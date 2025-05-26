@@ -1,29 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
-
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-  <ul class=flashes>
-  {% for message in messages %}
-    <li>{{ message }}</li>
-  {% endfor %}
-  </ul>
-{% endif %}
-{% endwith %}
-<body>
-    <h1>Login</h1>
-    <form id="formlogin" method="POST">
-        <div>
-            <label for="email">E-mail:</label> 
-            <input type="email" name="email" required>
-        </div>
-        <div>
-            <label for="password">Senha:</label>
-            <input type="password" name="password" required>
-        </div>
-        <button type="submit">Entrar</button>
-        <p id="resposta" class="invis"></p>
-    </form>
-    <p>Não tem conta? <a href="{{ url_for('register') }}">Registre-se.</a></p>
+<body class="bg-blue-100">
+    <div class="max-w-md mx-auto p-6 mt-10 bg-white rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-4">Faça login</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST" action="{{ url_for('index') }}">
+            <div class="mb-4">
+                <label class="block text-gray-700">E-mail</label>
+                <input type="email" name="email" class="border p-2 w-full rounded" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Senha</label>
+                <input type="password" name="password" class="border p-2 w-full rounded" required>
+            </div>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Logar</button>
+        </form>
+        <p class="mt-4">Não tem uma conta? <a href="{{ url_for('register') }}" class="text-blue-600 hover:underline">Registre-se.</a></p>
+    </div>
 </body>
 {% endblock %}
