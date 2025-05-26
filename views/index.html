@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<body>
+    <h1>Login</h1>
+    <form id="formlogin">
+        <div>
+            <label for="username">Usuário:</label> 
+            <input type="text" name="username" required>
+        </div>
+        <div>
+            <label for="password">Senha:</label>
+            <input type="password" name="password" required>
+        </div>
+        <button type="submit">Entrar</button>
+        <p id="resposta" class="invis"></p>
+    </form>
+    <p>Não tem conta? <a href="{{ url_for('registro') }}">Registre-se.</a></p>
+</body>
+<script>
+    $("#formlogin").submit(function(e) {
+        e.preventDefault(); 
+        var form = $(this);
+        var actionUrl = form.attr('action');
+        $.ajax({
+            type: "POST",
+            url: '/login',
+            data: form.serialize(),
+            success: function () {
+                location.reload()
+            },
+            error: function () {
+                var resposta = $('#resposta');
+                resposta.text("Senha errada")
+                resposta.removeClass("invis");
+            }
+        });
+    });
+</script>
+{% endblock %}
