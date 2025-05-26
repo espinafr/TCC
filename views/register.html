@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<body>
+    {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+    <h1 class="mb-4 text-2xl">Registro</h1>
+    <form id="formregister" method="POST">
+        <div>
+            <label for="username">Usuário:</label> 
+            <input type="text" name="username" required>
+        </div>
+        <div>
+            <label for="email">E-mail:</label>
+            <input type="email" name="email" required>
+        </div>
+        <div>
+            <label for="password">Senha:</label>
+            <input type="password" name="password" required>
+        </div>
+        <div>
+            <div>
+                <label for="a">Feminino</label>
+                <input type="radio" name="gender" value="a" required>    
+            </div>
+            <div>
+                <label for="o">Masculino</label>
+                <input type="radio" name="gender" value="o" required>
+            </div>
+        </div>
+        <button type="submit">Entrar</button>
+        <p id="resposta" class="invis"></p>
+    </form>
+</body>
+{% endblock %}

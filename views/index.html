@@ -1,11 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  <ul class=flashes>
+  {% for message in messages %}
+    <li>{{ message }}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+{% endwith %}
 <body>
     <h1>Login</h1>
-    <form id="formlogin">
+    <form id="formlogin" method="POST">
         <div>
-            <label for="username">Usuário:</label> 
-            <input type="text" name="username" required>
+            <label for="email">E-mail:</label> 
+            <input type="email" name="email" required>
         </div>
         <div>
             <label for="password">Senha:</label>
@@ -14,26 +24,6 @@
         <button type="submit">Entrar</button>
         <p id="resposta" class="invis"></p>
     </form>
-    <p>Não tem conta? <a href="{{ url_for('registro') }}">Registre-se.</a></p>
+    <p>Não tem conta? <a href="{{ url_for('register') }}">Registre-se.</a></p>
 </body>
-<script>
-    $("#formlogin").submit(function(e) {
-        e.preventDefault(); 
-        var form = $(this);
-        var actionUrl = form.attr('action');
-        $.ajax({
-            type: "POST",
-            url: '/login',
-            data: form.serialize(),
-            success: function () {
-                location.reload()
-            },
-            error: function () {
-                var resposta = $('#resposta');
-                resposta.text("Senha errada")
-                resposta.removeClass("invis");
-            }
-        });
-    });
-</script>
 {% endblock %}

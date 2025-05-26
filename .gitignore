@@ -1,3 +1,6 @@
 *.env
 *.db
-TCC/*
+TCC/
+tcc2/
+__pycache__/
+*.pyc

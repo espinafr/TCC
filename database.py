@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+from argon2 import PasswordHasher
 
 class DatabaseManager:
     def __init__(self, db_name):
@@ -8,24 +9,32 @@ class DatabaseManager:
     def connect(self):
         return sqlite3.connect(self.db_name)
 
+    def get_user(self, email):
+        with self.connect() as conn:
+            c = conn.cursor()
+            c.execute('SELECT * FROM users WHERE email = ?', (email,))
+            result = c.fetchone()
+            return result if result else False
+
     def init_users_db(self):
         with self.connect() as conn:
             c = conn.cursor()
             c.execute('''CREATE TABLE IF NOT EXISTS users
-                         (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT UNIQUE, password TEXT, gender TEXT, creation_date TEXT, confirmed INTEGER)''')
+                         (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, email TEXT UNIQUE, password TEXT, gender TEXT, creation_date TEXT, confirmed INTEGER)''')
             conn.commit()
 
-    def save_user(self, email, password, confirmed=0):
+    def save_user(self, username, email, password, gender, confirmed=0):
         with self.connect() as conn:
             c = conn.cursor()
-            c.execute('SELECT email FROM users WHERE email = ?', (email,))
-            if c.fetchone():
+            if self.get_user(email):
                 return False, "E-mail já registrado"
-            c.execute('INSERT INTO users (name, email, password, gender, creation_date, confirmed) VALUES (?, ?, ?)', (email, password, confirmed))
+            ph = PasswordHasher()
+            password = ph.hash(password)
+            c.execute('INSERT INTO users (username, email, password, gender, creation_date, confirmed) VALUES (?, ?, ?, ?, ?, ?)', (username, email, password, gender, datetime.now(), confirmed))
             conn.commit()
             return True, None
 
-    def confirm_user(self, email):
+    def activate_user(self, email):
         with self.connect() as conn:
             c = conn.cursor()
             c.execute('UPDATE users SET confirmed = 1 WHERE email = ?', (email,))
@@ -33,10 +42,13 @@ class DatabaseManager:
 
     def check_user(self, email, password):
         with self.connect() as conn:
-            c = conn.cursor()
-            c.execute('SELECT confirmed FROM users WHERE email = ? AND password = ?', (email, password))
-            result = c.fetchone()
-            return result[0] if result else None
+            c = conn.cursor
+            user = self.get_user(email)
+            if user:
+                ph = PasswordHasher()
+                if ph.verify(user[3], password):
+                    return 1
+            return None
 
     def init_missions_db(self):
         with self.connect() as conn:

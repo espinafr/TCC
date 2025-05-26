@@ -4,7 +4,7 @@ import os
 from database import DatabaseManager
 from email_service import EmailService
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="views", static_folder="public")
 load_dotenv()
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -21,26 +21,40 @@ email_service = EmailService(app)
 db.init_users_db()
 db.init_missions_db()
 
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password'] # Sanitizar
+        confirmed = db.check_user(email, password)
+        if confirmed == 1:
+            flash('Login bem-sucedido!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('E-mail não confirmado ou credenciais inválidas.', 'error')
+    return render_template('index.html')
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form['name']
+        username = request.form['username']
         email = request.form['email']
         password = request.form['password']
-        gender = request.form['gender']
-        
-        success, error = db.save_user(email, password)
+        gender = request.form['gender']        
+
+        success, error = db.save_user(username, email, password, gender)
         if not success:
             flash(error, 'error')
             return redirect(url_for('register'))
-        
+
         token = email_service.generate_token(email)
         confirm_url = url_for('confirm_email', token=token, _external=True)
-        success, error = email_service.send_confirmation_email(email, confirm_url)
+        success, error = email_service.send_confirmation_email(email, username, confirm_url)
         if success:
             flash('Um e-mail de confirmação foi enviado!', 'success')
         else:
             flash(f'Erro ao enviar e-mail: {error}', 'error')
+
         return redirect(url_for('register'))
     
     return render_template('register.html')
@@ -49,24 +63,24 @@ def register():
 def confirm_email(token):
     success, result = email_service.verify_token(token)
     if success:
-        db.confirm_user(result)
+        db.activate_user(result)
         flash('E-mail confirmado com sucesso! Faça login para continuar.', 'success')
     else:
         flash(result, 'error')
-    return redirect(url_for('login'))
+    return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
-        password = request.form['password']
+        password = request.form['password'] # Sanitizar
         confirmed = db.check_user(email, password)
         if confirmed == 1:
             flash('Login bem-sucedido!', 'success')
             return redirect(url_for('dashboard'))
         else:
             flash('E-mail não confirmado ou credenciais inválidas.', 'error')
-    return render_template('login.html')
+    return render_template('index.html')
 
 @app.route('/dashboard')
 def dashboard():
