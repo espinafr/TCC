@@ -3,18 +3,37 @@ import re
 class Sanitizer:
     def __init__(self):
         self.valid_interests = ['esportes', 'arte', 'leitura']
-
-    def validate_registration(self, data):
+    
+    def validate_login(self, data: list):
         errors = []
-        # Validar username
-        if not data.get('email') or not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', data.get('email')):
-            errors.append('O username precisa ter entre 3 e 15 caracteres')
-        # Validar e-mail
-        if not data.get('email') or not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', data.get('email')):
-            errors.append('E-mail inválido.')
+        logintype = 'email'
         # Validar senha
         if not data.get('password') or len(data.get('password')) < 8 or len(data.get('password')) > 20:
             errors.append('A senha deve ter entre 8 e 20 caracteres.')
+        # Validar e-mail
+        if not data.get('login'):
+            if '@' in data.get('login'):
+                if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', data.get('login')):
+                    errors.append('E-mail inválido.')
+            elif not re.search(r'[^\w]', data.get('login')) or len(data.get('login')) < 3 or len(data.get('login')) > 15:
+                logintype = 'username'
+                errors.append('O nome de usuário precisa ter de 4 a 15 caracteres e só pode conter letras e underline')
+        return errors, logintype
+    
+    def validate_registration(self, data: list):
+        errors = []
+        # Validar senha
+        if not data.get('password') or len(data.get('password')) < 8 or len(data.get('password')) > 20:
+            errors.append('A senha deve ter entre 8 e 20 caracteres.')
+        # Validar e-mail
+        if not data.get('email') or not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', data.get('email')):
+            errors.append('E-mail inválido.')
+        # Validar username7
+        if not data.get('username') or re.search(r'[^\w]', data.get('username')) or len(data.get('username')) < 3 or len(data.get('username')) > 15:
+            errors.append('O nome de usuário precisa ter de 4 a 15 caracteres e só pode conter letras e underline')
+        # Validar gênero
+        if not data.get('gender') or data.get('gender')[0] not in ['a', 'o', 'e']:
+            errors.append('Gênero inválido.')
         
         return errors
 

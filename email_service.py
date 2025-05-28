@@ -11,7 +11,7 @@ class EmailService:
         msg = Message('Confirme seu E-mail - Conexão em Família', 
                       sender=self.app.config['MAIL_USERNAME'], 
                       recipients=[email])
-        msg.body = f'Olá {nome}! Clique no link para confirmar seu e-mail: {confirm_url}\nO link expira em 1 hora.\n\nSe você não solicitou registro, ignore esse e-mail.'
+        msg.body = f'Olá {nome}! Clique no link para confirmar seu e-mail: {confirm_url}\nO link expira em 1 hora. Se não confirmar dentro desse tempo, sua conta será desativada.\n\nSe você não solicitou registro, ignore esse e-mail.'
         try:
             self.mail.send(msg)
             return True, None

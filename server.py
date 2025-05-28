@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 from database import DatabaseManager
 from email_service import EmailService
+from data_sanitizer import Sanitizer
 
 app = Flask(__name__, template_folder="views", static_folder="public")
 load_dotenv()
@@ -16,40 +17,42 @@ app.config['MAIL_PASSWORD'] = os.getenv('EMAIL_PASSWORD')
 # Inicializar serviços
 db = DatabaseManager('users.db')
 email_service = EmailService(app)
+sanitizer = Sanitizer()
 
 # Inicializar bancos de dados
 db.init_users_db()
 db.init_missions_db()
 
+def getValidationErrors(validationErrs):
+    if len(validationErrs) > 0:
+            [flash(erro, 'error') for erro in validationErrs]
+            return True
+    return False
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password'] # Sanitizar
-        confirmed = db.check_user(email, password)
-        if confirmed == 1:
-            flash('Login bem-sucedido!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('E-mail não confirmado ou credenciais inválidas.', 'error')
     return render_template('index.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        gender = request.form['gender']        
-
-        success, error = db.save_user(username, email, password, gender)
+    if request.method == 'POST': # Bloquear nomes iguais
+        data = {
+            'username': request.form['username'],
+            'email': request.form['email'],
+            'password': request.form['password'],
+            'gender': request.form['gender'] 
+        }
+        
+        if getValidationErrors(sanitizer.validate_registration(data)): return redirect(url_for('register'))
+        
+        success, error = db.save_user(data['username'], data['email'], data['password'], data['gender'])
         if not success:
             flash(error, 'error')
             return redirect(url_for('register'))
 
-        token = email_service.generate_token(email)
+        token = email_service.generate_token(data['email'])
         confirm_url = url_for('confirm_email', token=token, _external=True)
-        success, error = email_service.send_confirmation_email(email, username, confirm_url)
+        success, error = email_service.send_confirmation_email(data['email'], data['username'], confirm_url)
         if success:
             flash('Um e-mail de confirmação foi enviado!', 'success')
         else:
@@ -71,13 +74,19 @@ def confirm_email(token):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password'] # Sanitizar
-        confirmed = db.check_user(email, password)
-        if confirmed == 1:
+    if request.method == 'POST': #arrumar isso
+        data = {
+            "login": request.form['login'],
+            "password": request.form['password']
+        }
+        
+        errors, logintype = sanitizer.validate_login(data)
+        if getValidationErrors(errors): return redirect(url_for('index'))
+
+        active = db.logto_user(data['login'], data['password'], logintype)
+        if active == 1:
             flash('Login bem-sucedido!', 'success')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('index'))
         else:
             flash('E-mail não confirmado ou credenciais inválidas.', 'error')
     return render_template('index.html')
