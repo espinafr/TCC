@@ -70,15 +70,13 @@ class DatabaseManager:
             c.execute('UPDATE users SET active = 1 WHERE email = ?', (email,))
             conn.commit()
 
-    def logto_user(self, login, password):
-        with self.connect() as conn:
-            c = conn.cursor
-            user = self.get_user(login)
-            if user:
-                ph = PasswordHasher()
-                if ph.verify(user[3], password):
-                    return 1
-            return None
+    def logto_user(self, login, password, _type):
+        user = self.get_user(_type, login)
+        if user:
+            ph = PasswordHasher()
+            if ph.verify(user[3], password):
+                return 1
+        return None
 
     def init_missions_db(self):
         with self.connect() as conn:

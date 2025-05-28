@@ -6,18 +6,22 @@ class Sanitizer:
     
     def validate_login(self, data: list):
         errors = []
-        logintype = 'email'
+        logintype = ''
         # Validar senha
         if not data.get('password') or len(data.get('password')) < 8 or len(data.get('password')) > 20:
             errors.append('A senha deve ter entre 8 e 20 caracteres.')
-        # Validar e-mail
-        if not data.get('login'):
+        # Validar e-mail ou nome
+        if data.get('login'):
             if '@' in data.get('login'):
+                logintype = 'email'
                 if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', data.get('login')):
                     errors.append('E-mail inválido.')
-            elif not re.search(r'[^\w]', data.get('login')) or len(data.get('login')) < 3 or len(data.get('login')) > 15:
+            else:
                 logintype = 'username'
-                errors.append('O nome de usuário precisa ter de 4 a 15 caracteres e só pode conter letras e underline')
+                if re.search(r'[^\w]', data.get('login')) or len(data.get('login')) < 3 or len(data.get('login')) > 15:
+                    errors.append('O nome de usuário precisa ter de 4 a 15 caracteres e só pode conter letras e underline')
+        else:
+            errors.append('Faltam dados.')
         return errors, logintype
     
     def validate_registration(self, data: list):

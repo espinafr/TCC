@@ -14,8 +14,8 @@
         {% endwith %}
         <form method="POST" action="{{ url_for('login') }}">
             <div class="mb-4">
-                <label class="block text-gray-700">E-mail</label>
-                <input type="email" name="email" class="border p-2 w-full rounded" required>
+                <label class="block text-gray-700">E-mail ou usuário</label>
+                <input type="text" name="login" class="border p-2 w-full rounded" required>
             </div>
             <div class="mb-4">
                 <label class="block text-gray-700">Senha</label>
