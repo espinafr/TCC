@@ -1,56 +1,60 @@
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, IntegerField, SelectMultipleField, RadioField
+from wtforms.validators import DataRequired, Email, Length, NumberRange, ValidationError
 import re
 
-class Sanitizer:
-    def __init__(self):
-        self.valid_interests = ['esportes', 'arte', 'leitura']
-    
-    def validate_login(self, data: list):
-        errors = []
-        logintype = ''
-        # Validar senha
-        if not data.get('password') or len(data.get('password')) < 8 or len(data.get('password')) > 20:
-            errors.append('A senha deve ter entre 8 e 20 caracteres.')
-        # Validar e-mail ou nome
-        if data.get('login'):
-            if '@' in data.get('login'):
-                logintype = 'email'
-                if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', data.get('login')):
-                    errors.append('E-mail inválido.')
-            else:
-                logintype = 'username'
-                if re.search(r'[^\w]', data.get('login')) or len(data.get('login')) < 3 or len(data.get('login')) > 15:
-                    errors.append('O nome de usuário precisa ter de 4 a 15 caracteres e só pode conter letras e underline')
-        else:
-            errors.append('Faltam dados.')
-        return errors, logintype
-    
-    def validate_registration(self, data: list):
-        errors = []
-        # Validar senha
-        if not data.get('password') or len(data.get('password')) < 8 or len(data.get('password')) > 20:
-            errors.append('A senha deve ter entre 8 e 20 caracteres.')
-        # Validar e-mail
-        if not data.get('email') or not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', data.get('email')):
-            errors.append('E-mail inválido.')
-        # Validar username7
-        if not data.get('username') or re.search(r'[^\w]', data.get('username')) or len(data.get('username')) < 3 or len(data.get('username')) > 15:
-            errors.append('O nome de usuário precisa ter de 4 a 15 caracteres e só pode conter letras e underline')
-        # Validar gênero
-        if not data.get('gender') or data.get('gender')[0] not in ['a', 'o', 'e']:
-            errors.append('Gênero inválido.')
-        
-        return errors
+def validate_username(form, field):
+    if not field.data:
+        raise ValidationError('O nome de usuário é obrigatório.')
+    if len(field.data) < 3 or len(field.data) > 15:
+        raise ValidationError('O nome de usuário precisa ter de 3 a 15 caracteres.')
+    if not field.data.isalnum() and '_' not in field.data:
+        raise ValidationError('O nome de usuário só pode conter letras, números e underline.')
 
-    # Teste
-    def validate_preferences(self, data):
-        errors = []
-        # Exemplo: validar apenas preferências
-        child_age = data.get('child_age')
-        if not child_age or not child_age.isdigit() or not (8 <= int(child_age) <= 13):
-            errors.append('A idade da criança deve estar entre 8 e 13 anos.')
-        interests = data.get('interests', [])
-        if not interests:
-            errors.append('Selecione pelo menos um interesse.')
-        if not all(interest in self.valid_interests for interest in interests):
-            errors.append('Interesse inválido.')
-        return errors
+def validate_login(form, field):
+    if not field.data:
+        raise ValidationError('O login é obrigatório.')
+    if '@' in field.data:
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', field.data):
+            raise ValidationError('E-mail inválido.')
+    else:
+        if len(field.data) < 3 or len(field.data) > 15:
+            raise ValidationError('O nome de usuário precisa ter de 3 a 15 caracteres.')
+        if not field.data.isalnum() and '_' not in field.data:
+            raise ValidationError('O nome de usuário só pode conter letras, números e underline.')
+
+def validate_gender(form, field):
+    if not field.data or field.data[0].lower() not in ['a', 'o', 'e']:
+        raise ValidationError('Gênero inválido.')
+
+class RegistrationForm(FlaskForm):
+    email = StringField('E-mail', validators=[
+        DataRequired(message='O e-mail é obrigatório.'),
+        Email(message='Por favor, insira um e-mail válido.')
+    ])
+    username = StringField('Nome de Usuário', validators=[
+        DataRequired(message='O nome de usuário é obrigatório.'),
+        validate_username
+    ])
+    password = PasswordField('Senha', validators=[
+        DataRequired(message='A senha é obrigatória.'),
+        Length(min=8, max=20, message='A senha deve ter entre 8 e 20 caracteres.')
+    ])
+    gender = RadioField('Gênero', choices=[
+        ('a', 'Feminino'),
+        ('o', 'Masculino'),
+        ('e', 'Outro')
+    ], validators=[
+        DataRequired(message='O gênero é obrigatório.'),
+        validate_gender
+    ])
+
+class LoginForm(FlaskForm):
+    login = StringField('E-mail ou Nome de Usuário', validators=[
+        DataRequired(message='O login é obrigatório.'),
+        validate_login
+    ])
+    password = PasswordField('Senha', validators=[
+        DataRequired(message='A senha é obrigatória.'),
+        Length(min=8, max=20, message='A senha deve ter entre 8 e 20 caracteres.')
+    ])
