@@ -2,7 +2,8 @@
 {% block content %}
 <body class="bg-blue-100">
     <div class="max-w-md mx-auto p-6 mt-10 bg-white rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-4">Faça login</h1>
+        <h1 class="text-2xl font-bold mb-4">Index</h1>
+        <a href="{{ url_for('post') }}"></a>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -12,7 +13,160 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+        
+        {% if login %}
+        <p>Bem-vindo {{login}}</p>
+        <a href="{{ url_for('create_post') }}" class="bg-blue-500 text-white px-4 py-2 rounded-lg mb-4 inline-block">Criar Post</a>
+        {% for post in posts %}
+            <div class="post bg-white p-4 rounded-lg shadow-md mb-4">
+                <h3 class="text-lg font-bold">{{ post.title }}</h3>
+                <p>{{ post.content | truncate(200) }}</p>
+                <p class="text-sm text-gray-500">Por {{ post.email }} em {{ post.created_at }}</p>
+                <p class="text-sm text-gray-500">Tags: {{ post.tags }}</p>
+                <div class="flex space-x-4">
+                    <form action="{{ url_for('like_post', post_id=post.post_id) }}" method="POST">
+                        {{ form.csrf_token }}
+                        <button type="submit" class="text-blue-500 hover:underline">Curtir</button>
+                    </form>
+                    <a href="{{ url_for('view_post', post_id=post.post_id) }}" class="text-blue-500 hover:underline">Ver Mais</a>
+                </div>
+            </div>
+        {% endfor %}
+        <!--<form method="POST" action="/create_post" enctype="multipart/form-data" class="max-w-2xl mx-auto p-6">
+            
+            <div class="mb-4">
+                <input type="text" name="title" maxlength="50" placeholder="Digite seu título aqui" class="w-full p-2 border text-gray-700 rounded" required>
+            </div>
+            <div class="mb-4 flex space-x-4">
+                <div class="w-1/2">
+                    <select name="main_tag" class="w-full p-2 border text-gray-700 rounded" required>
+                        <option value="" disabled selected>Categorias</option>
+                        <option value="parenting" style="background-color: #FF6B6B;">Parentalidade</option>
+                        <option value="education" style="background-color: #4ECDC4;">Educação</option>
+                        <option value="health" style="background-color: #45B7D1;">Saúde</option>
+                    </select>
+                </div>
+                <div class="w-1/2 relative">
+                    <select class="w-full p-2 border text-gray-700 rounded appearance-none" id="optionalTags" size="1" onchange="toggleSelectedTag(this)">
+                        <option value="" disabled selected>optional tags...</option>
+                        <option value="question">question (x1175)</option>
+                        <option value="not-very-serious">not-very-serious (x448)</option>
+                        <option value="very-serious">very-serious (x350)</option>
+                        <option value="not-clickbait">not-clickbait (x193)</option>
+                        <option value="police-called">police-called (x126)</option>
+                    </select>
+                    <input type="hidden" name="optional_tags" id="hiddenOptionalTags">
+                    <div id="selectedTags" class="mt-2 flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+            <div class="mb-4">
+                <textarea name="content" maxlength="1250" placeholder="Selecione uma categoria antes de escrever." class="w-full h-40 p-2 border text-gray-700 rounded" required></textarea>
+            </div>
+            <div class="mb-4">
+                <input type="file" name="images" accept="image/*" multiple onchange="previewImages(event)" class="mb-2 border rounded p-2 hover:bg-gray-200 transition">
+                <div id="imagePreview" class="flex space-x-2"></div>
+            </div>
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded cursor-pointer">Postar</button>
+        </form>
+
+        <script>
+            let selectedTags = [];
+
+            function toggleSelectedTag(select) {
+                const value = select.value;
+                if (!value) return;
+
+                const index = selectedTags.indexOf(value);
+                if (index === -1) {
+                    if (selectedTags.length >= 5) {
+                        alert('Maximum 5 optional tags allowed!');
+                        select.value = '';
+                        return;
+                    }
+                    selectedTags.push(value);
+                } else {
+                    selectedTags.splice(index, 1);
+                }
+
+                updateSelectedTagsDisplay();
+                select.value = '';
+            }
+
+            function updateSelectedTagsDisplay() {
+                const display = document.getElementById('selectedTags');
+                const hiddenInput = document.getElementById('hiddenOptionalTags');
+                display.innerHTML = '';
+
+                selectedTags.forEach(tag => {
+                    const tagElement = document.createElement('span');
+                    tagElement.className = 'bg-gray-700 text-white px-2 py-1 rounded flex items-center';
+                    tagElement.textContent = tag;
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = '×';
+                    removeButton.className = 'ml-2 text-red-400 hover:text-red-300';
+                    removeButton.onclick = () => {
+                        selectedTags = selectedTags.filter(t => t !== tag);
+                        updateSelectedTagsDisplay();
+                    };
+                    tagElement.appendChild(removeButton);
+                    display.appendChild(tagElement);
+                });
+
+                hiddenInput.value = selectedTags.join(',');
+            }
+
+            function previewImages(event) {
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = '';
+                const files = event.target.files;
+                if (files.length > 4) {
+                    alert('Maximum 4 images allowed!');
+                    event.target.value = '';
+                    return;
+                }
+                for (let i = 0; i < files.length; i++) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(files[i]);
+                    img.style.width = '100px';
+                    img.style.height = '100px';
+                    img.onmouseover = () => img.style.transform = 'scale(1.1)';
+                    img.onmouseout = () => img.style.transform = 'scale(1)';
+                    preview.appendChild(img);
+                }
+            }
+
+            // Drag and drop image handling
+            const form = document.querySelector('form');
+            form.addEventListener('dragover', (e) => e.preventDefault());
+            form.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const files = e.dataTransfer.files;
+                const input = document.querySelector('input[type="file"]');
+                const dataTransfer = new DataTransfer();
+                for (let i = 0; i < files.length && i < 4; i++) {
+                    dataTransfer.items.add(files[i]);
+                }
+                input.files = dataTransfer.files;
+                previewImages({ target: input });
+            });
+
+            // Simple @ mention suggestion (replace with actual user data from DB)
+            const textarea = document.querySelector('textarea');
+            textarea.addEventListener('input', (e) => {
+                if (e.data === '@') {
+                    const popup = document.createElement('div');
+                    popup.className = 'absolute bg-gray-800 border border-gray-700 p-2 rounded';
+                    popup.innerHTML = '<div>@pearson</div><div>@john</div>';
+                    popup.style.top = textarea.getBoundingClientRect().bottom + 'px';
+                    popup.style.left = textarea.getBoundingClientRect().left + 'px';
+                    document.body.appendChild(popup);
+                    setTimeout(() => popup.remove(), 2000);
+                }
+            });
+        </script>
+        {% else %}
         <form method="POST" action="{{ url_for('login') }}">
+            <input id="csrf_token" name="csrf_token" type="hidden" value="{{ csrf_token() }}">
             <div class="mb-4">
                 <label class="block text-gray-700">E-mail ou usuário</label>
                 <input type="text" name="login" class="border p-2 w-full rounded" required>
@@ -24,6 +178,8 @@
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Logar</button>
         </form>
         <p class="mt-4">Não tem uma conta? <a href="{{ url_for('register') }}" class="text-blue-600 hover:underline">Registre-se.</a></p>
+    -->
+        {% endif %}
     </div>
 </body>
 {% endblock %}

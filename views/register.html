@@ -13,6 +13,7 @@
             {% endif %}
         {% endwith %}
         <form method="POST" action="{{ url_for('register') }}">
+            {{ form.hidden_tag() }}
             <div class="mb-4">
                 <label class="block text-gray-700">Usuário</label>
                 <input type="text" name="username" class="border p-2 w-full rounded" required>

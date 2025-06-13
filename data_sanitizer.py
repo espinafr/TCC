@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, IntegerField, SelectMultipleField, RadioField
-from wtforms.validators import DataRequired, Email, Length, NumberRange, ValidationError
+from wtforms import StringField, PasswordField, RadioField #, IntegerField, SelectMultipleField
+from wtforms.validators import DataRequired, Email, Length, ValidationError # NumberRange,
 import re
 
 def validate_username(form, field):

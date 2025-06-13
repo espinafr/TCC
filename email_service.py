@@ -19,11 +19,11 @@ class EmailService:
             return False, str(e)
 
     def generate_token(self, email):
-        return self.serializer.dumps(email, salt='email-confirm')
+        return self.serializer.dumps(email, salt='mAiL-ConnnnfirMMmmmmMMAaAation')
 
     def verify_token(self, token, max_age=3600):
         try:
-            email = self.serializer.loads(token, salt='email-confirm', max_age=max_age)
+            email = self.serializer.loads(token, salt="mAiL-ConnnnfirMMmmmmMMAaAation", max_age=max_age)
             return True, email
         except exc.SignatureExpired:
             return False, "O link de confirmação expirou"

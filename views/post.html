@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<body class="bg-gray-100">
+    <div class="max-w-2xl mx-auto p-6 mt-10 bg-white rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-4">Criar Novo Post</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST" action="{{ url_for('create_post') }}">
+            {{ form.csrf_token }}
+            <div class="mb-4">
+                <label class="block text-gray-700">Título</label>
+                {{ form.title(class="border p-2 w-full rounded", placeholder="Título do post") }}
+                {% for error in form.title.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Conteúdo</label>
+                {{ form.content(class="border p-2 w-full rounded h-32", placeholder="Escreva seu post aqui...") }}
+                {% for error in form.content.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Tags</label>
+                {{ form.tags(class="border p-2 w-full rounded") }}
+                {% for error in form.tags.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Publicar</button>
+        </form>
+    </div>
+</body>
+{% endblock %}
