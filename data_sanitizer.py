@@ -4,7 +4,38 @@ from wtforms.validators import DataRequired, Email, Length, ValidationError, Opt
 from flask_wtf.file import FileAllowed, FileSize
 import re
 
-ALLOWED_CATEGORIES = ['esportes', 'arte', 'leitura', 'ao ar livre', 'educativo']
+ALLOWED_CATEGORIES = [
+    'Amamentação',
+    'Sono infantil',
+    'Primeiros passos',
+    'Fase escolar',
+    'TDAH',
+    'Autismo',
+    'Alergias',
+    'Gripe e resfriado',
+    'Culinária kids',
+    'Recusa alimentar',
+    'Birras',
+    'Bullying',
+    'Desenho',
+    'Música',
+    'Leitura',
+    'Contação histórias',
+    'Jogos digitais',
+    'Redes sociais',
+    'Tempo de tela',
+    'Limites',
+    'Mesada',
+    'Tarefas domésticas',
+    'Divórcio',
+    'Irmãos',
+    'Avós',
+    'Adoção',
+    'Cyberbullying',
+    'Sexualidade',
+    'Puberdade',
+    'Crise adolescência'
+]
 
 def validate_fotos(form, field):
     # Filtra arquivos que realmente foram selecionados (não são vazios)
@@ -95,11 +126,7 @@ class PostForm(FlaskForm):
     titulo = StringField(name='titulo', validators=[DataRequired(message='O título é obrigatório.'), Length(min=5, max=100, message="O título precisa conter entre %(min)d e %(max)d caracteres")])
     conteudo = TextAreaField(name='conteudo', validators=[DataRequired(message='O conteúdo é obrigatório.'), Length(min=30, max=1000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
     tags = SelectField(name='tags', choices=[
-        ('esportes', 'Esportes'),
-        ('arte', 'Arte'),
-        ('leitura', 'Leitura'),
-        ('ao_ar_livre', 'Ao Ar Livre'),
-        ('educativo', 'Educativo')
+        ("desen_infan", "Desenho Infantil"), ("educacao", "Educação"), ("saude", "Saúde"), ("disciplina", "Disciplina"), ("nutricao", "Nutrição"), ("comportamen", "Comportamento"), ("lazer", "Lazer"), ("tecnologia", "Tecnologia"), ("familia", "Família"), ("desafios", "Desafios")
     ], validators=[DataRequired(message='Selecione uma categoria.'), validate_not_empty_choice], render_kw={'data-placeholder': 'true'})
     optionaltags = StringField(validators=[Optional(), validate_opcional])
     images = MultipleFileField(

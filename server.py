@@ -3,7 +3,6 @@ from flask_wtf import CSRFProtect
 from functools import wraps
 from dotenv import load_dotenv
 from database import DatabaseManager, User
-from recommendation_service import RecommendationService
 from email_service import EmailService
 import data_sanitizer as sanitizer
 from botocore.exceptions import ClientError
@@ -48,7 +47,6 @@ csrf = CSRFProtect(app)
 # Inicializando serviços
 db_manager  = DatabaseManager()
 email_service = EmailService(app)
-recommendation_service = RecommendationService(db_manager)
 
 with app.app_context():
     db_manager.init_all_dbs()
@@ -132,6 +130,7 @@ def login():
         
         if user_logged_in:
             session['login'] = user_logged_in.email
+            session['username'] = user_logged_in.username
             session.permanent = True
             flash('Login bem-sucedido!', 'success')
             return redirect(url_for('index'))
@@ -177,9 +176,9 @@ def create_post():
                     print(f"Erro geral: {e}")
 
         post_id = db_manager.save_post(
-            session['login'],
-            form.titulo.data,
-            form.conteudo.data,
+            session['username'],
+            form.titulo.data.strip(),
+            form.conteudo.data.strip(),
             form.tags.data,
             form.optionaltags.data,
             image_urls_list=uploaded_files_info
@@ -193,20 +192,9 @@ def create_post():
     
     return render_template('post.html', form=form)
 
-@app.route('/like/<int:post_id>', methods=['POST'])
-@login_required
-def like_post(post_id):
-    # Evitar curtidas duplicadas
-    interactions = db_manager.get_user_interactions(session['login'], interaction_type='like')
-    if not any(i['post_id'] == post_id and i['type'] == 'like' for i in interactions):
-        db_manager.register_interaction(session['login'], post_id, 'like')
-        flash('Post curtido!', 'success')
-    return redirect(url_for('index'))
-
 @app.route('/view/<int:post_id>', methods=['GET'])
 @login_required
 def view_post(post_id):
-    db_manager.register_interaction(session['login'], post_id, 'view')
     post = db_manager.get_post_by_id(post_id)
     
     if post:

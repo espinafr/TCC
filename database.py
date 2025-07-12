@@ -19,7 +19,7 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), nullable=False)
+    username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
     gender = Column(String(1)) # Ajuste o tamanho conforme necessário
@@ -28,7 +28,6 @@ class User(Base):
 
     # Relacionamentos
     posts = relationship("Post", back_populates="author_user")
-    interactions = relationship("Interaction", back_populates="interactor_user")
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
@@ -37,38 +36,20 @@ class Post(Base):
     __tablename__ = 'posts'
 
     post_id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(100), ForeignKey('users.email'), nullable=False)
+    username = Column(String(100), ForeignKey('users.username'), nullable=False)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     tag = Column(String(12))
-    optional_tags = Column(String(60))
+    optional_tags = Column(String(75))
     created_at = Column(DateTime, default=datetime.now)
     image_urls = Column(Text, nullable=True) 
 
     # Relacionamento com User
     author_user = relationship("User", back_populates="posts")
-    # Relacionamento com Interactions
-    post_interactions = relationship("Interaction", back_populates="related_post")
 
     def __repr__(self):
         return f"<Post(post_id={self.post_id}, title='{self.title}', email='{self.email}')>"
 
-class Interaction(Base):
-    __tablename__ = 'interactions'
-
-    interaction_id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(100), ForeignKey('users.email'), nullable=False)
-    post_id = Column(Integer, ForeignKey('posts.post_id'), nullable=False)
-    interaction_type = Column(String(50), nullable=False) # Ex: 'like', 'comment'
-    comment_text = Column(Text)
-    created_at = Column(DateTime, default=datetime.now)
-
-    # Relacionamentos
-    interactor_user = relationship("User", back_populates="interactions")
-    related_post = relationship("Post", back_populates="post_interactions")
-
-    def __repr__(self):
-        return f"<Interaction(id={self.interaction_id}, email='{self.email}', type='{self.interaction_type}')>"
 
 class DatabaseManager:
     def __init__(self):
@@ -193,14 +174,14 @@ class DatabaseManager:
                     return None # Senha incorreta
             return None # Usuário não encontrado ou não ativo
 
-    def save_post(self, email, title, content, tag, optional_tags, image_urls_list=None):
+    def save_post(self, username, title, content, tag, optional_tags, image_urls_list=None):
         """Salva um novo post no banco de dados."""
         with self.get_db() as db:
             image_urls_json = json.dumps(image_urls_list) if image_urls_list else None
 
             try:
                 new_post = Post(
-                    email=email,
+                    username=username,
                     title=title,
                     content=content,
                     tag=tag,
@@ -221,44 +202,8 @@ class DatabaseManager:
         with self.get_db() as db:
             post = db.query(Post).filter(Post.post_id == post_id).first()
             if post:
-                # Converte a string JSON de URLs de imagem de volta para uma lista Python
                 if post.image_urls:
                     post.image_urls = json.loads(post.image_urls)
                 else:
-                    post.image_urls = [] # Garante que seja uma lista vazia se não houver URLs
+                    post.image_urls = []
             return post
-    def register_interaction(self, email, post_id, interaction_type, comment_text=None):
-        """Registra uma interação (like, comentário) de um usuário com um post."""
-        with self.get_db() as db:
-            try:
-                new_interaction = Interaction(
-                    email=email,
-                    post_id=post_id,
-                    interaction_type=interaction_type,
-                    comment_text=comment_text
-                )
-                db.add(new_interaction)
-                db.commit()
-                db.refresh(new_interaction)
-                return new_interaction.interaction_id
-            except Exception as e:
-                db.rollback()
-                print(f"Erro ao registrar interação: {e}")
-                return None
-
-    def get_user_interactions(self, email, interaction_type=None):
-        """Obtém interações de um usuário, opcionalmente filtrando por tipo."""
-        with self.get_db() as db:
-            query = db.query(Interaction).filter(Interaction.email == email)
-            if interaction_type:
-                query = query.filter(Interaction.interaction_type == interaction_type)
-            
-            # Retornar uma lista de dicionários para compatibilidade com o original
-            return [{'post_id': interaction.post_id, 'type': interaction.interaction_type} 
-                    for interaction in query.all()]
-
-    def get_all_interactions(self):
-        """Obtém todas as interações."""
-        with self.get_db() as db:
-            # Retornar uma lista de tuplas para compatibilidade
-            return [(i.email, i.post_id, i.interaction_type) for i in db.query(Interaction).all()]
