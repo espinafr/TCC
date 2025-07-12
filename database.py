@@ -1,101 +1,264 @@
-import sqlite3
+import os
 from datetime import datetime, timedelta
-from argon2 import PasswordHasher
+from argon2 import PasswordHasher, exceptions
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship
+from sqlalchemy.exc import IntegrityError, OperationalError
+import contextlib
+import json
+
+from dotenv import load_dotenv
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    password = Column(String(255), nullable=False)
+    gender = Column(String(1)) # Ajuste o tamanho conforme necessário
+    creation_date = Column(DateTime, default=datetime.now) # SQLAlchemy gerencia DateTime objetos
+    active = Column(Boolean, default=False) # 0/1 vira False/True
+
+    # Relacionamentos
+    posts = relationship("Post", back_populates="author_user")
+    interactions = relationship("Interaction", back_populates="interactor_user")
+
+    def __repr__(self):
+        return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
+
+class Post(Base):
+    __tablename__ = 'posts'
+
+    post_id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(100), ForeignKey('users.email'), nullable=False)
+    title = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    tag = Column(String(12))
+    optional_tags = Column(String(60))
+    created_at = Column(DateTime, default=datetime.now)
+    image_urls = Column(Text, nullable=True) 
+
+    # Relacionamento com User
+    author_user = relationship("User", back_populates="posts")
+    # Relacionamento com Interactions
+    post_interactions = relationship("Interaction", back_populates="related_post")
+
+    def __repr__(self):
+        return f"<Post(post_id={self.post_id}, title='{self.title}', email='{self.email}')>"
+
+class Interaction(Base):
+    __tablename__ = 'interactions'
+
+    interaction_id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(100), ForeignKey('users.email'), nullable=False)
+    post_id = Column(Integer, ForeignKey('posts.post_id'), nullable=False)
+    interaction_type = Column(String(50), nullable=False) # Ex: 'like', 'comment'
+    comment_text = Column(Text)
+    created_at = Column(DateTime, default=datetime.now)
+
+    # Relacionamentos
+    interactor_user = relationship("User", back_populates="interactions")
+    related_post = relationship("Post", back_populates="post_interactions")
+
+    def __repr__(self):
+        return f"<Interaction(id={self.interaction_id}, email='{self.email}', type='{self.interaction_type}')>"
 
 class DatabaseManager:
-    def __init__(self, db_name):
-        self.db_name = db_name
+    def __init__(self):
+        # A conexão e sessão são gerenciadas pelo SessionLocal
+        self.ph = PasswordHasher() # Instancia o PasswordHasher uma vez
 
-    def connect(self):
-        return sqlite3.connect(self.db_name)
+    @contextlib.contextmanager
+    def get_db(self):
+        """Retorna uma nova sessão de banco de dados."""
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
 
-    def get_user(self, type: str, value):
-        with self.connect() as conn:
-            c = conn.cursor()
-            c.execute(f'SELECT * FROM users WHERE {type} = ?', (value,))
-            result = c.fetchone()
-            return result if result else False
+    def init_all_dbs(self):
+        """Cria todas as tabelas definidas nos modelos no banco de dados."""
+        try:
+            Base.metadata.create_all(bind=engine)
+            print("Tabelas criadas ou já existentes no PostgreSQL.")
+        except OperationalError as e:
+            print(f"Erro ao conectar ou criar tabelas: {e}")
+            print("Verifique a DATABASE_URL e as credenciais do PostgreSQL.")
+        except Exception as e:
+            print(f"Um erro inesperado ocorreu durante a inicialização do DB: {e}")
 
-    def init_users_db(self):
-        with self.connect() as conn:
-            c = conn.cursor()
-            c.execute('''CREATE TABLE IF NOT EXISTS users
-                         (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, email TEXT UNIQUE, password TEXT, gender TEXT, creation_date TEXT, active INTEGER)''')
-            conn.commit()
-    
-    def check_user_activation(self, _type, identification):
-        userData = self.get_user(_type, identification)
-        if userData:
-            if userData[-1] == 0:
-                diferencaTempo = datetime.now() - datetime.strptime(userData[-2], '%d-%m-%Y %H:%M:%S')
-                if diferencaTempo > timedelta(hours=1):
-                    contaDeletada = self.delete_user(userData[2])
-                    if contaDeletada.rowcount == 0:
-                        return False, "Erro manejando contas. Tente novamente."
-                else:
-                    return False, f"Já existe uma conta com \"{identification}\" em processo de ativação. Faltam {60 - int(diferencaTempo.total_seconds() / 60)} minutos"
-            else:
-                return False, f"Conta com \"{identification}\" já registrada."
-        return True, True
-
-    def save_user(self, username, email, password, gender, active=0):
-        with self.connect() as conn:
-            c = conn.cursor()
-
-            data = {
-                'email': email,
-                'username': username
-            }
-            for _type in data:
-                available = self.check_user_activation(_type, data[_type])
-                if not available[0]:
-                    return False, available[1]
-            
-            ph = PasswordHasher()
-            password = ph.hash(password)
-            c.execute('INSERT INTO users (username, email, password, gender, creation_date, active) VALUES (?, ?, ?, ?, ?, ?)', (username, email, password, gender, datetime.now().strftime('%d-%m-%Y %H:%M:%S'), active))
-            conn.commit()
-            return True, None
-
-    def delete_user(self, email):
-        with self.connect() as conn:
-            c = conn.cursor()
-            result = c.execute('DELETE FROM users WHERE email = ?', (email, ))
-            conn.commit()
-            return result
-
-    def activate_user(self, email):
-        with self.connect() as conn:
-            c = conn.cursor()
-            c.execute('UPDATE users SET active = 1 WHERE email = ?', (email,))
-            conn.commit()
-
-    def logto_user(self, login, password, _type):
-        user = self.get_user(_type, login)
-        if user:
-            ph = PasswordHasher()
-            if ph.verify(user[3], password):
-                return 1
+    # Helper para obter usuário de forma consistente
+    def _get_user_by_field(self, db, field_name: str, value):
+        if field_name == 'email':
+            return db.query(User).filter(User.email == value).first()
+        elif field_name == 'username':
+            return db.query(User).filter(User.username == value).first()
+        elif field_name == 'id':
+            return db.query(User).filter(User.id == value).first()
         return None
 
-    def init_missions_db(self):
-        with self.connect() as conn:
-            c = conn.cursor()
-            c.execute('''CREATE TABLE IF NOT EXISTS missions
-                         (mission_id INTEGER PRIMARY KEY, description TEXT, age_min INTEGER, age_max INTEGER,
-                          category TEXT, duration INTEGER, goal TEXT)''')
-            missions = [
-                (1, 'Criar uma história em família, cada um adicionando uma frase', 8, 13, 'criatividade', 30, 'fortalecer vínculo'),
-                (2, 'Jogar uma partida de futebol no quintal', 10, 13, 'esportes', 45, 'reduzir tempo de tela'),
-                (3, 'Ler um capítulo de um livro juntos', 8, 12, 'leitura', 20, 'estimular leitura'),
-            ]
-            c.executemany('INSERT OR IGNORE INTO missions VALUES (?, ?, ?, ?, ?, ?, ?)', missions)
-            conn.commit()
+    def get_user(self, type: str, value):
+        """Retorna um usuário pelo tipo (email, username, id) e valor."""
+        with self.get_db() as db:
+            user = self._get_user_by_field(db, type, value)
+            return user if user else False
 
-    def get_mission(self, child_age, interests, available_time):
-        with self.connect() as conn:
-            c = conn.cursor()
-            c.execute('SELECT description, duration FROM missions WHERE age_min <= ? AND age_max >= ? AND duration <= ? AND category IN ({})'.format(','.join(['?']*len(interests))),
-                      [child_age, child_age, available_time] + interests)
-            missions = c.fetchall()
-            return missions
+    def check_user_activation(self, _type, identification):
+        """
+        Verifica a ativação do usuário e lida com contas não ativas expiradas.
+        Retorna (True, True) para sucesso, (False, mensagem) para erro/problema.
+        """
+        with self.get_db() as db:
+            user_data = self._get_user_by_field(db, _type, identification)
+
+            if user_data:
+                if not user_data.active: # active é False (0)
+                    diferencaTempo = datetime.now() - user_data.creation_date
+                    if diferencaTempo > timedelta(hours=1):
+                        # Deletar conta expirada
+                        db.query(User).filter(User.email == user_data.email).delete()
+                        db.commit()
+                        return True, True # Conta deletada, pode prosseguir com novo registro
+                    else:
+                        minutes_left = 60 - int(diferencaTempo.total_seconds() / 60)
+                        return False, f"Já existe uma conta com \"{identification}\" em processo de ativação. Faltam {minutes_left} minutos"
+                else:
+                    return False, f"Conta com \"{identification}\" já registrada."
+            return True, True # Usuário não encontrado, pode prosseguir
+
+    def save_user(self, username, email, password, gender, active=False):
+        """Salva um novo usuário no banco de dados.
+        Assume que as validações de existência e ativação já foram feitas externamente
+        pelo chamador (ex: na rota de registro).
+        """
+        with self.get_db() as db:
+            try:
+                hashed_password = self.ph.hash(password)
+                new_user = User(
+                    username=username,
+                    email=email,
+                    password=hashed_password,
+                    gender=gender,
+                    active=active
+                )
+                db.add(new_user)
+                db.commit()
+                db.refresh(new_user) # Recarrega o objeto para ter o ID gerado pelo DB
+                return True, None
+            except IntegrityError as e:
+                db.rollback()
+                # Isso ainda é importante para pegar falhas de UniqueConstraint
+                # em caso de race conditions ou se a validação externa falhou por algum motivo.
+                # "users_email_key" é um nome de constraint comum para unique(email) no PostgreSQL.
+                if "users_email_key" in str(e) or "duplicate key value violates unique constraint" in str(e):
+                    return False, "O email já está registrado."
+                # Se o username fosse UNIQUE, você adicionaria uma verificação similar aqui.
+                return False, f"Erro ao salvar usuário: {e}"
+            except Exception as e:
+                db.rollback()
+                return False, f"Erro inesperado ao salvar usuário: {e}"
+
+    def delete_user(self, email):
+        """Deleta um usuário pelo email."""
+        with self.get_db() as db:
+            result = db.query(User).filter(User.email == email).delete(synchronize_session=False)
+            db.commit()
+            return result # Retorna o número de linhas afetadas (0 ou 1)
+
+    def activate_user(self, email):
+        """Ativa a conta de um usuário."""
+        with self.get_db() as db:
+            # update retorna o número de linhas afetadas
+            result = db.query(User).filter(User.email == email).update({"active": True})
+            db.commit()
+            return result > 0 # Retorna True se o usuário foi encontrado e atualizado
+
+    def logto_user(self, login, password, _type):
+        """Verifica as credenciais do usuário para login."""
+        with self.get_db() as db:
+            user = self._get_user_by_field(db, _type, login)
+            if user and user.active: # Apenas usuários ativos podem logar
+                try:
+                    self.ph.verify(user.password, password)
+                    return user # Retorna o objeto User se o login for bem-sucedido
+                except exceptions.VerifyMismatchError:
+                    return None # Senha incorreta
+            return None # Usuário não encontrado ou não ativo
+
+    def save_post(self, email, title, content, tag, optional_tags, image_urls_list=None):
+        """Salva um novo post no banco de dados."""
+        with self.get_db() as db:
+            image_urls_json = json.dumps(image_urls_list) if image_urls_list else None
+
+            try:
+                new_post = Post(
+                    email=email,
+                    title=title,
+                    content=content,
+                    tag=tag,
+                    optional_tags=optional_tags,
+                    image_urls=image_urls_json
+                )
+                db.add(new_post)
+                db.commit()
+                db.refresh(new_post) # Recarrega o objeto para ter o ID gerado pelo DB
+                return new_post.post_id
+            except Exception as e:
+                db.rollback()
+                print(f"Erro ao salvar post: {e}")
+                return None
+
+    def get_post_by_id(self, post_id):
+        """Obtém um post pelo seu ID."""
+        with self.get_db() as db:
+            post = db.query(Post).filter(Post.post_id == post_id).first()
+            if post:
+                # Converte a string JSON de URLs de imagem de volta para uma lista Python
+                if post.image_urls:
+                    post.image_urls = json.loads(post.image_urls)
+                else:
+                    post.image_urls = [] # Garante que seja uma lista vazia se não houver URLs
+            return post
+    def register_interaction(self, email, post_id, interaction_type, comment_text=None):
+        """Registra uma interação (like, comentário) de um usuário com um post."""
+        with self.get_db() as db:
+            try:
+                new_interaction = Interaction(
+                    email=email,
+                    post_id=post_id,
+                    interaction_type=interaction_type,
+                    comment_text=comment_text
+                )
+                db.add(new_interaction)
+                db.commit()
+                db.refresh(new_interaction)
+                return new_interaction.interaction_id
+            except Exception as e:
+                db.rollback()
+                print(f"Erro ao registrar interação: {e}")
+                return None
+
+    def get_user_interactions(self, email, interaction_type=None):
+        """Obtém interações de um usuário, opcionalmente filtrando por tipo."""
+        with self.get_db() as db:
+            query = db.query(Interaction).filter(Interaction.email == email)
+            if interaction_type:
+                query = query.filter(Interaction.interaction_type == interaction_type)
+            
+            # Retornar uma lista de dicionários para compatibilidade com o original
+            return [{'post_id': interaction.post_id, 'type': interaction.interaction_type} 
+                    for interaction in query.all()]
+
+    def get_all_interactions(self):
+        """Obtém todas as interações."""
+        with self.get_db() as db:
+            # Retornar uma lista de tuplas para compatibilidade
+            return [(i.email, i.post_id, i.interaction_type) for i in db.query(Interaction).all()]

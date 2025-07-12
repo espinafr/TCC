@@ -1,6 +1,6 @@
 *.env
 *.db
-TCC/
-tcc2/
+venv/
 __pycache__/
 *.pyc
+database_old.py

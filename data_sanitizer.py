@@ -1,7 +1,39 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, IntegerField, SelectMultipleField, RadioField
-from wtforms.validators import DataRequired, Email, Length, NumberRange, ValidationError
+from wtforms import StringField, PasswordField, RadioField, TextAreaField, SelectMultipleField, SelectField, MultipleFileField
+from wtforms.validators import DataRequired, Email, Length, ValidationError, Optional
+from flask_wtf.file import FileAllowed, FileSize
 import re
+
+ALLOWED_CATEGORIES = ['esportes', 'arte', 'leitura', 'ao ar livre', 'educativo']
+
+def validate_fotos(form, field):
+    # Filtra arquivos que realmente foram selecionados (não são vazios)
+    selected_files = [f for f in field.data if f and f.filename]
+
+    if len(selected_files) > 5:
+        raise ValidationError('Você pode enviar no máximo 5 fotos.')
+
+def validate_not_empty_choice(form, field):
+    if field.data == '':
+        raise ValidationError('Por favor, selecione uma opção válida.')
+
+def validate_opcional(form, field):
+    if not field.data:
+        field.data = []
+        return
+
+    input_categories = [cat.strip() for cat in field.data.split(',')] # string pra lista
+    input_categories = list(filter(None, input_categories)) # remove itens vazios 
+    unique_categories = list(set(input_categories)) # remove duplicatas
+
+    MAX_CATEGORIES = 5
+    if len(unique_categories) > MAX_CATEGORIES:
+        raise ValidationError(f'Você pode selecionar no máximo {MAX_CATEGORIES} categorias.')
+
+    for category in unique_categories:
+        if category not in ALLOWED_CATEGORIES:
+            raise ValidationError(f'A categoria "{category}" não é válida. Categorias permitidas: {", ".join(ALLOWED_CATEGORIES)}.')
+
 
 def validate_username(form, field):
     if not field.data:
@@ -58,3 +90,24 @@ class LoginForm(FlaskForm):
         DataRequired(message='A senha é obrigatória.'),
         Length(min=8, max=20, message='A senha deve ter entre 8 e 20 caracteres.')
     ])
+
+class PostForm(FlaskForm):
+    titulo = StringField(name='titulo', validators=[DataRequired(message='O título é obrigatório.'), Length(min=5, max=100, message="O título precisa conter entre %(min)d e %(max)d caracteres")])
+    conteudo = TextAreaField(name='conteudo', validators=[DataRequired(message='O conteúdo é obrigatório.'), Length(min=30, max=1000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
+    tags = SelectField(name='tags', choices=[
+        ('esportes', 'Esportes'),
+        ('arte', 'Arte'),
+        ('leitura', 'Leitura'),
+        ('ao_ar_livre', 'Ao Ar Livre'),
+        ('educativo', 'Educativo')
+    ], validators=[DataRequired(message='Selecione uma categoria.'), validate_not_empty_choice], render_kw={'data-placeholder': 'true'})
+    optionaltags = StringField(validators=[Optional(), validate_opcional])
+    images = MultipleFileField(
+        'Enviar Fotos (até 5, max. 10MB cada)', #label
+        validators=[
+            Optional(), # O campo é opcional
+            FileAllowed(['jpg', 'png', 'jpeg', 'webp'], 'Apenas imagens JPG, PNG e JPEG são permitidas!'),
+            FileSize(max_size=10 * 1024 * 1024, message='O tamanho do arquivo não pode exceder 10MB!'),
+            validate_fotos
+        ]
+    )

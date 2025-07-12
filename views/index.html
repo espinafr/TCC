@@ -2,7 +2,7 @@
 {% block content %}
 <body class="bg-blue-100">
     <div class="max-w-md mx-auto p-6 mt-10 bg-white rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-4">Faça login</h1>
+        <h1 class="text-2xl font-bold mb-4">Index</h1>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -12,7 +12,12 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+        
+        {% if login %}
+        <p>Bem-vindo {{login}}</p>
+        {% else %}
         <form method="POST" action="{{ url_for('login') }}">
+            <input id="csrf_token" name="csrf_token" type="hidden" value="{{ csrf_token() }}">
             <div class="mb-4">
                 <label class="block text-gray-700">E-mail ou usuário</label>
                 <input type="text" name="login" class="border p-2 w-full rounded" required>
@@ -24,6 +29,7 @@
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Logar</button>
         </form>
         <p class="mt-4">Não tem uma conta? <a href="{{ url_for('register') }}" class="text-blue-600 hover:underline">Registre-se.</a></p>
+        {% endif %}
     </div>
 </body>
 {% endblock %}

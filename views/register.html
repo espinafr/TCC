@@ -13,19 +13,48 @@
             {% endif %}
         {% endwith %}
         <form method="POST" action="{{ url_for('register') }}">
+            {{ form.hidden_tag() }}
             <div class="mb-4">
+                {% if form.username.errors %}
+                    <ul class="error-message">
+                        {% for error in form.username.errors %}
+                            <li class="text-red-500">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
                 <label class="block text-gray-700">Usuário</label>
                 <input type="text" name="username" class="border p-2 w-full rounded" required>
             </div>
             <div class="mb-4">
+                {% if form.email.errors %}
+                    <ul class="error-message">
+                        {% for error in form.email.errors %}
+                            <li class="text-red-500">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
                 <label class="block text-gray-700">E-mail</label>
                 <input type="email" name="email" class="border p-2 w-full rounded" required>
             </div>
             <div class="mb-4">
+                {% if form.password.errors %}
+                    <ul class="error-message">
+                        {% for error in form.password.errors %}
+                            <li class="text-red-500">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
                 <label class="block text-gray-700">Senha</label>
                 <input type="password" name="password" class="border p-2 w-full rounded" required>
             </div>
             <div class="mb-4">
+                {% if form.gender.errors %}
+                    <ul class="error-message">
+                        {% for error in form.gender.errors %}
+                            <li class="text-red-500">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
                 <div class="flex gap-2">
                     <label for="a" class="block text-gray-700">Feminino</label>
                     <input type="radio" name="gender" value="a" required>    

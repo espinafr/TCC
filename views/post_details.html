@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block additional_styles %}
+<style>
+    /* Estilos adicionais para melhorar a legibilidade e o espaçamento */
+    body {
+        font-family: 'Inter', sans-serif; /* Ou outra fonte de sua preferência */
+    }
+    .post-content p {
+        margin-bottom: 1rem; /* Espaço entre parágrafos */
+        line-height: 1.6; /* Altura da linha para melhor leitura */
+    }
+    .post-content img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin-bottom: 1rem;
+        border-radius: 0.5rem; /* Bordas arredondadas para imagens */
+    }
+
+    .modal {
+        /* Removido display: flex; align-items: center; justify-content: center; daqui */
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.8);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    /* NOVA CLASSE: Somente aplica flexbox quando o modal está visível */
+    .modal.is-visible {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        animation: zoomIn 0.3s ease-out;
+    }
+    .close-button {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        transition: 0.3s;
+        cursor: pointer;
+        z-index: 10000;
+    }
+    .close-button:hover,
+    .close-button:focus {
+        color: #bbb;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    /* Keyframe Animations */
+    @keyframes fadeIn {
+        from {opacity: 0;}
+        to {opacity: 1;}
+    }
+    @keyframes zoomIn {
+        from {transform: scale(0.8); opacity: 0;}
+        to {transform: scale(1); opacity: 1;}
+    }
+</style>
+{% endblock %}
+{% block content %}
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 md:mb-0">{{ post.title }}</h1>
+            <span class="text-gray-500 text-sm md:text-base">
+                {# post.created_at é um objeto datetime. Usamos strftime para formatar #}
+                {{ post.created_at.strftime('%b %d, %Y') }}
+            </span>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-6">
+            <span class="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                {{ post.tag.upper() }} {# Categoria principal #}
+            </span>
+            {# Itera sobre as tags opcionais se existirem #}
+            {% if post.optional_tags %}
+                {% for tag in post.optional_tags.split(',') %}
+                    {% if tag.strip() %} {# Garante que a tag não está vazia #}
+                        <span class="bg-gray-300 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full">
+                            {{ tag.strip().upper() }}
+                        </span>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="post-content text-gray-700 leading-relaxed text-base md:text-lg mb-8">
+            {{ post.content }}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% if post.image_urls %}
+                {% for image_url in post.image_urls %}
+                    <div class="bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center h-48 md:h-64 cursor-pointer hover:opacity-90 transition-opacity" onclick="openModal('{{ image_url }}')">
+                        <img src="{{ image_url }}" alt="Imagem do Post" class="object-cover w-full h-full">
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        {% if post.email %}
+            <div class="mt-8 pt-4 border-t border-gray-200 text-gray-600 text-sm">
+                Postado por: <span class="font-semibold">{{ post.email }}</span>
+            </div>
+        {% endif %}
+
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('index') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
+                Voltar para a página inicial
+            </a>
+        </div>
+
+        <div id="imageModal" class="modal hidden"> {# Continua com 'hidden' do Tailwind #}
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <img class="modal-content" id="fullImage">
+        </div>
+
+        <script>
+            // Função para abrir o modal
+            function openModal(imageSrc) {
+                const modal = document.getElementById('imageModal');
+                const fullImage = document.getElementById('fullImage');
+                fullImage.src = imageSrc;
+                modal.classList.remove('hidden'); // Remove a classe hidden do Tailwind
+                modal.classList.add('is-visible'); // <-- ADICIONA A NOVA CLASSE AQUI
+            }
+
+            // Função para fechar o modal
+            function closeModal() {
+                const modal = document.getElementById('imageModal');
+                modal.classList.add('hidden'); // Adiciona a classe hidden do Tailwind
+                modal.classList.remove('is-visible'); // <-- REMOVE A NOVA CLASSE AQUI
+            }
+
+            // Fecha o modal ao clicar fora da imagem
+            const modal = document.getElementById('imageModal');
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // Fecha o modal ao pressionar a tecla ESC
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        </script>
+    </div>
+</body>
+{% endblock %}
