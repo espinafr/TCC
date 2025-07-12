@@ -35,7 +35,7 @@ class User(Base):
 class Post(Base):
     __tablename__ = 'posts'
 
-    post_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     username = Column(String(100), ForeignKey('users.username'), nullable=False)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
@@ -48,7 +48,7 @@ class Post(Base):
     author_user = relationship("User", back_populates="posts")
 
     def __repr__(self):
-        return f"<Post(post_id={self.post_id}, title='{self.title}', email='{self.email}')>"
+        return f"<Post(id={self.id}, title='{self.title}', email='{self.email}')>"
 
 
 class DatabaseManager:
@@ -191,16 +191,16 @@ class DatabaseManager:
                 db.add(new_post)
                 db.commit()
                 db.refresh(new_post) # Recarrega o objeto para ter o ID gerado pelo DB
-                return new_post.post_id
+                return new_post.id
             except Exception as e:
                 db.rollback()
                 print(f"Erro ao salvar post: {e}")
                 return None
 
-    def get_post_by_id(self, post_id):
+    def get_post_by_id(self, id):
         """Obtém um post pelo seu ID."""
         with self.get_db() as db:
-            post = db.query(Post).filter(Post.post_id == post_id).first()
+            post = db.query(Post).filter(Post.id == id).first()
             if post:
                 if post.image_urls:
                     post.image_urls = json.loads(post.image_urls)

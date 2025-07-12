@@ -175,7 +175,7 @@ def create_post():
                     flash(f'Erro inesperado ao processar {file.filename}: {e}', 'danger')
                     print(f"Erro geral: {e}")
 
-        post_id = db_manager.save_post(
+        id = db_manager.save_post(
             session['username'],
             form.titulo.data.strip(),
             form.conteudo.data.strip(),
@@ -184,7 +184,7 @@ def create_post():
             image_urls_list=uploaded_files_info
         )
 
-        if post_id:
+        if id:
             flash('Post criado com sucesso!', 'success')
         else:
             flash('Erro ao criar post. Tente novamente.', 'danger')
@@ -192,10 +192,10 @@ def create_post():
     
     return render_template('post.html', form=form)
 
-@app.route('/view/<int:post_id>', methods=['GET'])
+@app.route('/view/<int:id>', methods=['GET'])
 @login_required
-def view_post(post_id):
-    post = db_manager.get_post_by_id(post_id)
+def view_post(id):
+    post = db_manager.get_post_by_id(id)
     
     if post:
         return render_template('post_details.html', post=post)
