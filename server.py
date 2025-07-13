@@ -5,10 +5,12 @@ from dotenv import load_dotenv
 from database import DatabaseManager, User
 from email_service import EmailService
 import data_sanitizer as sanitizer
+from PIL import Image
 from botocore.exceptions import ClientError
 import boto3
 import uuid
 import os
+import io
 
 # TAILWIND NÃO PODE SER USADO EM PRODUÇÃO, LEMBRAR DE MUDAR ISSO!!!
 
@@ -157,8 +159,24 @@ def create_post():
                 try:
                     file_extension = os.path.splitext(file.filename)[1]
                     unique_filename = str(uuid.uuid4()) + file_extension
+                    img = Image.open(file)
+
+                    # Cria um buffer em memória para salvar a imagem limpa
+                    img_byte_arr = io.BytesIO()
+
+                    # Salva a imagem no buffer sem metadados EXIF.
+                    if file_extension == '.jpeg' or file_extension == '.jpg':
+                        img.save(img_byte_arr, format='JPEG', optimize=True)
+                    elif file_extension == '.png':
+                        img.save(img_byte_arr, format='PNG', optimize=True)
+                    else:
+                        # Para outros formatos
+                        img.save(img_byte_arr, format=img.format, optimize=True)
+
+                    img_byte_arr.seek(0) # Volta o ponteiro pro início do buffer
+
                     s3_client.upload_fileobj(
-                        file,
+                        img_byte_arr, # Buffer com a imagem limpa
                         app.config['S3_BUCKET_NAME'],
                         f'public/{unique_filename}',
                         ExtraArgs={

@@ -133,7 +133,7 @@ class PostForm(FlaskForm):
         'Enviar Fotos (até 5, max. 10MB cada)', #label
         validators=[
             Optional(), # O campo é opcional
-            FileAllowed(['jpg', 'png', 'jpeg', 'webp'], 'Apenas imagens JPG, PNG e JPEG são permitidas!'),
+            FileAllowed(['jpg', 'png', 'jpeg', 'webp'], 'Apenas imagens JPG, PNG, JPEG e WEBP são permitidas!'),
             FileSize(max_size=10 * 1024 * 1024, message='O tamanho do arquivo não pode exceder 10MB!'),
             validate_fotos
         ]
