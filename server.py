@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, redirect, url_for, flash, session
 from flask_wtf import CSRFProtect
 from functools import wraps
 from dotenv import load_dotenv
