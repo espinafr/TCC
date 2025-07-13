@@ -1,6 +1,4 @@
 *.env
-*.db
 venv/
 __pycache__/
 *.pyc
-database_old.py
