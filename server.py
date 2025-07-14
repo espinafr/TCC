@@ -56,7 +56,7 @@ with app.app_context():
 def login_required(f): # f de função original
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'login' not in session:
+        if 'id' not in session:
             flash('Faça login para acessar esta página.', 'error')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
@@ -70,7 +70,7 @@ def inject_global_variables():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html', login=session.get('login'))
+    return render_template('index.html', login=session.get('id'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -131,8 +131,7 @@ def login():
         user_logged_in = db_manager.logto_user(form.login.data, form.password.data, 'email' if '@' in form.login.data else 'username')
         
         if user_logged_in:
-            session['login'] = user_logged_in.email
-            session['username'] = user_logged_in.username
+            session['id'] = user_logged_in.id
             session.permanent = True
             flash('Login bem-sucedido!', 'success')
             return redirect(url_for('index'))
@@ -143,7 +142,7 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
-    session.pop('login', None)
+    session.pop('id', None)
     flash('Você saiu com sucesso.', 'success')
     return redirect(url_for('login'))
 
@@ -194,7 +193,7 @@ def create_post():
                     print(f"Erro geral: {e}")
 
         id = db_manager.save_post(
-            session['username'],
+            session['id'],
             form.titulo.data.strip(),
             form.conteudo.data.strip(),
             form.tags.data,

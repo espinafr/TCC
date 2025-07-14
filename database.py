@@ -22,12 +22,13 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
-    gender = Column(String(1)) # Ajuste o tamanho conforme necessário
-    creation_date = Column(DateTime, default=datetime.now) # SQLAlchemy gerencia DateTime objetos
-    active = Column(Boolean, default=False) # 0/1 vira False/True
+    gender = Column(String(1))
+    creation_date = Column(DateTime, default=datetime.now)
+    active = Column(Boolean, default=False)
 
     # Relacionamentos
     posts = relationship("Post", back_populates="author_user")
+    interactions = relationship("Interaction", back_populates="user_who_interacted")
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
@@ -36,7 +37,7 @@ class Post(Base):
     __tablename__ = 'posts'
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(100), ForeignKey('users.username'), nullable=False)
+    user_id = Column(String(100), ForeignKey('users.id'), nullable=False)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     tag = Column(String(12))
@@ -44,12 +45,29 @@ class Post(Base):
     created_at = Column(DateTime, default=datetime.now)
     image_urls = Column(Text, nullable=True) 
 
-    # Relacionamento com User
+    # Relacionamentos
     author_user = relationship("User", back_populates="posts")
+    interactions = relationship("Interaction", back_populates="post_being_interacted")
 
     def __repr__(self):
-        return f"<Post(id={self.id}, title='{self.title}', email='{self.email}')>"
+        return f"<Post(id={self.id}, title='{self.title}', username='{self.username}')>"
 
+class Interaction(Base):
+    __tablename__ = "interactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)
+    type = Column(String(50), nullable=False)
+    value = Column(String(300), nullable=True)
+    timestamp = Column(DateTime, default=datetime.now)
+
+    # Relacionamentos
+    user_who_interacted = relationship("User", back_populates="interactions")
+    post_being_interacted = relationship("Post", back_populates="interactions")
+
+    def __repr__(self):
+        return f"<Interaction(id={self.id}, post_id='{self.post_id}', user_id='{self.user_id}', type='{self.type}')>"
 
 class DatabaseManager:
     def __init__(self):
@@ -65,17 +83,6 @@ class DatabaseManager:
         finally:
             db.close()
 
-    def init_all_dbs(self):
-        """Cria todas as tabelas definidas nos modelos no banco de dados."""
-        try:
-            Base.metadata.create_all(bind=engine)
-            print("Tabelas criadas ou já existentes no PostgreSQL.")
-        except OperationalError as e:
-            print(f"Erro ao conectar ou criar tabelas: {e}")
-            print("Verifique a DATABASE_URL e as credenciais do PostgreSQL.")
-        except Exception as e:
-            print(f"Um erro inesperado ocorreu durante a inicialização do DB: {e}")
-
     # Helper para obter usuário de forma consistente
     def _get_user_by_field(self, db, field_name: str, value):
         if field_name == 'email':
@@ -86,6 +93,35 @@ class DatabaseManager:
             return db.query(User).filter(User.id == value).first()
         return None
 
+    # Helper para registrar interações
+    def _register_interaction(self, user_id: int, post_id: int, interaction_type: str, value):
+        with self.get_db() as db:
+            try:
+                new_interaction = Interaction(
+                    user_id=user_id,
+                    post_id=post_id,
+                    type=interaction_type,
+                    value=value
+                )
+                db.add(new_interaction)
+                db.commit()
+                db.refresh(new_interaction) # Recarrega o objeto para ter o ID gerado pelo DB
+                return True, new_interaction.id
+            except Exception as e:
+                db.rollback()
+                return False, f"Erro inesperado ao salvar interação: {e}"
+
+    def init_all_dbs(self):
+        """Cria todas as tabelas definidas nos modelos no banco de dados."""
+        try:
+            Base.metadata.create_all(bind=engine)
+            print("Tabelas criadas ou já existentes no PostgreSQL.")
+        except OperationalError as e:
+            print(f"Erro ao conectar ou criar tabelas: {e}")
+            print("Verifique a DATABASE_URL e as credenciais do PostgreSQL.")
+        except Exception as e:
+            print(f"Um erro inesperado ocorreu durante a inicialização do DB: {e}")
+    
     def get_user(self, type: str, value):
         """Retorna um usuário pelo tipo (email, username, id) e valor."""
         with self.get_db() as db:
@@ -136,12 +172,11 @@ class DatabaseManager:
                 return True, None
             except IntegrityError as e:
                 db.rollback()
-                # Isso ainda é importante para pegar falhas de UniqueConstraint
-                # em caso de race conditions ou se a validação externa falhou por algum motivo.
-                # "users_email_key" é um nome de constraint comum para unique(email) no PostgreSQL.
-                if "users_email_key" in str(e) or "duplicate key value violates unique constraint" in str(e):
+                if "users_email_key" in str(e):
                     return False, "O email já está registrado."
-                # Se o username fosse UNIQUE, você adicionaria uma verificação similar aqui.
+                elif "users_username_key" in str(e):
+                    return False, "O nome de usuário já está em uso."
+                
                 return False, f"Erro ao salvar usuário: {e}"
             except Exception as e:
                 db.rollback()
@@ -174,14 +209,14 @@ class DatabaseManager:
                     return None # Senha incorreta
             return None # Usuário não encontrado ou não ativo
 
-    def save_post(self, username, title, content, tag, optional_tags, image_urls_list=None):
+    def save_post(self, user_id, title, content, tag, optional_tags, image_urls_list=None):
         """Salva um novo post no banco de dados."""
         with self.get_db() as db:
             image_urls_json = json.dumps(image_urls_list) if image_urls_list else None
 
             try:
                 new_post = Post(
-                    username=username,
+                    user_id=user_id,
                     title=title,
                     content=content,
                     tag=tag,
