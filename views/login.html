@@ -13,7 +13,7 @@
             {% endif %}
         {% endwith %}
         <form method="POST" action="{{ url_for('login') }}">
-            {{ form.csrf_token }}
+            {{ form.hidden_tag() }}
             <div class="mb-4">
                 {% if form.password.errors %}
                     <ul class="error-message">
@@ -36,7 +36,7 @@
                 <label for="passaword" class="block text-gray-700">Senha</label>
                 <input type="password" name="password" class="border p-2 w-full rounded" required>
             </div>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Logar</button>
+            <button title="Botão para entrar na conta" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Entrar</button>
         </form>
         <p class="mt-4">Não tem uma conta? <a href="{{ url_for('register') }}" class="text-blue-600 hover:underline">Registre-se.</a></p>
     </div>

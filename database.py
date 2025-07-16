@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta
 from argon2 import PasswordHasher, exceptions
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship, joinedload
 from sqlalchemy.exc import IntegrityError, OperationalError
 import contextlib
 import json
@@ -28,7 +28,7 @@ class User(Base):
 
     # Relacionamentos
     posts = relationship("Post", back_populates="author_user")
-    interactions = relationship("Interaction", back_populates="user_who_interacted")
+    interactions = relationship("Interaction", foreign_keys="[Interaction.user_id]", back_populates="user_who_interacted")
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
@@ -37,7 +37,7 @@ class Post(Base):
     __tablename__ = 'posts'
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(100), ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     tag = Column(String(12))
@@ -47,7 +47,7 @@ class Post(Base):
 
     # Relacionamentos
     author_user = relationship("User", back_populates="posts")
-    interactions = relationship("Interaction", back_populates="post_being_interacted")
+    interactions = relationship("Interaction", foreign_keys="[Interaction.post_id]", back_populates="post_being_interacted")
 
     def __repr__(self):
         return f"<Post(id={self.id}, title='{self.title}', username='{self.username}')>"
@@ -58,16 +58,21 @@ class Interaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)
-    type = Column(String(50), nullable=False)
+    parent_interaction_id = Column(Integer, ForeignKey('interactions.id'), nullable=True) 
+    type = Column(String(50), nullable=False)  # 'like_post', 'dislike_post', 'comment_post', 'like_comment', 'dislike_comment', 'reply_comment', 'view_post', 'share_post'
     value = Column(String(300), nullable=True)
     timestamp = Column(DateTime, default=datetime.now)
 
     # Relacionamentos
-    user_who_interacted = relationship("User", back_populates="interactions")
-    post_being_interacted = relationship("Post", back_populates="interactions")
+    user_who_interacted = relationship("User", back_populates="interactions", foreign_keys=[user_id])
+    post_being_interacted = relationship("Post", back_populates="interactions", foreign_keys=[post_id])
+    
+    # Hierarquia de comentários
+    parent_interaction = relationship("Interaction", remote_side=[id], back_populates="child_interactions")
+    child_interactions = relationship("Interaction", back_populates="parent_interaction", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Interaction(id={self.id}, post_id='{self.post_id}', user_id='{self.user_id}', type='{self.type}')>"
+        return f"<Interaction(id='{self.id}', post_id='{self.post_id}', user_id='{self.user_id}', type='{self.type}', parent_id={self.parent_interaction_id})>"
 
 class DatabaseManager:
     def __init__(self):
@@ -94,14 +99,15 @@ class DatabaseManager:
         return None
 
     # Helper para registrar interações
-    def _register_interaction(self, user_id: int, post_id: int, interaction_type: str, value):
+    def _register_interaction(self, user_id: int, post_id: int, interaction_type: str, value: str = None, parent_interaction_id: int = None):
         with self.get_db() as db:
             try:
                 new_interaction = Interaction(
                     user_id=user_id,
                     post_id=post_id,
                     type=interaction_type,
-                    value=value
+                    value=value,
+                    parent_interaction_id=parent_interaction_id
                 )
                 db.add(new_interaction)
                 db.commit()
@@ -192,7 +198,6 @@ class DatabaseManager:
     def activate_user(self, email):
         """Ativa a conta de um usuário."""
         with self.get_db() as db:
-            # update retorna o número de linhas afetadas
             result = db.query(User).filter(User.email == email).update({"active": True})
             db.commit()
             return result > 0 # Retorna True se o usuário foi encontrado e atualizado
@@ -235,10 +240,230 @@ class DatabaseManager:
     def get_post_by_id(self, id):
         """Obtém um post pelo seu ID."""
         with self.get_db() as db:
-            post = db.query(Post).filter(Post.id == id).first()
+            post = db.query(Post).options(joinedload(Post.author_user)).filter(Post.id == id).first()
             if post:
                 if post.image_urls:
                     post.image_urls = json.loads(post.image_urls)
                 else:
                     post.image_urls = []
             return post
+
+    def get_interaction_by_id(self, interaction_id: int):
+        """Obtém uma interação específica pelo ID, carregando o usuário."""
+        with self.get_db() as db:
+            return db.query(Interaction).options(joinedload(Interaction.user_who_interacted)).filter(
+                Interaction.id == interaction_id
+            ).first()
+
+    def toggle_post_reaction(self, user_id: int, post_id: int, reaction_type: str):
+        """
+        Registra, atualiza ou remove uma reação (like/dislike) a um post.
+        reaction_type pode ser 'like_post' ou 'dislike_post'.
+        """
+        with self.get_db() as db:
+            # 1. Verificar se o usuário já tem uma reação a este post
+            existing_reaction = db.query(Interaction).filter(
+                Interaction.user_id == user_id,
+                Interaction.post_id == post_id,
+                Interaction.type.in_(['like_post', 'dislike_post']), 
+                Interaction.parent_interaction_id == None # Apenas reações diretas ao post
+            ).first()
+
+            if existing_reaction:
+                if existing_reaction.type == reaction_type:
+                    # Se a reação existente for do mesmo tipo, o usuário está "desfazendo" a reação.
+                    db.delete(existing_reaction)
+                    db.commit()
+                    return True, "Reação removida com sucesso!"
+                else:
+                    # Se a reação existente for de um tipo diferente, o usuário está "trocando" a reação.
+                    existing_reaction.type = reaction_type
+                    existing_reaction.timestamp = datetime.now() # Atualiza o timestamp da interação
+                    db.commit()
+                    return True, f"Reação alterada para '{reaction_type}' com sucesso!"
+            else:
+                # Se não houver reação existente, crie uma nova.
+                success, result = self._register_interaction(user_id, post_id, reaction_type, None, None)
+                if not success:
+                    return False, result
+                return True, result
+
+    def toggle_comment_reaction(self, user_id: int, comment_id: int, reaction_type: str):
+        """
+        Registra, atualiza ou remove uma reação (like/dislike) a um comentário.
+        reaction_type pode ser 'like_comment' ou 'dislike_comment'.
+        """
+        with self.get_db() as db:
+            comment_target = db.query(Interaction).filter(
+                Interaction.id == comment_id, 
+                Interaction.type.in_(['comment_post', 'reply_comment'])
+            ).first()
+
+            if not comment_target:
+                return False, "Comentário alvo não encontrado ou inválido."
+
+            existing_reaction = db.query(Interaction).filter(
+                Interaction.user_id == user_id,
+                Interaction.parent_interaction_id == comment_id,
+                Interaction.type.in_(['like_comment', 'dislike_comment']) 
+            ).first()
+
+            if existing_reaction:
+                if existing_reaction.type == reaction_type:
+                    # Se a reação existente for do mesmo tipo, o usuário está "desfazendo" a reação.
+                    db.delete(existing_reaction)
+                    db.commit()
+                    return True, "Reação ao comentário removida com sucesso!"
+                else:
+                    # Se a reação existente for de um tipo diferente, o usuário está "trocando" a reação.
+                    existing_reaction.type = reaction_type
+                    existing_reaction.timestamp = datetime.now()
+                    db.commit()
+                    return True, f"Reação ao comentário alterada para '{reaction_type}' com sucesso!"
+            else:
+                # Se não houver reação existente, crie uma nova.
+                success, result = self._register_interaction(user_id, comment_target.post_id, reaction_type, None, comment_id)
+                if not success:
+                    return False, result
+                return True, f"Reação '{reaction_type}' ao comentário registrada com sucesso!"
+
+    def register_reply_to_comment(self, user_id: int, parent_comment_id: int, reply_text: str):
+        """Registra uma resposta a um comentário existente."""
+        with self.get_db() as db:
+            parent_comment = db.query(Interaction).filter(Interaction.id == parent_comment_id, Interaction.type == 'comment_post').first()
+            if not parent_comment:
+                return False, "Comentário não encontrado ou não é um comentário válido para responder."
+            
+            post_id = parent_comment.post_id
+
+            success, result = self._register_interaction(user_id, post_id, "reply_comment", reply_text, parent_comment_id)
+            if not success:
+                return False, result
+            return True, result
+
+    def get_comments_for_post(self, post_id: int):
+        """Obtém todos os comentários e suas respostas para um dado post."""
+        with self.get_db() as db:
+            comments = db.query(Interaction).options(
+                joinedload(Interaction.user_who_interacted), # Pega o usuário que fez o comentário
+                joinedload(Interaction.child_interactions).joinedload(Interaction.user_who_interacted) # Pega respostas e likes do comentário e seus usuários
+            ).filter(
+                Interaction.post_id == post_id,
+                Interaction.type == 'comment_post',
+                Interaction.parent_interaction_id == None # Apenas comentários de nível superior
+            ).order_by(Interaction.timestamp).all() # Ordena por data
+
+            return comments
+
+    def get_comment_by_id(self, comment_id: int):
+        """Obtém um comentário específico (e suas respostas e likes)."""
+        with self.get_db() as db:
+            comment = db.query(Interaction).options(
+                joinedload(Interaction.user_who_interacted),
+                joinedload(Interaction.child_interactions).joinedload(Interaction.user_who_interacted)
+            ).filter(Interaction.id == comment_id, Interaction.type == 'comment_post').first()
+            return comment
+    
+    def count_reactions_for_post(self, post_id: int, reaction_type: str):
+        """Conta o número de likes/dislikes para um post."""
+        with self.get_db() as db:
+            return db.query(Interaction).filter(
+                Interaction.post_id == post_id,
+                Interaction.type == reaction_type,
+                Interaction.parent_interaction_id == None # Apenas reações diretas ao post
+            ).count()
+
+    def count_reactions_for_comment(self, comment_id: int, reaction_type: str):
+        """Conta o número de likes/dislikes para um comentário."""
+        with self.get_db() as db:
+            return db.query(Interaction).filter(
+                Interaction.parent_interaction_id == comment_id,
+                Interaction.type == reaction_type
+            ).count()
+
+    def get_user_post_reaction(self, user_id: int, post_id: int):
+        """Obtém a reação do usuário a um post."""
+        with self.get_db() as db:
+            return db.query(Interaction).filter(
+                Interaction.user_id == user_id,
+                Interaction.post_id == post_id,
+                Interaction.type.in_(['like_post', 'dislike_post']),
+                Interaction.parent_interaction_id == None
+            ).first()
+
+    def get_user_comment_reaction(self, user_id: int, comment_id: int):
+        """Obtém a reação (like/dislike) de um usuário a um comentário ou resposta."""
+        with self.get_db() as db:
+            return db.query(Interaction).filter(
+                Interaction.user_id == user_id,
+                Interaction.parent_interaction_id == comment_id, # Associa a um comentário/resposta pai
+                Interaction.type.in_(['like_comment', 'dislike_comment']) 
+            ).first()
+
+    def get_comments_and_replies_for_post(self, post_id: int, user_id: int = None):
+        """
+        Retorna comentários e suas respostas para um post,
+        incluindo contagens de likes/dislikes e a reação do usuário logado.
+        """
+        with self.get_db() as db:
+            comments_data = []
+            # Busca comentários diretos ao post (type='comment_post', parent_interaction_id=None)
+            comments = db.query(Interaction).filter(
+                Interaction.post_id == post_id,
+                Interaction.type == 'comment_post',
+                Interaction.parent_interaction_id == None
+            ).order_by(Interaction.timestamp.asc()).all()
+
+            for comment in comments:
+                comment_likes = self.count_reactions_for_comment(comment.id, 'like_comment')
+                comment_dislikes = self.count_reactions_for_comment(comment.id, 'dislike_comment')
+                
+                user_comment_reaction = None
+                if user_id:
+                    user_reaction_obj = self.get_user_comment_reaction(user_id, comment.id)
+                    if user_reaction_obj:
+                        user_comment_reaction = user_reaction_obj.type
+
+                replies_data = []
+                # Busca respostas a este comentário (parent_interaction_id == comment.id)
+                replies = db.query(Interaction).filter(
+                    Interaction.parent_interaction_id == comment.id,
+                    Interaction.type == 'reply_comment' # Garante que é uma resposta
+                ).order_by(Interaction.timestamp.asc()).all()
+
+                for reply in replies:
+                    reply_likes = self.count_reactions_for_comment(reply.id, 'like_comment')
+                    reply_dislikes = self.count_reactions_for_comment(reply.id, 'dislike_comment')
+                    
+                    user_reply_reaction = None
+                    if user_id:
+                        user_reaction_obj = self.get_user_comment_reaction(user_id, reply.id) # Reação à resposta
+                        if user_reaction_obj:
+                            user_reply_reaction = user_reaction_obj.type
+
+                    replies_data.append({
+                        "id": reply.id,
+                        "username": reply.user_who_interacted.username,
+                        "content": reply.value,
+                        "likes": reply_likes,
+                        "dislikes": reply_dislikes,
+                        "user_reaction": user_reply_reaction # Reação do usuário à resposta
+                    })
+                
+                comments_data.append({
+                    "id": comment.id,
+                    "username": comment.user_who_interacted.username,
+                    "content": comment.value,
+                    "likes": comment_likes,
+                    "dislikes": comment_dislikes,
+                    "user_reaction": user_comment_reaction, # Reação do usuário ao comentário
+                    "replies": replies_data
+                })
+            return comments_data
+
+    def get_interaction_by_id(self, interaction_id: int):
+        """Obtém uma interação específica pelo ID, carregando o usuário."""
+        with self.get_db() as db:
+            return db.query(Interaction).options(joinedload(Interaction.user_who_interacted)).filter(
+                Interaction.id == interaction_id
+            ).first()
