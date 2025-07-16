@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block additional_styles %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<meta name="csrf-token" content="{{ csrf_token() }}">
 <style>
     /* Estilos Gerais do Post (mantidos e ajustados) */
     body {
@@ -334,11 +333,11 @@
                     <p class="font-semibold text-gray-800 mb-1">{{ comment.username }}</p>
                     <p class="text-gray-700 mb-2">{{ comment.content }}</p>
                     <div class="flex items-center gap-4 text-sm text-gray-500">
-                        <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment.user_reaction == 'like_comment' %}active{% endif %}">
-                            <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count">{{ comment.likes }}</span>
+                        <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment.user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ comment.id }}likeButton">
+                            <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ comment.id }}likeCount">{{ comment.likes }}</span>
                         </button>
-                        <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment.user_reaction == 'dislike_comment' %}active{% endif %}">
-                            <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count">{{ comment.dislikes }}</span>
+                        <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment.user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ comment.id }}dislikeButton">
+                            <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ comment.id }}dislikeCount">{{ comment.dislikes }}</span>
                         </button>
                         <button class="interaction-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openReplyModal('{{ comment.id }}')">
                             <i class="fa-solid fa-reply"></i>
@@ -358,11 +357,11 @@
                                 <p class="font-semibold text-gray-800 mb-1">{{ reply.username }}</p>
                                 <p class="text-gray-700 mb-2">{{ reply.content }}</p>
                                 <div class="flex items-center gap-4 text-sm text-gray-500">
-                                    <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if reply.user_reaction == 'like_comment' %}active{% endif %}">
-                                        <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count">{{ reply.likes }}</span>
+                                    <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if reply.user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ reply.id }}likeButton">
+                                        <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ reply.id }}likeCount">{{ reply.likes }}</span>
                                     </button>
-                                    <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if reply.user_reaction == 'dislike_comment' %}active{% endif %}">
-                                        <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count">{{ reply.dislikes }}</span>
+                                    <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if reply.user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ reply.id }}dislikeButton">
+                                        <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ reply.id }}dislikeCount">{{ reply.dislikes }}</span>
                                     </button>
                                     <button class="interaction-button comment-reply-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openReplyModal('{{ reply.id }}')">
                                         <i class="fa-solid fa-reply"></i>
@@ -422,8 +421,7 @@
             modal.classList.remove('is-visible');
             // Resetar textareas dos modais ao fechar para evitar estados persistentes
             if (modalId === 'replyModal') {
-                document.getElementById('replyTextarea').value = '';
-                adjustTextareaHeight(document.getElementById('replyTextarea'));
+                resetTextarea(document.getElementById('replyTextarea'));
                 toggleReplyButton();
             }
         }
@@ -472,10 +470,16 @@
             // Lógica de backend aqui
         });
 
-        function toggleReactionButtons(self, opposite) {
-            if (self.classList.contains('active')) {
-                document.getElementById(opposite).classList.remove('active'); // Caso o botão de deslike esteja ativado :P
+        function visualReactionUpdate(selfType, oppositeType) { 
+            const oppositeCount = document.getElementById(oppositeType + "Count");
+            const selfCount = document.getElementById(selfType + "Count");
+
+            const opposite = document.getElementById(oppositeType + "Button");
+            if (opposite.classList.contains('active')) { // Se a reação oposta estiver ativa....
+                oppositeCount.textContent = Number(oppositeCount.textContent) - 1; // Na hora de converter os valores de 1000 pra 1k isso não vai funcionar mais, então talvez seja necessário criar um data-quanitity pra saber o valor numérico
+                opposite.classList.remove('active'); // Caso o botão de deslike esteja ativado :P
             }
+            selfCount.textContent = Number(selfCount.textContent) + 1;
         }
 
         // --- Compartilhamento ---
@@ -497,11 +501,16 @@
             document.getElementById('shareContextMenu').classList.add('hidden'); // Fecha o menu após copiar
         }
 
-        // --- Funções de Comentário Principal ---
+        // --- Funções de Comentário ---
 
         function adjustTextareaHeight(textarea) {
             textarea.style.height = 'auto';
             textarea.style.height = (textarea.scrollHeight) + 'px';
+        }
+
+        function resetTextarea(textarea) {
+            textarea.value = '';
+            textarea.style.height = 'unset';
         }
 
         function toggleCommentButton() {
@@ -525,7 +534,6 @@
         }
 
         document.getElementById('commentTextarea').addEventListener('input', toggleCommentButton);
-
         document.getElementById('replyTextarea').addEventListener('input', toggleReplyButton);
         
         // Pegar CSRF token da meta tag
@@ -541,7 +549,7 @@
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken // Envia o token no cabeçalho X-CSRFToken
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(data)
                 });
@@ -556,16 +564,14 @@
 
         document.getElementById('likeButton').addEventListener('click', async function() {
             const postId = "{{ post.id }}";
-            const reactionType = this.classList.contains('active') ? 'like_post' : 'like_post'; // Lógica para remover/adicionar
-            const data = { reaction_type: 'like_post' };
 
-            const result = await sendApiRequest(`/api/posts/${postId}/react`, 'POST', data);
-            
-            // Atualiza a reação rapidamente, mesmo sem resposta do servidor ainda
             toggleButtonActive(this); 
-            toggleReactionButtons(this, 'dislikeButton');
+            visualReactionUpdate('like', 'dislike');
+
+            const data = { reaction_type: 'like_post' };
+            const result = await sendApiRequest(`/api/posts/${postId}/react`, 'POST', data);
             if (result.success) {
-                updatePostCounts(postId); // Atualizar contagem
+                updatePostCounts(postId);
             } else {
                 alert('Erro durante a reação, nenhuma alteração foi feita: ' + result.message);
             }
@@ -573,11 +579,12 @@
 
         document.getElementById('dislikeButton').addEventListener('click', async function() {
             const postId = "{{ post.id }}";
+
+            toggleButtonActive(this); 
+            visualReactionUpdate('dislike', 'like');
+            
             const data = { reaction_type: 'dislike_post' };
             const result = await sendApiRequest(`/api/posts/${postId}/react`, 'POST', data);
-            
-            toggleButtonActive(this); 
-            toggleReactionButtons(this, 'likeButton');
             if (result.success) {
                 updatePostCounts(postId);
             } else {
@@ -589,14 +596,13 @@
             if (this.classList.contains('active')) {
                 const commentText = document.getElementById('commentTextarea').value.trim();
                 const postId = "{{ post.id }}";
-                const data = { comment_text: commentText };
 
-                const result = await sendApiRequest(`/api/posts/${postId}/comment`, 'POST', data);
+                resetTextarea(document.getElementById('commentTextarea'));
+                toggleCommentButton();
                 
+                const data = { comment_text: commentText };
+                const result = await sendApiRequest(`/api/posts/${postId}/comment`, 'POST', data);
                 if (result.success) {
-                    document.getElementById('commentTextarea').value = '';
-                    adjustTextareaHeight(document.getElementById('commentTextarea'));
-                    toggleCommentButton();
                     await refreshCommentsSection(); // Recarregar a seção de comentários para adicionar o novo
                 } else {
                     alert('Erro: ' + result.message);
@@ -614,11 +620,11 @@
                     return;
                 }
 
+                closeModal('replyModal');
                 const data = { reply_text: replyText };
                 const result = await sendApiRequest(`/api/comments/${parentCommentId}/reply`, 'POST', data);
                 
                 if (result.success) {
-                    closeModal('replyModal');
                     await refreshCommentsSection(); // Recarregar a seção de comentários
                 } else {
                     alert('Erro: ' + result.message);
@@ -639,30 +645,33 @@
 
             if (clickedButton) {
                 const commentItem = clickedButton.closest('.comment-item');
-                const commentId = commentItem ? commentItem.dataset.commentId : null;
+                const commentId = commentItem ? commentItem.dataset.commentId : null; // Eu acho esse forma de if else muito funny
 
-                if (clickedButton.classList.contains('comment-like-button')) {
-                    handleCommentReaction(commentId, 'like_comment', clickedButton, commentItem);
-                } else if (clickedButton.classList.contains('comment-dislike-button')) {
-                    handleCommentReaction(commentId, 'dislike_comment', clickedButton, commentItem);
-                } else if (clickedButton.classList.contains('comment-save-button')) {
-                    // Lógica para salvar comentário
+                if (clickedButton.classList.contains('comment-reply-button')) {
+                    openReplyModal(commentId); // Resposta de comentário
+                } else {
                     toggleButtonActive(clickedButton);
-                    alert(`Botão Salvar Comentário ${commentId} clicado! (Lógica backend a ser implementada)`);
-                } else if (clickedButton.classList.contains('comment-reply-button')) {
-                    // Quando o botão de resposta é clicado, abre o modal e passa o ID do comentário
-                    openReplyModal(commentId); 
+
+                    if (clickedButton.classList.contains('comment-like-button')) {
+                        visualReactionUpdate(`interaction${commentId}like`, `interaction${commentId}dislike`); // Like
+                        handleCommentReaction(commentId, 'like_comment');
+                    } else if (clickedButton.classList.contains('comment-dislike-button')) {
+                        visualReactionUpdate(`interaction${commentId}dislike`, `interaction${commentId}like`); // Deslike
+                        handleCommentReaction(commentId, 'dislike_comment');
+                    } else if (clickedButton.classList.contains('comment-save-button')) {
+                        // Lógica para salvar comentário
+                        alert(`Botão Salvar Comentário ${commentId} clicado! (Lógica backend a ser implementada)`);
+                    }
                 }
             }
         });
 
-        async function handleCommentReaction(commentId, reactionType, clickedButton, commentItem) {
+        async function handleCommentReaction(commentId, reactionType) {
             const data = { reaction_type: reactionType };
             const result = await sendApiRequest(`/api/comments/${commentId}/react`, 'POST', data);
 
             if (result.success) {
-                // Ao invés de toggleButtonActive direto, chame updateCommentCounts
-                await updateCommentCounts(commentId); // Isso buscará o estado atualizado do backend
+                await updateCommentCounts(commentId);
             } else {
                 alert('Erro: ' + result.message);
             }
@@ -680,9 +689,9 @@
                 data.comments.forEach(comment => {
                     commentsSection.innerHTML += renderComment(comment); // Adiciona cada comentário
                 });
-                // Reajusta as textareas e botões após a recarga
+
                 document.querySelectorAll('textarea').forEach(textarea => {
-                    adjustTextareaHeight(textarea);
+                    resetTextarea(textarea);
                 });
                 toggleCommentButton();
                 toggleReplyButton();
@@ -723,18 +732,19 @@
                 if (commentItem) {
                     commentItem.querySelector('.comment-like-count').textContent = data.likes;
                     commentItem.querySelector('.comment-dislike-count').textContent = data.dislikes;
-
+                    
                     const likeButton = commentItem.querySelector('.comment-like-button');
                     const dislikeButton = commentItem.querySelector('.comment-dislike-button');
 
-                    // Remove as classes ativas antes de adicionar
-                    if (likeButton) likeButton.classList.remove('active');
-                    if (dislikeButton) dislikeButton.classList.remove('active');
+                    if (dislikeButton && likeButton) {
+                        likeButton.classList.remove('active');
+                        dislikeButton.classList.remove('active');
 
-                    if (data.user_reaction === 'like_comment') {
-                        if (likeButton) likeButton.classList.add('active');
-                    } else if (data.user_reaction === 'dislike_comment') {
-                        if (dislikeButton) dislikeButton.classList.add('active');
+                        if (data.user_reaction === 'like_comment') {
+                            likeButton.classList.add('active');
+                        } else if (data.user_reaction === 'dislike_comment') {
+                            dislikeButton.classList.add('active');
+                        }
                     }
                 }
             }
@@ -767,11 +777,11 @@
                         <p class="font-semibold text-gray-800 mb-1">${comment.username}</p>
                         <p class="text-gray-700 mb-2">${comment.content}</p>
                         <div class="flex items-center gap-4 text-sm text-gray-500">
-                            <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${commentLikeActiveClass}">
-                                <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count">${comment.likes || 0}</span>
+                            <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${commentLikeActiveClass}" id="interaction${comment.id}likeButton">
+                                <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction${comment.id}likeCount">${comment.likes || 0}</span>
                             </button>
-                            <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${commentDislikeActiveClass}">
-                                <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count">${comment.dislikes || 0}</span>
+                            <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${commentDislikeActiveClass}" id="interaction${comment.id}dislikeButton">
+                                <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction${comment.id}dislikeCount">${comment.dislikes || 0}</span>
                             </button>
                             <button class="interaction-button comment-reply-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openReplyModal('${comment.id}')">
                                 <i class="fa-solid fa-reply"></i>
@@ -796,11 +806,11 @@
                                 <p class="font-semibold text-gray-800 mb-1">${reply.username}</p>
                                 <p class="text-gray-700 mb-2">${reply.content}</p>
                                 <div class="flex items-center gap-4 text-sm text-gray-500">
-                                    <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${replyLikeActiveClass}">
-                                        <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count">${reply.likes || 0}</span>
+                                    <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${replyLikeActiveClass}" id="interaction${reply.id}likeButton">
+                                        <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction${reply.id}likeCount">${reply.likes || 0}</span>
                                     </button>
-                                    <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${replyDislikeActiveClass}">
-                                        <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count">${reply.dislikes || 0}</span>
+                                    <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${replyDislikeActiveClass}" id="interaction${reply.id}dislikeButton">
+                                        <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction${reply.id}dislikeCount">${reply.dislikes || 0}</span>
                                     </button>
                                     <button class="interaction-button comment-reply-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openReplyModal('${reply.id}')">
                                         <i class="fa-solid fa-reply"></i>
@@ -815,7 +825,6 @@
             return html;
         }
 
-        // Chame updatePostCounts ao carregar a página
         document.addEventListener('DOMContentLoaded', async () => {
             const postId = "{{ post.id }}";
             document.querySelectorAll('textarea').forEach(textarea => {

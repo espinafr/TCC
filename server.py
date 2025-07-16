@@ -279,7 +279,6 @@ def react_to_comment_api(comment_id):
 def comment_post_api(post_id):
     user_id = session.get('id')
     comment_text = request.json.get('comment_text')
-    print("chego")
 
     if not comment_text or len(comment_text.strip()) == 0:
         return jsonify({"success": False, "message": "Comentário não pode ser vazio."}), 400
