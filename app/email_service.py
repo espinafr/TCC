@@ -2,8 +2,14 @@ from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, exc
 
 class EmailService:
-    def __init__(self, app):
-        self.mail = Mail(app)
+    def __init__(self, app=None):
+        self.mail = None
+        self.serializer = None
+        if app is not None:
+            self.init_app(app)
+
+    def init_app(self, app):
+        self.mail = app.extensions['mail'] = Mail(app)
         self.serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
         self.app = app
 

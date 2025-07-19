@@ -400,65 +400,85 @@ class DatabaseManager:
                 Interaction.type.in_(['like_comment', 'dislike_comment']) 
             ).first()
 
-    def get_comments_and_replies_for_post(self, post_id: int, user_id: int = None):
+    def get_comments_and_replies_for_post(self, post_id: int, user_id: int = None, limit: int = None, offset: int = None):
         """
-        Retorna comentários e suas respostas para um post,
+        Retorna comentários e suas respostas para um post, com paginação,
         incluindo contagens de likes/dislikes e a reação do usuário logado.
+        Prioriza os comentários do usuário logado.
         """
         with self.get_db() as db:
-            comments_data = []
-            # Busca comentários diretos ao post (type='comment_post', parent_interaction_id=None)
-            comments = db.query(Interaction).filter(
+            # Primeiro, obter os comentários do usuário logado
+            user_comments_query = db.query(Interaction).options(
+                joinedload(Interaction.user_who_interacted)
+            ).filter(
                 Interaction.post_id == post_id,
                 Interaction.type == 'comment_post',
-                Interaction.parent_interaction_id == None
-            ).order_by(Interaction.timestamp.asc()).all()
+                Interaction.parent_interaction_id == None,  # Comentários de nível superior
+                Interaction.user_id == user_id  # Filtrar comentários do usuário
+            ).order_by(Interaction.timestamp.desc())
 
+            # Depois, obter os outros comentários
+            other_comments_query = db.query(Interaction).options(
+                joinedload(Interaction.user_who_interacted)
+            ).filter(
+                Interaction.post_id == post_id,
+                Interaction.type == 'comment_post',
+                Interaction.parent_interaction_id == None,  # Comentários de nível superior
+                Interaction.user_id != user_id  # Excluir comentários do usuário
+            ).order_by(Interaction.timestamp.desc())
+
+            if offset is not None and limit is not None:
+                # Aplicar paginação APENAS aos outros comentários (para não paginar os comentários do usuário)
+                other_comments_query = other_comments_query.offset(offset).limit(limit)
+
+            user_comments = user_comments_query.all()
+            other_comments = other_comments_query.all()
+
+            # Combinar os comentários do usuário e os outros comentários
+            comments = user_comments + other_comments
+
+            comments_data = []
             for comment in comments:
-                comment_likes = self.count_reactions_for_comment(comment.id, 'like_comment')
-                comment_dislikes = self.count_reactions_for_comment(comment.id, 'dislike_comment')
-                
-                user_comment_reaction = None
+                # Contagens de likes/dislikes para o comentário
+                likes_count = self.count_reactions_for_comment(comment.id, 'like_comment')
+                dislikes_count = self.count_reactions_for_comment(comment.id, 'dislike_comment')
+
+                # Reação do usuário ao comentário
+                user_reaction = None
                 if user_id:
                     user_reaction_obj = self.get_user_comment_reaction(user_id, comment.id)
                     if user_reaction_obj:
-                        user_comment_reaction = user_reaction_obj.type
+                        user_reaction = user_reaction_obj.type
 
-                replies_data = []
-                # Busca respostas a este comentário (parent_interaction_id == comment.id)
-                replies = db.query(Interaction).filter(
+                # Obter a resposta mais curtida (se houver)
+                most_liked_reply = None
+                replies = db.query(Interaction).options(joinedload(Interaction.user_who_interacted)).filter(
                     Interaction.parent_interaction_id == comment.id,
-                    Interaction.type == 'reply_comment' # Garante que é uma resposta
-                ).order_by(Interaction.timestamp.asc()).all()
+                    Interaction.type == 'reply_comment'
+                ).all()
 
-                for reply in replies:
-                    reply_likes = self.count_reactions_for_comment(reply.id, 'like_comment')
-                    reply_dislikes = self.count_reactions_for_comment(reply.id, 'dislike_comment')
-                    
-                    user_reply_reaction = None
-                    if user_id:
-                        user_reaction_obj = self.get_user_comment_reaction(user_id, reply.id) # Reação à resposta
-                        if user_reaction_obj:
-                            user_reply_reaction = user_reaction_obj.type
+                if replies:
+                    most_liked_reply = max(replies, key=lambda reply: self.count_reactions_for_comment(reply.id, 'like_comment') - self.count_reactions_for_comment(reply.id, 'dislike_comment'))
+                    most_liked_reply_data = {
+                        "id": most_liked_reply.id,
+                        "username": most_liked_reply.user_who_interacted.username,
+                        "content": most_liked_reply.value,
+                        "likes": self.count_reactions_for_comment(most_liked_reply.id, 'like_comment'),
+                        "dislikes": self.count_reactions_for_comment(most_liked_reply.id, 'dislike_comment'),
+                        "user_reaction": self.get_user_comment_reaction(user_id, most_liked_reply.id).type if user_id and self.get_user_comment_reaction(user_id, most_liked_reply.id) else None
+                    } if most_liked_reply else None
 
-                    replies_data.append({
-                        "id": reply.id,
-                        "username": reply.user_who_interacted.username,
-                        "content": reply.value,
-                        "likes": reply_likes,
-                        "dislikes": reply_dislikes,
-                        "user_reaction": user_reply_reaction # Reação do usuário à resposta
-                    })
-                
-                comments_data.append({
+                comment_data = {
                     "id": comment.id,
                     "username": comment.user_who_interacted.username,
                     "content": comment.value,
-                    "likes": comment_likes,
-                    "dislikes": comment_dislikes,
-                    "user_reaction": user_comment_reaction, # Reação do usuário ao comentário
-                    "replies": replies_data
-                })
+                    "likes": likes_count,
+                    "dislikes": dislikes_count,
+                    "user_reaction": user_reaction,
+                    "replies": [most_liked_reply_data] if most_liked_reply_data else []
+                }
+                comments_data.append(comment_data)
+
             return comments_data
 
     def get_interaction_by_id(self, interaction_id: int):
@@ -467,3 +487,34 @@ class DatabaseManager:
             return db.query(Interaction).options(joinedload(Interaction.user_who_interacted)).filter(
                 Interaction.id == interaction_id
             ).first()
+        
+    def get_replies_for_comment(self, comment_id: int, user_id: int = None):
+        """Obtém todas as respostas para um comentário específico."""
+        with self.get_db() as db:
+            replies = db.query(Interaction).options(joinedload(Interaction.user_who_interacted)).filter(
+                Interaction.parent_interaction_id == comment_id,
+                Interaction.type == 'reply_comment'
+            ).all()
+
+            replies_data = []
+            for reply in replies:
+                likes_count = self.count_reactions_for_comment(reply.id, 'like_comment')
+                dislikes_count = self.count_reactions_for_comment(reply.id, 'dislike_comment')
+
+                user_reaction = None
+                if user_id:
+                    user_reaction_obj = self.get_user_comment_reaction(user_id, reply.id)
+                    if user_reaction_obj:
+                        user_reaction = user_reaction_obj.type
+
+                reply_data = {
+                    "id": reply.id,
+                    "username": reply.user_who_interacted.username,
+                    "content": reply.value,
+                    "likes": likes_count,
+                    "dislikes": dislikes_count,
+                    "user_reaction": user_reaction
+                }
+                replies_data.append(reply_data)
+
+            return replies_data

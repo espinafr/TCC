@@ -12,7 +12,7 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        <form method="POST" action="{{ url_for('register') }}">
+        <form method="POST" action="{{ url_for('authentication.register') }}">
             {{ form.hidden_tag() }}
             <div class="mb-4">
                 {% if form.username.errors %}
@@ -70,7 +70,7 @@
             </div>
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button> <!-- Fazer animação de espera -->
         </form>
-        <p class="mt-4">Já tem uma conta? <a href="{{ url_for('login') }}" class="text-blue-600 hover:underline">Entre.</a></p>
+        <p class="mt-4">Já tem uma conta? <a href="{{ url_for('authentication.login') }}" class="text-blue-600 hover:underline">Entre.</a></p>
     </div>
 </body>
 {% endblock %}

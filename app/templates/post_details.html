@@ -25,7 +25,6 @@
         overflow-wrap: break-word;
     }
 
-    /* Estilos do Modal de Imagem (mantidos) */
     .modal {
         position: fixed;
         z-index: 9999;
@@ -70,7 +69,6 @@
         cursor: pointer;
     }
 
-    /* Keyframe Animations (mantidas) */
     @keyframes fadeIn {
         from {opacity: 0;}
         to {opacity: 1;}
@@ -80,44 +78,39 @@
         to {transform: scale(1); opacity: 1;}
     }
 
-    /* Novos Estilos para Botões de Interação (Like/Dislike/Compartilhar/Salvar) */
     .interaction-button {
         display: inline-flex;
         align-items: center;
-        gap: 0.25rem; /* Espaço entre ícone e texto/número */
+        gap: 0.25rem;
         padding: 0.5rem 0.75rem;
-        border-radius: 9999px; /* Bordas arredondadas (full) */
-        color: #6B7280; /* Cor padrão cinza (gray-500) */
-        background-color: #E5E7EB; /* Cor de fundo cinza claro (gray-200) */
+        border-radius: 9999px;
+        color: #6B7280;
+        background-color: #E5E7EB;
         transition: all 0.2s ease-in-out;
         cursor: pointer;
-        font-weight: 600; /* semi-bold */
-        font-size: 0.875rem; /* text-sm */
+        font-weight: 600;
+        font-size: 0.875rem;
     }
-
-    /* Hover State */
+    
     .interaction-button:hover:not(.active) {
-        background-color: #DBEAFE; /* blue-100 */
-        color: #3B82F6; /* blue-500 */
+        background-color: #DBEAFE;
+        color: #3B82F6;
     }
-
-    /* Active State (quando clicado) */
+    
     .interaction-button.active {
-        background-color: #3B82F6; /* blue-500 */
+        background-color: #3B82F6;
         color: white;
     }
 
     .interaction-button.active .fa-thumbs-up,
     .interaction-button.active .fa-thumbs-down {
-        color: white; /* Garante que o ícone também fique branco no estado ativo */
+        color: white; 
     }
 
-    /* Ajuste para ícones dentro do botão */
     .interaction-button i {
-        font-size: 1.125rem; /* text-lg */
+        font-size: 1.125rem;
     }
 
-    /* Estilo para o campo de comentário */
     .comment-input-container {
         display: flex;
         align-items: center;
@@ -126,9 +119,9 @@
 
     .comment-textarea {
         flex-grow: 1;
-        resize: none; /* Desabilita redimensionamento manual */
-        height: 2.5rem; /* Altura inicial */
-        overflow: hidden; /* Esconde a barra de rolagem inicial */
+        resize: none;
+        height: 2.5rem;
+        overflow: hidden;
     }
 
     .comment-button {
@@ -137,25 +130,24 @@
         font-weight: 600;
         transition: all 0.2s ease-in-out;
         cursor: pointer;
-        background-color: #E0E7FF; /* light blue */
-        color: #6366F1; /* indigo-500 */
-        pointer-events: none; /* Desabilitado por padrão */
+        background-color: #E0E7FF;
+        color: #6366F1;
+        pointer-events: none;
         opacity: 0.6;
     }
 
     .comment-button.active {
-        background-color: #3B82F6; /* blue-500 */
+        background-color: #3B82F6;
         color: white;
-        pointer-events: auto; /* Habilita clique */
+        pointer-events: auto;
         opacity: 1;
     }
 
     .comment-button:hover:not(.active) {
-        background-color: #BFDBFE; /* blue-200 */
-        color: #2563EB; /* blue-700 */
+        background-color: #BFDBFE; 
+        color: #2563EB; 
     }
-
-    /* Estilos para o Context Menu de Compartilhamento */
+    
     .share-context-menu {
         position: absolute;
         background-color: white;
@@ -164,9 +156,9 @@
         padding: 0.5rem 0;
         z-index: 100;
         min-width: 180px;
-        right: 0; /* Alinha à direita do botão de compartilhamento */
-        top: 100%; /* Abaixo do botão */
-        transform: translateY(0.5rem); /* Pequeno espaçamento */
+        right: 0; 
+        top: 100%;
+        transform: translateY(0.5rem);
     }
 
     .share-context-menu button {
@@ -180,14 +172,13 @@
         border: none;
         cursor: pointer;
         font-size: 0.95rem;
-        color: #374151; /* gray-700 */
+        color: #374151;
     }
 
     .share-context-menu button:hover {
-        background-color: #F3F4F6; /* gray-100 */
+        background-color: #F3F4F6;
     }
 
-    /* Estilos para o Modal de Resposta de Comentário */
     .reply-modal-content {
         background-color: white;
         border-radius: 0.5rem;
@@ -208,38 +199,36 @@
         top: 10px;
         right: 15px;
         font-size: 2rem;
-        color: #9CA3AF; /* gray-400 */
+        color: #9CA3AF;
         cursor: pointer;
         transition: color 0.2s;
     }
     .reply-modal-content .close-button-modal:hover {
-        color: #4B5563; /* gray-700 */
+        color: #4B5563;
     }
-
-    /* Keyframe Animation for Reply Modal */
+    
     @keyframes slideIn {
         from { transform: translateY(-50px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
     }
 
-    /* Estilo para a foto de perfil nos comentários */
     .comment-profile-pic {
-        width: 2.5rem; /* w-10 */
-        height: 2.5rem; /* h-10 */
-        border-radius: 9999px; /* rounded-full */
-        background-color: #D1D5DB; /* gray-300 */
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 9999px;
+        background-color: #D1D5DB;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #6B7280; /* gray-500 */
-        font-size: 0.75rem; /* text-xs */
-        flex-shrink: 0; /* Não permite que a imagem encolha */
+        color: #6B7280;
+        font-size: 0.75rem;
+        flex-shrink: 0;
     }
 
-    /* Estilo para espaçamento de resposta de comentário */
+    
     .comment-reply {
-        margin-left: 3rem; /* Indenta a resposta */
-        border-left: 2px solid #E5E7EB; /* Linha indicando que é uma resposta */
+        margin-left: 3rem;
+        border-left: 2px solid #E5E7EB;
         padding-left: 1rem;
         margin-top: 1rem;
     }
@@ -378,7 +367,7 @@
         {# Fim da Seção de Comentários Existentes #}
 
         <div class="mt-8 text-center">
-            <a href="{{ url_for('index') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
+            <a href="{{ url_for('main.index') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
                 Voltar para a página inicial
             </a>
         </div>
@@ -404,6 +393,20 @@
     </div>
 
     <script>
+        // Auxiliares
+
+        function toggleLoading(buton) {
+            const hasSpinner = button.querySelector('.loading-spinner');
+            if (hasSpinner) {
+                hasSpinner.remove();
+            } else {
+                const spinner = document.createElement('span');
+                spinner.className = 'loading-spinner';
+                spinner.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                button.appendChild(spinner);
+            }
+        }
+
         // Funções para Modais (ajustadas para aceitar ID do modal)
         function openModal(modalId, imageSrc = null) {
             const modal = document.getElementById(modalId);
@@ -480,6 +483,15 @@
                 opposite.classList.remove('active'); // Caso o botão de deslike esteja ativado :P
             }
             selfCount.textContent = Number(selfCount.textContent) + 1;
+        }
+
+        function formatCount(count) {
+            if (count >= 1000 && count < 1000000) {
+                return (count / 1000).toFixed(1) + 'K';
+            } else if (count >= 1000000) {
+                return (count / 1000000).toFixed(1) + 'M'; // Não custa sonhar né
+            }
+            return count;
         }
 
         // --- Compartilhamento ---
@@ -599,6 +611,7 @@
 
                 resetTextarea(document.getElementById('commentTextarea'));
                 toggleCommentButton();
+                toggleLoading(this);
                 
                 const data = { comment_text: commentText };
                 const result = await sendApiRequest(`/api/posts/${postId}/comment`, 'POST', data);
