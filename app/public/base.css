@@ -1,0 +1,49 @@
+body {
+    font-family: 'Inter', sans-serif;
+    box-sizing: border-box;
+}
+
+#notificationContainer {
+    position: fixed;
+    z-index: 1000;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    user-select: none;
+    pointer-events: none;
+}
+
+#notificationContainer > div{
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+
+    backdrop-filter: blur(4px) brightness(0.9) contrast(1.1) saturate(1.2);
+    background-color: #ffffff3b;
+    color: #2563EB;
+    font-weight: bold;
+    
+    transition: .2s;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+@keyframes zoomIn {
+    from {transform: scale(0.8); opacity: 0;}
+    to {transform: scale(1); opacity: 1;}
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}

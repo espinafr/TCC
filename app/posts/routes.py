@@ -91,7 +91,7 @@ def view_post(post_id):
             user_post_reaction_type = user_post_reaction.type
 
     # Carregar comentários e suas respostas com contagens e reações do usuário
-    comments_with_details = db_manager.get_comments_and_replies_for_post(post_id, user_id)
+    comments_with_details = db_manager.get_comments_and_replies_for_post(post_id, user_id, replies_limit=1, initial_comments_limit=20)
 
     return render_template('post_details.html',
                            post=post,

@@ -92,11 +92,11 @@ def reply_comment_api(parent_comment_id):
 
 @bp.route('/posts/<int:post_id>/counts', methods=['GET'])
 @login_required
-def get_post_counts_api(post_id):
+def get_post_interactions_api(post_id):
     likes_count = db_manager.count_reactions_for_post(post_id, 'like_post')
     dislikes_count = db_manager.count_reactions_for_post(post_id, 'dislike_post')
     
-    # Opcional: Obter o estado de reação do usuário logado
+    # Obter o estado de reação do usuário logado
     user_id = session.get('id')
     user_reaction = None
     if user_id:
@@ -113,7 +113,7 @@ def get_post_counts_api(post_id):
 
 @bp.route('/comments/<int:comment_id>/counts', methods=['GET'])
 @login_required
-def get_comment_counts_api(comment_id):
+def get_comment_interactions_api(comment_id):
     likes_count = db_manager.count_reactions_for_comment(comment_id, 'like_comment')
     dislikes_count = db_manager.count_reactions_for_comment(comment_id, 'dislike_comment')
 
@@ -135,17 +135,14 @@ def get_comment_counts_api(comment_id):
 @bp.route('/posts/<int:post_id>/comments', methods=['GET'])
 @login_required
 def get_post_comments_api(post_id):
-    user_id = session.get('id')
-    limit = request.args.get('limit', default=20, type=int)
-    offset = request.args.get('offset', default=0, type=int)
-
-    comments_data = db_manager.get_comments_and_replies_for_post(post_id, user_id, limit=limit, offset=offset)
-
+    user_id = session.get('id') # Pega o ID do usuário para obter as reações dele
+    comments_data = db_manager.get_comments_and_replies_for_post(post_id, user_id)
+    
     return jsonify({"success": True, "comments": comments_data}), 200
 
-@bp.route('/api/comments/<int:comment_id>/replies', methods=['GET'])
+@bp.route('/comments/<int:comment_id>/replies', methods=['GET'])
 @login_required
 def get_comment_replies_api(comment_id):
     user_id = session.get('id')
-    replies_data = db_manager.get_replies_for_comment(comment_id, user_id)
+    replies_data = db_manager.get_all_replies_for_comment(comment_id, user_id)
     return jsonify({"success": True, "replies": replies_data}), 200
