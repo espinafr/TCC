@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 {% block additional_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
+<script>
+    const postId = {{ post.id }};
+    const total_comments = {{ total_comments }};
+    let rendered_comments = {{ next_offset }};
+</script>
 <script src="{{ url_for('static', filename='basics.js') }}"></script>
 <script src="{{ url_for('static', filename='postrequests.js') }}"></script>
-<style>
-</style>
 {% endblock %}
 {% block content %}
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
@@ -84,57 +88,57 @@
         <div class="border-t border-blue-200 mb-8"></div>
 
         <div id="commentsSection">
-            {% for comment in comments %}
-            <div class="comment-item flex gap-4 mb-6" data-comment-id="{{ comment.id }}">
+            {% for comment_content in comments %}
+            <div class="comment-item flex gap-4 mb-6" data-comment-id="{{ comment_content.comment.id }}">
                 <div class="comment-profile-pic">
                     <i class="fa-solid fa-user"></i>
                 </div>
                 <div class="flex-grow">
-                    <p class="font-semibold text-gray-800 mb-1">{{ comment.username }}</p>
-                    <p class="text-gray-700 mb-2">{{ comment.content }}</p>
-                    <div class="flex items-center gap-4 text-sm text-gray-500">
-                        <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment.user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ comment.id }}likeButton">
-                            <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ comment.id }}likeCount">{{ comment.likes }}</span>
-                        </button>
-                        <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment.user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ comment.id }}dislikeButton">
-                            <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ comment.id }}dislikeCount">{{ comment.dislikes }}</span>
-                        </button>
-                        <button class="interaction-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openReplyModal('{{ comment.id }}')">
-                            <i class="fa-solid fa-reply"></i>
-                        </button>
-                        <button class="interaction-button comment-save-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500">
-                            <i class="fa-solid fa-bookmark"></i>
-                        </button>
+                    <div id="interaction{{ comment_content.comment.id }}box">
+                        <p class="font-semibold text-gray-800 mb-1">{{ comment_content.comment.username }}</p>
+                        <p class="text-gray-700 mb-2">{{ comment_content.comment.value }}</p>
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                            <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ comment_content.comment.id }}likeButton">
+                                <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ comment_content.comment.id }}likeCount">{{ comment_content.likes }}</span>
+                            </button>
+                            <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ comment_content.comment.id }}dislikeButton">
+                                <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ comment_content.comment.id }}dislikeCount">{{ comment_content.dislikes }}</span>
+                            </button>
+                            <button class="interaction-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openRepliesModal('{{ comment_content.comment.id }}')">
+                                <i class="fa-solid fa-reply"></i>
+                            </button>
+                            <button class="interaction-button comment-save-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500">
+                                <i class="fa-solid fa-bookmark"></i>
+                            </button>
+                        </div>
                     </div>
                     
-                    {% if comment.replies %}
-                        {% for reply in comment.replies %}
-                        <div class="comment-item flex gap-4 mt-4 comment-reply" data-comment-id="{{ reply.id }}" data-user-reaction="{{ reply.user_reaction or '' }}">
+                    {% if comment_content.most_liked_reply %}
+                        <div class="comment-item flex gap-4 mt-4 comment-reply" data-comment-id="{{ comment_content.most_liked_reply.reply.id }}" data-user-reaction="{{ comment_content.reply_user_reaction or '' }}">
                             <div class="comment-profile-pic">
                                 <i class="fa-solid fa-user"></i>
                             </div>
                             <div class="flex-grow">
-                                <p class="font-semibold text-gray-800 mb-1">{{ reply.username }}</p>
-                                <p class="text-gray-700 mb-2">{{ reply.content }}</p>
+                                <p class="font-semibold text-gray-800 mb-1">{{ comment_content.most_liked_reply.reply.username }}</p>
+                                <p class="text-gray-700 mb-2">{{ comment_content.most_liked_reply.reply.value }}</p>
                                 <div class="flex items-center gap-4 text-sm text-gray-500">
-                                    <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if reply.user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ reply.id }}likeButton">
-                                        <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ reply.id }}likeCount">{{ reply.likes }}</span>
+                                    <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.reply_user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ comment_content.most_liked_reply.reply.id }}likeButton">
+                                        <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ comment_content.most_liked_reply.reply.id }}likeCount">{{ comment_content.most_liked_reply.likes }}</span>
                                     </button>
-                                    <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if reply.user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ reply.id }}dislikeButton">
-                                        <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ reply.id }}dislikeCount">{{ reply.dislikes }}</span>
+                                    <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.reply_user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ comment_content.most_liked_reply.reply.id }}dislikeButton">
+                                        <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ comment_content.most_liked_reply.reply.id }}dislikeCount">{{ comment_content.most_liked_reply.dislikes }}</span>
                                     </button>
-                                    <button class="interaction-button comment-reply-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openReplyModal('{{ reply.id }}')">
+                                    <button class="interaction-button comment-reply-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openRepliesModal('{{ comment_content.most_liked_reply.reply.id }}')">
                                         <i class="fa-solid fa-reply"></i>
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        {% endfor %}
                     {% endif %}
 
-                    {% if comment.total_replies > 1 %}
-                        <button class="interaction-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openCommentModal('{{ comment.id }}')">
-                            Ver as {{ comment.total_replies }} respostas
+                    {% if comment_content.total_replies > 1 %}
+                        <button class="interaction-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openCommentModal('{{ comment_content.comment.id }}')">
+                            Ver mais {{ comment_content.total_replies - 1 }} respostas
                         </button>
                     {% endif %}
                 </div>
@@ -143,9 +147,11 @@
         </div>
 
         <div class="mt-8 text-center">
+            {% if total_comments - comments|length > 0 %}
             <button id="loadMoreComments" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
                 Carregar mais comentários
             </button>
+            {% endif %}
             <a href="{{ url_for('main.index') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
                 Voltar para a página inicial
             </a>
@@ -175,7 +181,7 @@
                     <i class="fa-solid fa-user"></i>
                 </div>
                 <textarea id="replyTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva sua resposta!" oninput="adjustTextareaHeight(this); toggleReplyButton();"></textarea>
-                <button id="replyButton" class="comment-button" placeholder="Responder"></button>
+                <button id="replyButton" class="comment-button">Responder</button>
             </div>
         </div>
     </div>

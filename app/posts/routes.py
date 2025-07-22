@@ -1,5 +1,6 @@
 from flask import render_template, redirect, url_for, flash, session
 from app.extensions import login_required, db_manager, s3, current_app
+from app.api.routes import get_post_comments
 from botocore.exceptions import ClientError
 import app.data_sanitizer as sanitizer
 from app.posts import bp
@@ -91,11 +92,14 @@ def view_post(post_id):
             user_post_reaction_type = user_post_reaction.type
 
     # Carregar comentários e suas respostas com contagens e reações do usuário
-    comments_with_details = db_manager.get_comments_and_replies_for_post(post_id, user_id, replies_limit=1, initial_comments_limit=20)
+    comments_with_details = get_post_comments(post_id, offset=0, limit=10)
+    comment_count = db_manager.get_comment_count(post_id)
 
     return render_template('post_details.html',
                            post=post,
                            comments=comments_with_details, # Passa os comentários já com likes/dislikes e user_reaction
                            post_likes=post_likes,
                            post_dislikes=post_dislikes,
-                           user_post_reaction=user_post_reaction_type)
+                           user_post_reaction=user_post_reaction_type,
+                           next_offset=len(comments_with_details),
+                           total_comments=comment_count)

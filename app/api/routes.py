@@ -2,6 +2,71 @@ from flask import request, jsonify, session
 from app.extensions import login_required, db_manager
 from app.api import bp
 
+def get_post_comments(post_id, offset=0, limit=10):
+    comentarios = db_manager.get_paginated_comments(post_id, offset, limit)
+    formatted_comments = []
+
+    for comment, likes, dislikes, num_replies in comentarios:
+        comment_content = {
+            'comment': {
+                'id': comment.id,
+                'username': comment.user_who_interacted.username,
+                'value': comment.value
+            },
+            'likes': likes,
+            'dislikes': dislikes,
+            'total_replies': num_replies,
+        }
+
+        reaction = db_manager.get_user_comment_reaction(session.get('id'), comment.id)
+        if reaction:
+            comment_content['user_reaction'] = reaction.type
+        
+        if num_replies > 0:
+            most_liked_reply = db_manager.get_paginated_replies(post_id, comment.id, offset=0, limit=1)
+            if most_liked_reply:
+                for reply, likes, dislikes in most_liked_reply:
+                    comment_content['most_liked_reply'] = {
+                        'reply': {
+                            'id': reply.id,
+                            'username': reply.user_who_interacted.username,
+                            'value': reply.value
+                        },
+                        'likes': likes,
+                        'dislikes': dislikes
+                    }
+                
+                reply_reaction = db_manager.get_user_comment_reaction(session.get('id'), comment_content['most_liked_reply']["reply"]['id'])
+                if reply_reaction:
+                    comment_content['reply_user_reaction'] = reply_reaction.type
+        
+        formatted_comments.append(comment_content)
+    
+    return formatted_comments
+
+def get_comment_replies(post_id, comment_id, offset=0, limit=10):
+    replies = db_manager.get_paginated_replies(post_id, comment_id, offset, limit)
+    formatted_replies = []
+
+    for reply, likes, dislikes in replies:
+        reply_content = {
+            'reply': {
+                'id': reply.id,
+                'username': reply.user_who_interacted.username,
+                'value': reply.value
+            },
+            'likes': likes,
+            'dislikes': dislikes
+        }
+
+        reaction = db_manager.get_user_comment_reaction(session.get('id'), reply.id)
+        if reaction:
+            reply_content['user_reaction'] = reaction.type
+        
+        formatted_replies.append(reply_content)
+    
+    return formatted_replies
+
 @bp.route('/posts/<int:post_id>/react', methods=['POST'])
 @login_required
 def react_to_post_api(post_id):
@@ -49,12 +114,15 @@ def comment_post_api(post_id):
         return jsonify({
             "success": True, 
             "message": "Comentário adicionado com sucesso!", 
-            "comment": {
-                "id": new_comment.id,
-                "username": new_comment.user_who_interacted.username,
-                "content": new_comment.value,
+            "comment_content": {
+                "comment": {
+                    "id": new_comment.id,
+                    "username": new_comment.user_who_interacted.username,
+                    "value": new_comment.value
+                },
                 "likes": 0,
                 "dislikes": 0,
+                "user_reaction": None,  # Inicialmente sem reação do usuário
                 "replies": []
             }
         }), 200
@@ -79,12 +147,15 @@ def reply_comment_api(parent_comment_id):
         return jsonify({
             "success": True, 
             "message": "Resposta adicionada com sucesso!", 
-            "reply": {
-                "id": new_reply.id,
-                "username": new_reply.user_who_interacted.username,
-                "content": new_reply.value,
+            "reply_content": {
+                "reply": {
+                    "id": new_reply.id,
+                    "username": new_reply.user_who_interacted.username,
+                    "value": new_reply.value
+                },
                 "likes": 0,
-                "dislikes": 0
+                "dislikes": 0,
+                "user_reaction": None
             }
         }), 200
     else:
@@ -135,14 +206,16 @@ def get_comment_interactions_api(comment_id):
 @bp.route('/posts/<int:post_id>/comments', methods=['GET'])
 @login_required
 def get_post_comments_api(post_id):
-    user_id = session.get('id') # Pega o ID do usuário para obter as reações dele
-    comments_data = db_manager.get_comments_and_replies_for_post(post_id, user_id)
-    
-    return jsonify({"success": True, "comments": comments_data}), 200
+    offset = request.args.get('offset', 0, type=int)
+    limit = request.args.get('limit', 10, type=int)
 
-@bp.route('/comments/<int:comment_id>/replies', methods=['GET'])
+    comments = get_post_comments(post_id, offset, limit)
+
+    return jsonify({"success": True, "comments": comments}), 200
+
+@bp.route('/posts/<int:post_id>/comment/<int:comment_id>/replies', methods=['GET'])
 @login_required
-def get_comment_replies_api(comment_id):
-    user_id = session.get('id')
-    replies_data = db_manager.get_all_replies_for_comment(comment_id, user_id)
+def get_comment_replies_api(post_id, comment_id):
+    replies_data = get_comment_replies(post_id, comment_id, offset=0, limit=0)
+
     return jsonify({"success": True, "replies": replies_data}), 200

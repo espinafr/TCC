@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from argon2 import PasswordHasher, exceptions
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, desc, func, case
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship, joinedload
 from sqlalchemy.exc import IntegrityError, OperationalError
 import contextlib
@@ -404,146 +404,133 @@ class DatabaseManager:
                 Interaction.type.in_(['like_comment', 'dislike_comment']) 
             ).first()
 
-    def get_comments_and_replies_for_post(self, post_id: int, user_id: int = None, replies_limit: int = None, initial_comments_limit: int = None):
-        """
-        Retorna comentários e suas respostas para um post,
-        incluindo contagens de likes/dislikes e a reação do usuário logado.
-        """
+    def get_comment_count(self, post_id: int):
+        """Conta o número de comentários para um post específico."""
         with self.get_db() as db:
-            comments_data = []
-
-            # Modifique a query para aplicar o limite inicial de comentários
-            comments_query = db.query(Interaction).filter(
+            return db.query(Interaction).filter(
                 Interaction.post_id == post_id,
                 Interaction.type == 'comment_post',
-                Interaction.parent_interaction_id == None
-            ).order_by(Interaction.timestamp.asc())
+                Interaction.parent_interaction_id == None # Apenas comentários de nível superior
+            ).count()
 
-            if initial_comments_limit:
-                comments = comments_query.limit(initial_comments_limit).all()
-            else:
-                comments = comments_query.all()
-
-            for comment in comments:
-                comment_likes = self.count_reactions_for_comment(comment.id, 'like_comment')
-                comment_dislikes = self.count_reactions_for_comment(comment.id, 'dislike_comment')
-                
-                user_comment_reaction = None
-                if user_id:
-                    user_reaction_obj = self.get_user_comment_reaction(user_id, comment.id)
-                    if user_reaction_obj:
-                        user_comment_reaction = user_reaction_obj.type
-
-                replies_data = []
-                # Modifique a query para buscar apenas a resposta mais curtida
-                replies_query = db.query(Interaction).filter(
-                    Interaction.parent_interaction_id == comment.id,
-                    Interaction.type == 'reply_comment'
-                ).order_by(Interaction.timestamp.asc())
-
-                if replies_limit == 1:
-                    # Encontrar a resposta mais curtida
-                    most_liked_reply = None
-                    all_replies = replies_query.all()
-                    for reply in all_replies:
-                        likes = self.count_reactions_for_comment(reply.id, 'like_comment')
-                        if most_liked_reply is None or likes > self.count_reactions_for_comment(most_liked_reply.id, 'like_comment'):
-                            most_liked_reply = reply
-
-                    if most_liked_reply:
-                        reply_likes = self.count_reactions_for_comment(most_liked_reply.id, 'like_comment')
-                        reply_dislikes = self.count_reactions_for_comment(most_liked_reply.id, 'dislike_comment')
-                        
-                        user_reply_reaction = None
-                        if user_id:
-                            user_reaction_obj = self.get_user_comment_reaction(user_id, most_liked_reply.id)
-                            if user_reaction_obj:
-                                user_reply_reaction = user_reaction_obj.type
-
-                        replies_data.append({
-                            "id": most_liked_reply.id,
-                            "username": most_liked_reply.user_who_interacted.username,
-                            "content": most_liked_reply.value,
-                            "likes": reply_likes,
-                            "dislikes": reply_dislikes,
-                            "user_reaction": user_reply_reaction
-                        })
-                elif replies_limit:
-                    replies = replies_query.limit(replies_limit).all()
-                    for reply in replies:
-                        reply_likes = self.count_reactions_for_comment(reply.id, 'like_comment')
-                        reply_dislikes = self.count_reactions_for_comment(reply.id, 'dislike_comment')
-                        
-                        user_reply_reaction = None
-                        if user_id:
-                            user_reaction_obj = self.get_user_comment_reaction(user_id, reply.id)
-                            if user_reaction_obj:
-                                user_reply_reaction = user_reaction_obj.type
-
-                        replies_data.append({
-                            "id": reply.id,
-                            "username": reply.user_who_interacted.username,
-                            "content": reply.value,
-                            "likes": reply_likes,
-                            "dislikes": reply_dislikes,
-                            "user_reaction": user_reply_reaction
-                        })
-                
-                # Adiciona a contagem total de respostas
-                total_replies = db.query(Interaction).filter(
-                    Interaction.parent_interaction_id == comment.id,
-                    Interaction.type == 'reply_comment'
-                ).count()
-
-                comments_data.append({
-                    "id": comment.id,
-                    "username": comment.user_who_interacted.username,
-                    "content": comment.value,
-                    "likes": comment_likes,
-                    "dislikes": comment_dislikes,
-                    "user_reaction": user_comment_reaction,
-                    "replies": replies_data,
-                    "total_replies": total_replies  # Adiciona a contagem total
-                })
-            return comments_data
-
-    def get_all_replies_for_comment(self, comment_id: int, user_id: int = None):
-        """
-        Retorna todas as respostas para um comentário,
-        incluindo contagens de likes/dislikes e a reação do usuário logado.
-        """
+    # Método para obter comentários paginados por like
+    def get_paginated_comments(self, post_id, offset=0, limit=5):
+        # Subconsulta para contar os likes de cada comentário
         with self.get_db() as db:
-            replies_data = []
-            # Busca respostas a este comentário (parent_interaction_id == comment.id)
-            replies = db.query(Interaction).filter(
-                Interaction.parent_interaction_id == comment_id,
+            likes_count_subquery = db.query( # Conta quantas Interaction.id existem para Interaction.parent_interaction_id
+                Interaction.parent_interaction_id, 
+                func.count(Interaction.id).label('num_likes')
+            ).filter(
+                Interaction.type == 'like_comment',
+                Interaction.post_id == post_id
+            ).group_by(Interaction.parent_interaction_id).subquery() # Agrupa por Interaction.parent_interaction_id para contar os likes de cada comentário
+
+            dislikes_count_subquery = db.query(
+                Interaction.parent_interaction_id,
+                func.count(Interaction.id).label('num_dislikes')
+            ).filter(
+                Interaction.type == 'dislike_comment',
+                Interaction.post_id == post_id
+            ).group_by(Interaction.parent_interaction_id).subquery()
+            
+            replies_count_subquery = db.query(
+                Interaction.parent_interaction_id,
+                func.count(Interaction.id).label('num_replies')
+            ).filter(
+                Interaction.post_id == post_id,
                 Interaction.type == 'reply_comment'
-            ).order_by(Interaction.timestamp.asc()).all()
+            ).group_by(Interaction.parent_interaction_id).subquery()
 
-            for reply in replies:
-                reply_likes = self.count_reactions_for_comment(reply.id, 'like_comment')
-                reply_dislikes = self.count_reactions_for_comment(reply.id, 'dislike_comment')
-                
-                user_reply_reaction = None
-                if user_id:
-                    user_reaction_obj = self.get_user_comment_reaction(user_id, reply.id)
-                    if user_reaction_obj:
-                        user_reply_reaction = user_reaction_obj.type
-
-                replies_data.append({
-                    "id": reply.id,
-                    "username": reply.user_who_interacted.username,
-                    "content": reply.value,
-                    "likes": reply_likes,
-                    "dislikes": reply_dislikes,
-                    "user_reaction": user_reply_reaction
-                })
-
-    #Interaction.query.filter_by(post_id=post_id).order_by(desc(Comentario.likes)).offset(offset).limit(limit).all()
-
-    def get_interaction_by_id(self, interaction_id: int):
-        """Obtém uma interação específica pelo ID, carregando o usuário."""
+            # Query principal para buscar os comentários
+            comments = db.query(
+                Interaction, # Inclui a tabela de Interação
+                func.coalesce(likes_count_subquery.c.num_likes, 0).label('num_likes'), # Coalesce para garantir que comentários sem likes retornem 0, sem isso o LEFT JOIN retornaria None. Label é o nome da coluna.
+                func.coalesce(dislikes_count_subquery.c.num_dislikes, 0).label('num_dislikes'),
+                func.coalesce(replies_count_subquery.c.num_replies, 0).label('num_replies')
+            ).options(
+                joinedload(Interaction.user_who_interacted)
+            ).filter(
+                Interaction.post_id == post_id,
+                Interaction.type == 'comment_post',
+                Interaction.parent_interaction_id == None # Apenas comentários de nível superior
+            ).outerjoin( # Usa OUTER JOIN para garantir que comentários sem likes ainda sejam retornados. Se fosse INNER JOIN, comentários sem likes seriam excluídos.
+                likes_count_subquery, 
+                Interaction.id == likes_count_subquery.c.parent_interaction_id # A condição de junção é que o ID do comentário deve corresponder ao parent_interaction_id da subconsulta
+            ).outerjoin(
+                dislikes_count_subquery,
+                Interaction.id == dislikes_count_subquery.c.parent_interaction_id
+            ).outerjoin(
+                replies_count_subquery,
+                Interaction.id == replies_count_subquery.c.parent_interaction_id
+            ).order_by(
+                desc('num_likes'), # Ordena pelos likes, do maior para o menor
+                desc(Interaction.timestamp) # Critério de desempate
+            ).offset(offset).limit(limit).all()
+            
+            return comments
+        
+    # Método para obter comentários paginados por like
+    def get_paginated_replies(self, post_id, comment_id, offset=0, limit=5):
+        # Subconsulta para contar os likes de cada resposta
         with self.get_db() as db:
-            return db.query(Interaction).options(joinedload(Interaction.user_who_interacted)).filter(
-                Interaction.id == interaction_id
-            ).first()
+            likes_count_subquery = db.query(
+                Interaction.parent_interaction_id,
+                func.count(Interaction.id).label('num_likes')
+            ).filter(
+                Interaction.type == 'like_comment',
+                Interaction.post_id == post_id
+            ).group_by(Interaction.parent_interaction_id).subquery()
+
+            dislikes_count_subquery = db.query(
+                Interaction.parent_interaction_id,
+                func.count(Interaction.id).label('num_dislikes')
+            ).filter(
+                Interaction.type == 'dislike_comment',
+                Interaction.post_id == post_id
+            ).group_by(Interaction.parent_interaction_id).subquery()
+
+            # Query principal para buscar as respostas/replies
+            replies = db.query(
+                Interaction, # Inclui a tabela de Interação
+                func.coalesce(likes_count_subquery.c.num_likes, 0).label('num_likes'), # Coalesce para garantir que respostas sem likes retornem 0, sem isso o LEFT JOIN retornaria None. Label é o nome da coluna.
+                func.coalesce(dislikes_count_subquery.c.num_dislikes, 0).label('num_dislikes')
+            ).options(
+                joinedload(Interaction.user_who_interacted)
+            ).filter(
+                Interaction.post_id == post_id,
+                Interaction.type == 'reply_comment',
+                Interaction.parent_interaction_id == comment_id # Reply do comentário específico
+            ).outerjoin( # Usa OUTER JOIN para garantir que respostas sem likes ainda sejam retornados. Se fosse INNER JOIN, respostas sem likes seriam excluídos.
+                likes_count_subquery, 
+                Interaction.id == likes_count_subquery.c.parent_interaction_id # A condição de junção é que o ID da resposta deve corresponder ao parent_interaction_id da subconsulta
+            ).outerjoin(
+                dislikes_count_subquery,
+                Interaction.id == dislikes_count_subquery.c.parent_interaction_id
+            ).order_by(
+                desc('num_likes'), # Ordena pelos likes, do maior para o menor
+                desc(Interaction.timestamp) # Critério de desempate
+            )
+            
+            if limit and limit > 0:
+                replies = replies.offset(offset).limit(limit)
+            
+            replies = replies.all()
+            return replies
+    
+    def get_comment_amount_for_post(self, post_id: int):
+        """Conta o número de comentários para um post específico."""
+        with self.get_db() as db:
+            return db.query(Interaction).filter(
+                Interaction.post_id == post_id,
+                Interaction.type == 'comment_post',
+                Interaction.parent_interaction_id == None # Apenas comentários de nível superior
+            ).count()
+
+    def get_reply_amout_for_comment(self, post_id: int, comment_id: int):
+        """Conta o número de respostas para um comentário específico."""
+        with self.get_db() as db:
+            return db.query(Interaction).filter(
+                Interaction.post_id == post_id,
+                Interaction.type == 'reply_comment',
+                Interaction.parent_interaction_id == comment_id
+            ).count()
