@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block content %}
+<body class="bg-gray-100">
+    <div class="max-w-2xl mx-auto p-6 mt-10 bg-white rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-4">Criar Novo Post</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST" action="{{ url_for('posts.create_post') }}" enctype="multipart/form-data" class="max-w-2xl mx-auto p-6 bg-gray-50 rounded-lg shadow-inner mt-6">
+            {{ form.csrf_token }}
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Criar um novo post</h2>
+            <div class="mb-4">
+                {% if form.titulo.errors %}
+                    <ul class="error-message">
+                        {% for error in form.titulo.errors %}
+                            <li class="text-red-500">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <input type="text" name="titulo" minlength="3" maxlength="100" placeholder="Digite seu título aqui" class="w-full p-2 border text-gray-700 rounded" required>
+            </div>
+            <div class="mb-4 flex space-x-4">
+                <div class="w-1/2">
+                    {% if form.tags.errors %}
+                        <ul class="error-message">
+                            {% for error in form.tags.errors %}
+                                <li class="text-red-500">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <select class="w-full p-2 border text-gray-700 rounded" name="tags" required>
+                        <option value="" selected disabled>Selecione uma categoria...</option>
+                        {% for value in form.tags.iter_choices() %}
+                            <option value="{{ value[0] }}">{{ value[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="w-1/2 relative">
+                    {% if form.optionaltags.errors %}
+                        <ul class="error-message">
+                            {% for error in form.optionaltags.errors %}
+                                <li class="text-red-500">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <select class="w-full p-2 border text-gray-700 rounded appearance-none" id="optionalTags" size="1" onchange="toggleSelectedTag(this)">
+                        <option value="" disabled selected>Tags opcionais...</option>
+                        {% for value in allowed_categories %}
+                            <option value="{{ value }}">{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="optionaltags" id="hiddenOptionalTags">
+                    <div id="selectedTags" class="mt-2 flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+            <div class="mb-4">
+                {% if form.conteudo.errors %}
+                    <ul class="error-message">
+                        {% for error in form.conteudo.errors %}
+                            <li class="text-red-500">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <textarea name="conteudo" minlength="30" maxlength="1000" placeholder="Selecione uma categoria antes de escrever." class="w-full h-40 p-2 border text-gray-700 rounded" required></textarea>
+            </div>
+            <div class="mb-4">
+                {% if form.images.errors %}
+                    <ul class="error-message">
+                        {% for error in form.images.errors %}
+                            <li class="text-red-500">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <input type="file" name="images" accept="image/*" multiple onchange="previewImages(event)" class="mb-2 border rounded p-2 hover:bg-gray-200 transition">
+                <div id="imagePreview" class="flex space-x-2"></div>
+            </div>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer">Publicar</button>
+        </form>
+
+        <script>
+            let selectedTags = [];
+
+            function toggleSelectedTag(select) {
+                const value = select.value;
+                if (!value) return;
+
+                const index = selectedTags.indexOf(value);
+                if (index === -1) {
+                    if (selectedTags.length >= 5) {
+                        alert('Maximum 5 optional tags allowed!');
+                        select.value = '';
+                        return;
+                    }
+                    selectedTags.push(value);
+                } else {
+                    selectedTags.splice(index, 1);
+                }
+
+                updateSelectedTagsDisplay();
+                select.value = '';
+            }
+
+            function updateSelectedTagsDisplay() {
+                const display = document.getElementById('selectedTags');
+                const hiddenInput = document.getElementById('hiddenOptionalTags');
+                display.innerHTML = '';
+
+                selectedTags.forEach(tag => {
+                    const tagElement = document.createElement('span');
+                    tagElement.className = 'bg-blue-200 px-2 py-1 rounded flex items-center';
+                    tagElement.textContent = tag;
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = '×';
+                    removeButton.className = 'ml-2 text-red-400 hover:text-red-300';
+                    removeButton.onclick = () => {
+                        selectedTags = selectedTags.filter(t => t !== tag);
+                        updateSelectedTagsDisplay();
+                    };
+                    tagElement.appendChild(removeButton);
+                    display.appendChild(tagElement);
+                });
+
+                hiddenInput.value = selectedTags.join(',');
+            }
+
+            function previewImages(event) {
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = '';
+                const files = event.target.files;
+                if (files.length > 4) {
+                    alert('Maximum 4 images allowed!');
+                    event.target.value = '';
+                    return;
+                }
+                for (let i = 0; i < files.length; i++) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(files[i]);
+                    img.style.width = '100px';
+                    img.style.height = '100px';
+                    img.onmouseover = () => img.style.transform = 'scale(1.1)';
+                    img.onmouseout = () => img.style.transform = 'scale(1)';
+                    preview.appendChild(img);
+                }
+            }
+
+            // Drag and drop image handling
+            const form = document.querySelector('form');
+            form.addEventListener('dragover', (e) => e.preventDefault());
+            form.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const files = e.dataTransfer.files;
+                const input = document.querySelector('input[type="file"]');
+                const dataTransfer = new DataTransfer();
+                for (let i = 0; i < files.length && i < 4; i++) {
+                    dataTransfer.items.add(files[i]);
+                }
+                input.files = dataTransfer.files;
+                previewImages({ target: input });
+            });
+            
+            const textarea = document.querySelector('textarea');
+            textarea.addEventListener('input', (e) => {
+                if (e.data === '@') {
+                    const popup = document.createElement('div');
+                    popup.className = 'absolute bg-gray-800 border border-gray-700 p-2 rounded';
+                    popup.innerHTML = '<div>@pearson</div><div>@john</div>';
+                    popup.style.top = textarea.getBoundingClientRect().bottom + 'px';
+                    popup.style.left = textarea.getBoundingClientRect().left + 'px';
+                    document.body.appendChild(popup);
+                    setTimeout(() => popup.remove(), 2000);
+                }
+            });
+        </script>
+    </div>
+</body>
+{% endblock %}
