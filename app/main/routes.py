@@ -1,6 +1,63 @@
 from flask import render_template, session
 from app.main import bp
+from app.extensions import login_required, db_manager
+from app.recommendation import RecommendationEngine, CollaborativeFilteringStrategy, ContentBasedStrategy
+
+# Inicializa o sistema de recomendação e registra as estratégias
+recommendation_engine = RecommendationEngine(db_manager)
+recommendation_engine.register_strategy(CollaborativeFilteringStrategy(db_manager))
+recommendation_engine.register_strategy(ContentBasedStrategy(db_manager))
+
+def get_interactions(post_id):
+    likes = db_manager.count_reactions_for_post(post_id, 'like_post')
+    dislikes = db_manager.count_reactions_for_post(post_id, 'dislike_post')
+    comments = db_manager.count_comments_for_post(post_id)
+    user_reaction = db_manager.get_user_post_reaction(session.get('id'), post_id)
+
+    if user_reaction:
+        user_reaction = user_reaction.type
+
+    return {
+        'likes': likes,
+        'dislikes': dislikes,
+        'comments': comments,
+        'user_reaction': user_reaction
+    }
+
+@login_required
+def get_recommendations():
+    # Exemplo: pega o user_id do parâmetro de query ou do token (ajuste conforme autenticação)
+    user_id = session.get('id')
+
+    # Obtém os posts recomendados
+    post_ids = recommendation_engine.recommend_posts(user_id, top_n=20)
+    posts = []
+    with db_manager.get_db() as db:
+        for post_id in post_ids:
+            post = db_manager.get_post_by_id(post_id)
+            if post:
+                post_reactions = get_interactions(post_id)
+
+                posts.append({
+                    'id': post.id,
+                    'title': post.title,
+                    'content': post.content,
+                    'tag': post.tag,
+                    'optional_tags': post.optional_tags,
+                    'created_at': post.created_at,
+                    'author': post.author_user.username,
+                    'image_urls': post.image_urls,
+                    'likes': post_reactions["likes"],
+                    'dislikes': post_reactions["dislikes"],
+                    'comments': post_reactions["comments"],
+                    'user_reaction': post_reactions["user_reaction"]
+                })
+    return posts
 
 @bp.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html', login=session.get('id'))
+    if session.get('id'):
+        recommendations = get_recommendations()
+        return render_template('timeline.html', posts=recommendations, user_id=session.get('id'))
+    else:
+        return render_template('index.html')

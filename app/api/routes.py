@@ -2,6 +2,38 @@ from flask import request, jsonify, session
 from app.extensions import login_required, db_manager
 from app.api import bp
 
+def get_post_with_details(post_id):
+    post = db_manager.get_post_by_id(post_id)
+    if not post:
+        return None
+    
+    user_id = session.get('id') # Obter o ID do usuário logado
+
+    # Carregar contagens de likes/dislikes do post e reação do usuário
+    post_likes = db_manager.count_reactions_for_post(post_id, 'like_post')
+    post_dislikes = db_manager.count_reactions_for_post(post_id, 'dislike_post')
+    user_post_reaction_type = ""
+    if user_id:
+        user_post_reaction = db_manager.get_user_post_reaction(user_id, post_id)
+        if user_post_reaction:
+            user_post_reaction_type = user_post_reaction.type
+
+    # Carregar comentários e suas respostas com contagens e reações do usuário
+    comments_with_details = get_post_comments(post_id, offset=0, limit=10)
+    comment_count = db_manager.get_comment_amount_for_post(post_id)
+
+    return {
+        'post': post,
+        'comments_with_details': comments_with_details,
+        'post_likes': post_likes,
+        'post_dislikes': post_dislikes,
+        'user_post_reaction': user_post_reaction_type,
+        'comment_count': comment_count,
+        'next_offset': len(comments_with_details),
+        'total_comments': comment_count
+    }
+
+
 def get_post_comments(post_id, offset=0, limit=10):
     comentarios = db_manager.get_paginated_comments(post_id, offset, limit)
     formatted_comments = []
@@ -161,6 +193,51 @@ def reply_comment_api(parent_comment_id):
     else:
         return jsonify({"success": False, "message": result}), 500
 
+# Rota para pegar detalhes de um post
+@bp.route('/posts/<int:post_id>', methods=['GET'])
+def get_post_details_api(post_id):
+    post_details = get_post_with_details(post_id)
+    if not post_details:
+        return jsonify({"success": False, "message": "Post não encontrado."}), 404
+    
+    return jsonify({
+        "success": True,
+        "post": {
+            "id": post_details['post'].id,
+            "title": post_details['post'].title,
+            "content": post_details['post'].content,
+            "tag": post_details['post'].tag,
+            "optional_tags": post_details['post'].optional_tags,
+            "image_urls": post_details['post'].image_urls,
+            "created_at": post_details['post'].created_at.strftime('%d/%m/%Y'),
+            "username": post_details['post'].author_user.username,
+        },
+        "comments": post_details['comments_with_details'],
+        "likes": post_details['post_likes'],
+        "dislikes": post_details['post_dislikes'],
+        "user_post_reaction": post_details['user_post_reaction'],
+        "next_offset": post_details['next_offset'],
+        "total_comments": post_details['total_comments']
+    }), 200
+
+# Rota para buscar comentários
+@bp.route('/posts/<int:post_id>/comments', methods=['GET'])
+@login_required
+def get_post_comments_api(post_id):
+    offset = request.args.get('offset', 0, type=int)
+    limit = request.args.get('limit', 10, type=int)
+
+    comments = get_post_comments(post_id, offset, limit)
+
+    return jsonify({"success": True, "comments": comments}), 200
+
+@bp.route('/posts/<int:post_id>/comment/<int:comment_id>/replies', methods=['GET'])
+@login_required
+def get_comment_replies_api(post_id, comment_id):
+    replies_data = get_comment_replies(post_id, comment_id, offset=0, limit=0)
+
+    return jsonify({"success": True, "replies": replies_data}), 200
+
 @bp.route('/posts/<int:post_id>/counts', methods=['GET'])
 @login_required
 def get_post_interactions_api(post_id):
@@ -201,21 +278,3 @@ def get_comment_interactions_api(comment_id):
         "dislikes": dislikes_count,
         "user_reaction": user_reaction
     }), 200
-
-# Rota para buscar comentários
-@bp.route('/posts/<int:post_id>/comments', methods=['GET'])
-@login_required
-def get_post_comments_api(post_id):
-    offset = request.args.get('offset', 0, type=int)
-    limit = request.args.get('limit', 10, type=int)
-
-    comments = get_post_comments(post_id, offset, limit)
-
-    return jsonify({"success": True, "comments": comments}), 200
-
-@bp.route('/posts/<int:post_id>/comment/<int:comment_id>/replies', methods=['GET'])
-@login_required
-def get_comment_replies_api(post_id, comment_id):
-    replies_data = get_comment_replies(post_id, comment_id, offset=0, limit=0)
-
-    return jsonify({"success": True, "replies": replies_data}), 200

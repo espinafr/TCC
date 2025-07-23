@@ -1,17 +1,12 @@
 {% extends "base.html" %}
 {% block additional_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
-<script>
-    const postId = {{ post.id }};
-    const total_comments = {{ total_comments }};
-    let rendered_comments = {{ next_offset }};
-</script>
 <script src="{{ url_for('static', filename='basics.js') }}"></script>
 <script src="{{ url_for('static', filename='postrequests.js') }}"></script>
 {% endblock %}
 {% block content %}
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl">
+    <div class="post-container bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl" data-postid="{{ post.id }}">
         <div class="flex justify-between items-start md:items-center mb-4">
             <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 md:mb-0">{{ post.title }}</h1>
             <span class="text-gray-500 text-sm md:text-base">
@@ -51,21 +46,21 @@
         </div>
 
         <div class="flex items-center gap-4 border-t border-gray-200 pt-4 mb-8">
-            <button class="interaction-button {% if user_post_reaction == 'like_post' %}active{% endif %}" id="likeButton">
+            <button class="interaction-button{% if user_post_reaction == 'like_post' %} active{% endif %}" id="likeButton">
                 <i class="fa-solid fa-thumbs-up"></i>
                 <span id="likeCount">{{ post_likes }}</span>
             </button>
-            <button class="interaction-button {% if user_post_reaction == 'dislike_post' %}active{% endif %}" id="dislikeButton">
+            <button class="interaction-button{% if user_post_reaction == 'dislike_post' %} active{% endif %}" id="dislikeButton">
                 <i class="fa-solid fa-thumbs-down"></i>
                 <span id="dislikeCount">{{ post_dislikes }}</span>
             </button>
-            <div class="relative">
-                <button class="interaction-button" id="shareButton">
+            <div class="relative shareContainer">
+                <button class="interaction-button shareButton" id="shareButton">
                     <i class="fa-solid fa-share-alt"></i>
                     <span>Compartilhar</span>
                 </button>
-                <div id="shareContextMenu" class="share-context-menu hidden">
-                    <button onclick="copyPostUrl()">
+                <div id="shareContextMenu{{ post.id }}" class="share-context-menu hidden">
+                    <button onclick="copyPostUrl('{{ post.id }}')">
                         <i class="fa-solid fa-copy"></i>
                         Copiar URL do Post
                     </button>
@@ -169,7 +164,7 @@
 
     <div id="imageModal" class="modal hidden">
         <span class="close-button" onclick="closeModal('imageModal')">&times;</span>
-        <img class="modal-content" id="fullImage">
+        <img class="image-modal-content" id="fullImage">
     </div>
 
     <div id="replyModal" class="modal hidden">
@@ -188,4 +183,12 @@
 
     <div id="notificationContainer"></div>
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar eventos e funcionalidades
+        attachPostEventListeners('{{ post.id }}', Number("{{ total_comments }}"), Number("{{ next_offset }}"));
+        toggleCommentButton();
+        toggleReplyButton();
+    });
+</script>
 {% endblock %}

@@ -52,28 +52,6 @@ function formatNumber(num) {
     return num;
 }
 
-// Funções para Modais
-function openModal(modalId, imageSrc = null) {
-    const modal = document.getElementById(modalId);
-    if (modalId === 'imageModal') {
-        const fullImage = document.getElementById('fullImage');
-        fullImage.src = imageSrc;
-    }
-    modal.classList.remove('hidden');
-    modal.classList.add('is-visible');
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.classList.add('hidden');
-    modal.classList.remove('is-visible');
-    
-    if (modalId === 'replyModal') {
-        resetTextarea(document.getElementById('replyTextarea'));
-        toggleReplyButton();
-    }
-}
-
 // Notificações
 function toggleNotification(id, message = "Carregando") {
     const container = document.getElementById('notificationContainer');

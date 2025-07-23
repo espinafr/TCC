@@ -50,7 +50,7 @@ class Post(Base):
     interactions = relationship("Interaction", foreign_keys="[Interaction.post_id]", back_populates="post_being_interacted")
 
     def __repr__(self):
-        return f"<Post(id={self.id}, title='{self.title}', username='{self.username}')>"
+        return f"<Post(id={self.id}, title='{self.title}', user_id='{self.user_id}')>"
 
 class Interaction(Base):
     __tablename__ = "interactions"
@@ -274,19 +274,19 @@ class DatabaseManager:
                     # Se a reação existente for do mesmo tipo, o usuário está "desfazendo" a reação.
                     db.delete(existing_reaction)
                     db.commit()
-                    return True, "Reação removida com sucesso!"
+                    return True, ""
                 else:
                     # Se a reação existente for de um tipo diferente, o usuário está "trocando" a reação.
                     existing_reaction.type = reaction_type
                     existing_reaction.timestamp = datetime.now() # Atualiza o timestamp da interação
                     db.commit()
-                    return True, f"Reação alterada para '{reaction_type}' com sucesso!"
+                    return True, reaction_type
             else:
                 # Se não houver reação existente, crie uma nova.
                 success, result = self._register_interaction(user_id, post_id, reaction_type, None, None)
                 if not success:
                     return False, result
-                return True, result
+                return True, reaction_type
 
     def toggle_comment_reaction(self, user_id: int, comment_id: int, reaction_type: str):
         """
@@ -377,6 +377,15 @@ class DatabaseManager:
                 Interaction.parent_interaction_id == None # Apenas reações diretas ao post
             ).count()
 
+    def count_comments_for_post(self, post_id: int):
+        """Conta o número de comentários para um post específico."""
+        with self.get_db() as db:
+            return db.query(Interaction).filter(
+                Interaction.post_id == post_id,
+                Interaction.type == 'comment_post',
+                Interaction.parent_interaction_id == None # Apenas comentários de nível superior
+            ).count()
+
     def count_reactions_for_comment(self, comment_id: int, reaction_type: str):
         """Conta o número de likes/dislikes para um comentário."""
         with self.get_db() as db:
@@ -403,15 +412,6 @@ class DatabaseManager:
                 Interaction.parent_interaction_id == comment_id, # Associa a um comentário/resposta pai
                 Interaction.type.in_(['like_comment', 'dislike_comment']) 
             ).first()
-
-    def get_comment_count(self, post_id: int):
-        """Conta o número de comentários para um post específico."""
-        with self.get_db() as db:
-            return db.query(Interaction).filter(
-                Interaction.post_id == post_id,
-                Interaction.type == 'comment_post',
-                Interaction.parent_interaction_id == None # Apenas comentários de nível superior
-            ).count()
 
     # Método para obter comentários paginados por like
     def get_paginated_comments(self, post_id, offset=0, limit=5):

@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, session
 from app.extensions import login_required, db_manager, s3, current_app
-from app.api.routes import get_post_comments
+from app.api.routes import get_post_with_details
 from botocore.exceptions import ClientError
 import app.data_sanitizer as sanitizer
 from app.posts import bp
@@ -75,31 +75,16 @@ def create_post():
 @bp.route('/post/<int:post_id>', methods=['GET'])
 @login_required
 def view_post(post_id):
-    post = db_manager.get_post_by_id(post_id)
+    post = get_post_with_details(post_id)
     if not post:
         flash('Post não encontrado.', 'error') # Considerar usar abort()
         return redirect(url_for('main.index'))
     
-    user_id = session.get('id') # Obter o ID do usuário logado
-
-    # Carregar contagens de likes/dislikes do post e reação do usuário
-    post_likes = db_manager.count_reactions_for_post(post_id, 'like_post')
-    post_dislikes = db_manager.count_reactions_for_post(post_id, 'dislike_post')
-    user_post_reaction_type = None
-    if user_id:
-        user_post_reaction = db_manager.get_user_post_reaction(user_id, post_id)
-        if user_post_reaction:
-            user_post_reaction_type = user_post_reaction.type
-
-    # Carregar comentários e suas respostas com contagens e reações do usuário
-    comments_with_details = get_post_comments(post_id, offset=0, limit=10)
-    comment_count = db_manager.get_comment_count(post_id)
-
     return render_template('post_details.html',
-                           post=post,
-                           comments=comments_with_details, # Passa os comentários já com likes/dislikes e user_reaction
-                           post_likes=post_likes,
-                           post_dislikes=post_dislikes,
-                           user_post_reaction=user_post_reaction_type,
-                           next_offset=len(comments_with_details),
-                           total_comments=comment_count)
+                           post=post['post'],
+                           comments=post['comments_with_details'], 
+                           post_likes=post['post_likes'],
+                           post_dislikes=post['post_dislikes'],
+                           user_post_reaction=post['user_post_reaction'],
+                           next_offset=post['next_offset'],
+                           total_comments=post['total_comments'])

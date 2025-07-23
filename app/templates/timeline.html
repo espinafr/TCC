@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block additional_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
+<script src="{{ url_for('static', filename='basics.js') }}"></script>
+<script src="{{ url_for('static', filename='postrequests.js') }}"></script>
+{% endblock %}
+{% block content %}
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8">Timeline</h1>
+        <div id="timelinePosts">
+            {% for post in posts %}
+            <div class="timeline-post post-container flex flex-col md:flex-row gap-6 mb-10 p-6 rounded-lg bg-gray-50 shadow-sm border border-gray-200 hover:shadow-lg cursor-pointer transition group" data-postid="{{ post.id }}">
+                <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="comment-profile-pic"><i class="fa-solid fa-user"></i></span>
+                            <span class="font-semibold text-gray-800">{{ post.author }}</span>
+                            <span class="text-xs text-gray-500">• {{ post.created_at.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-900 mb-2">{{ post.title }}</h2>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <span class="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">{{ post.tag.upper() }}</span>
+                            {% if post.optional_tags %}
+                                {% for tag in post.optional_tags.split(',') %}
+                                    {% if tag.strip() %}
+                                        <span class="bg-gray-300 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full">{{ tag.strip().upper() }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="post-content text-gray-700 leading-relaxed text-base md:text-lg my-4">{% if post.content|length > 350 %}{{ post.content[:350] }}... <a target="_blank" href="{{ url_for('posts.view_post', post_id=post.id) }}" class="text-blue-500 hover:underline">Ler Mais</a>{% else %}{{ post.content }}{% endif %}</div>
+                    </div>
+                    <div class="flex items-center gap-4 interactions-container">
+                        <button class="interaction-button like-button {% if post.user_reaction == 'like_post' %}active{% endif %}" id="like{{ post.id }}Button">
+                            <i class="fa-solid fa-thumbs-up"></i>
+                            <span id="like{{ post.id }}Count">{{ post.likes }}</span>
+                        </button>
+                        <button class="interaction-button dislike-button {% if post.user_reaction == 'dislike_post' %}active{% endif %}" id="dislike{{ post.id }}Button">
+                            <i class="fa-solid fa-thumbs-down"></i>
+                            <span id="dislike{{ post.id }}Count">{{ post.dislikes }}</span>
+                        </button>
+                        <div class="relative shareContainer">
+                            <button class="interaction-button shareButton">
+                                <i class="fa-solid fa-share-alt"></i>
+                                <span>Compartilhar</span>
+                            </button>
+                            <div id="shareContextMenu{{ post.id }}" class="share-context-menu hidden">
+                                <button onclick="copyPostUrl('{{ post.id }}')">
+                                    <i class="fa-solid fa-copy"></i>
+                                    Copiar URL do Post
+                                </button>
+                            </div>
+                        </div>
+                        <button class="interaction-button" id="saveButton{{ post.id }}">
+                            <i class="fa-solid fa-bookmark"></i>
+                            <span>Salvar</span>
+                        </button>
+                    </div>
+                </div>
+                {% if post.image_urls %}
+                <div class="image-container relative w-full md:w-48 h-48 flex items-center justify-center bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onclick="openModal('imageModal', '{{ post.image_urls[0] }}')">
+                    <img src="{{ post.image_urls[0] }}" alt="Imagem do Post" class="object-cover w-full h-full">
+                    {% if post.image_urls|length > 1 %}
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="bg-black bg-opacity-60 text-white text-lg font-bold px-4 py-2 rounded-full">+{{ post.image_urls|length - 1 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('main.index') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">Voltar para a página inicial</a>
+        </div>
+    </div>
+    <div id="imageModal" class="modal hidden">
+        <span class="close-button" onclick="closeModal('imageModal')">&times;</span>
+        <img class="image-modal-content" id="fullImage">
+    </div>
+    <div id="replyModal" class="modal hidden">
+        <div class="reply-modal-content">
+            <span class="close-button-modal" onclick="closeModal('replyModal')">&times;</span>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Responder Comentário</h3>
+            <div class="comment-input-container">
+                <div class="comment-profile-pic">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <textarea id="replyTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva sua resposta!" oninput="adjustTextareaHeight(this); toggleReplyButton();"></textarea>
+                <button id="replyButton" class="comment-button">Responder</button>
+            </div>
+        </div>
+    </div>
+    <div id="commentModal" class="modal hidden">
+            <div class="reply-modal-content">
+                <span class="close-button-modal" onclick="closeModal('commentModal')">&times;</span>
+                <div id="commentModalContent">
+                    <!-- Conteúdo do comentário e suas respostas será carregado aqui -->
+                </div>
+            </div>
+        </div>
+    <div id="postModal" class="modal hidden">
+        <div class="post-modal-content relative">
+            <span class="close-button" onclick="closeModal('postModal')">&times;</span>
+        </div>
+    </div>
+    <div id="notificationContainer"></div>
+</body>
+{% endblock %}
