@@ -3,6 +3,7 @@ from app.extensions import login_required, db_manager, s3, current_app
 from app.api.routes import get_post_with_details
 from botocore.exceptions import ClientError
 import app.data_sanitizer as sanitizer
+from app.database import Post
 from app.posts import bp
 from PIL import Image
 import uuid
@@ -54,23 +55,29 @@ def create_post():
                 except Exception as e:
                     flash(f'Erro inesperado ao processar {file.filename}: {e}', 'danger')
                     print(f"Erro geral: {e}")
+        
+        with db_manager.get_db() as db:
+            image_urls_json = json.dumps(uploaded_files_info) if uploaded_files_info else None
 
-        id = db_manager.save_post(
-            session['id'],
-            form.titulo.data.strip(),
-            form.conteudo.data.strip(),
-            form.tags.data,
-            form.optionaltags.data,
-            image_urls_list=uploaded_files_info
-        )
-
-        if id:
-            flash('Post criado com sucesso!', 'success')
-        else:
-            flash('Erro ao criar post. Tente novamente.', 'danger')
-        return redirect(url_for('main.index'))
+            try:
+                new_post = Post(
+                    user_id=session['id'],
+                    title=form.titulo.data.strip(),
+                    content=form.conteudo.data.strip(),
+                    tag=form.tags.data,
+                    optional_tags=form.optionaltags.data,
+                    image_urls=image_urls_json
+                )
+                db.add(new_post)
+                db.commit()
+                db.refresh(new_post) # Recarrega o objeto para ter o ID gerado pelo DB
+                flash('Post criado com sucesso!', 'success')
+                return redirect(url_for('posts.view_post', post_id=new_post.id))
+            except Exception as e:
+                db.rollback()
+                flash('Erro ao criar post. Tente novamente.', 'danger')
     
-    return render_template('post.html', form=form)
+    return render_template('post.html', form=form, allowed_categories=sanitizer.ALLOWED_CATEGORIES)
 
 @bp.route('/post/<int:post_id>', methods=['GET'])
 @login_required

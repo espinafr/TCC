@@ -46,6 +46,7 @@ def get_recommendations():
                     'optional_tags': post.optional_tags,
                     'created_at': post.created_at,
                     'author': post.author_user.username,
+                    'userid': post.author_user.id,
                     'image_urls': post.image_urls,
                     'likes': post_reactions["likes"],
                     'dislikes': post_reactions["dislikes"],
@@ -54,10 +55,33 @@ def get_recommendations():
                 })
     return posts
 
+def get_top_rated():
+    posts = []
+    for post in db_manager.get_posts_with_most_likes():
+        post_reactions = get_interactions(post.id)
+        posts.append({
+            'id': post.id,
+            'title': post.title,
+            'content': post.content,
+            'tag': post.tag,
+            'optional_tags': post.optional_tags,
+            'created_at': post.created_at,
+            'author': post.author_user.username,
+            'userid': post.author_user.id,
+            'image_urls': post.image_urls,
+            'likes': post_reactions["likes"],
+            'dislikes': post_reactions["dislikes"],
+            'comments': post_reactions["comments"],
+            'user_reaction': ""
+        })
+    print(posts)
+    return posts
+
 @bp.route('/', methods=['GET', 'POST'])
 def index():
     if session.get('id'):
         recommendations = get_recommendations()
-        return render_template('timeline.html', posts=recommendations, user_id=session.get('id'))
+        return render_template('timeline.html', posts=recommendations)
     else:
-        return render_template('index.html')
+        top_rated = get_top_rated()
+        return render_template('timeline.html', posts=top_rated)

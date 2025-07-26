@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from argon2 import PasswordHasher, exceptions
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, desc, func, case
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, SmallInteger, desc, func, case
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship, joinedload
 from sqlalchemy.exc import IntegrityError, OperationalError
 import contextlib
@@ -22,13 +22,21 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
-    gender = Column(String(1))
+    power = Column(SmallInteger, default=0)
     creation_date = Column(DateTime, default=datetime.now)
     active = Column(Boolean, default=False)
 
     # Relacionamentos
     posts = relationship("Post", back_populates="author_user")
     interactions = relationship("Interaction", foreign_keys="[Interaction.user_id]", back_populates="user_who_interacted")
+    
+    # Modereção
+    moderations_received = relationship("ModerationHistory", foreign_keys="[ModerationHistory.user_id]", back_populates="offending_user")
+    moderations_made = relationship("ModerationHistory",foreign_keys="[ModerationHistory.moderator_id]", back_populates="moderator")
+    
+    reports_handled = relationship("Report", foreign_keys="[Report.moderator_id]", back_populates="moderator")
+    reports_made = relationship("Report", foreign_keys="[Report.reporting_user_id]", back_populates="reporting_user")
+    reports_against = relationship("Report", foreign_keys="[Report.perpetrator_id]", back_populates="reported_user")
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
@@ -40,15 +48,16 @@ class Post(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
-    tag = Column(String(12))
+    tag = Column(String(25))
     optional_tags = Column(String(75))
     created_at = Column(DateTime, default=datetime.now)
-    image_urls = Column(Text, nullable=True) 
+    image_urls = Column(Text, nullable=True)
+    is_deleted = Column(Boolean, default=False)
 
     # Relacionamentos
     author_user = relationship("User", back_populates="posts")
     interactions = relationship("Interaction", foreign_keys="[Interaction.post_id]", back_populates="post_being_interacted")
-
+    
     def __repr__(self):
         return f"<Post(id={self.id}, title='{self.title}', user_id='{self.user_id}')>"
 
@@ -61,6 +70,7 @@ class Interaction(Base):
     parent_interaction_id = Column(Integer, ForeignKey('interactions.id'), nullable=True) 
     type = Column(String(50), nullable=False)  # 'like_post', 'dislike_post', 'comment_post', 'like_comment', 'dislike_comment', 'reply_comment', 'view_post', 'share_post'
     value = Column(String(352), nullable=True) # "@(usuário) " + 300 caracteres de comentários
+    is_deleted = Column(Boolean, default=False)
     timestamp = Column(DateTime, default=datetime.now)
 
     # Relacionamentos
@@ -73,6 +83,46 @@ class Interaction(Base):
 
     def __repr__(self):
         return f"<Interaction(id='{self.id}', post_id='{self.post_id}', user_id='{self.user_id}', type='{self.type}', parent_id={self.parent_interaction_id})>"
+
+class Report(Base):
+    __tablename__ = 'reports'
+    id = Column(Integer, primary_key=True, index=True)
+    reporting_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    type = Column(String(50), nullable=False) # 'usuario', 'post', 'interacao'
+    reason = Column(String(50), nullable=True)
+    description = Column(String(300), nullable=True)
+    reported_item_id = Column(Integer, nullable=False)
+    perpetrator_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    
+    status = Column(String(50), default='pending', nullable=False) # pending, in_review, resolved, rejected, archived
+    moderator_id = Column(Integer, ForeignKey('users.id'), nullable=True) # O moderador que lidou com o relatório
+    resolved_at = Column(DateTime, nullable=True)
+    creation_date = Column(DateTime, default=datetime.now)
+
+    #Relacionamentos
+    reporting_user = relationship("User", foreign_keys=[reporting_user_id], back_populates="reports_made")
+    reported_user = relationship("User", foreign_keys=[perpetrator_id], back_populates="reports_against")
+    moderator = relationship("User", foreign_keys=[moderator_id], back_populates="reports_handled")
+    
+    def __repr__(self):
+        return f"<Report(id={self.id}, type='{self.type}', status='{self.status}', reporting_user_id={self.reporting_user_id})>"
+
+class ModerationHistory(Base):
+    __tablename__ = 'moderation_history'
+    id = Column(Integer, primary_key=True, index=True)
+    action_type = Column(String(50), nullable=False) # mute, shadow-ban, ban, deactivation
+    reason = Column(Text, nullable=False)
+    is_active = Column(Boolean, default=True)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    moderator_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column(DateTime, default=datetime.now)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    post_id = Column(Integer, ForeignKey('posts.id'), nullable=True)
+    
+    # Relacionamentos
+    moderator = relationship("User", foreign_keys=[moderator_id], back_populates="moderations_made")
+    offending_user = relationship("User", foreign_keys=[user_id], back_populates="moderations_received")
 
 class DatabaseManager:
     def __init__(self):
@@ -157,7 +207,7 @@ class DatabaseManager:
                     return False, f"Conta com \"{identification}\" já registrada."
             return True, True # Usuário não encontrado, pode prosseguir
 
-    def save_user(self, username, email, password, gender, active=False):
+    def save_user(self, username, email, password, power = 0, active=False):
         """Salva um novo usuário no banco de dados.
         Assume que as validações de existência e ativação já foram feitas externamente
         pelo chamador (ex: na rota de registro).
@@ -169,7 +219,7 @@ class DatabaseManager:
                     username=username,
                     email=email,
                     password=hashed_password,
-                    gender=gender,
+                    power=power,
                     active=active
                 )
                 db.add(new_user)
@@ -214,33 +264,10 @@ class DatabaseManager:
                     return None # Senha incorreta
             return None # Usuário não encontrado ou não ativo
 
-    def save_post(self, user_id, title, content, tag, optional_tags, image_urls_list=None):
-        """Salva um novo post no banco de dados."""
-        with self.get_db() as db:
-            image_urls_json = json.dumps(image_urls_list) if image_urls_list else None
-
-            try:
-                new_post = Post(
-                    user_id=user_id,
-                    title=title,
-                    content=content,
-                    tag=tag,
-                    optional_tags=optional_tags,
-                    image_urls=image_urls_json
-                )
-                db.add(new_post)
-                db.commit()
-                db.refresh(new_post) # Recarrega o objeto para ter o ID gerado pelo DB
-                return new_post.id
-            except Exception as e:
-                db.rollback()
-                print(f"Erro ao salvar post: {e}")
-                return None
-
     def get_post_by_id(self, id):
         """Obtém um post pelo seu ID."""
         with self.get_db() as db:
-            post = db.query(Post).options(joinedload(Post.author_user)).filter(Post.id == id).first()
+            post = db.query(Post).options(joinedload(Post.author_user)).filter(Post.id == id, Post.is_deleted == False).first()
             if post:
                 if post.image_urls:
                     post.image_urls = json.loads(post.image_urls)
@@ -254,6 +281,26 @@ class DatabaseManager:
             return db.query(Interaction).options(joinedload(Interaction.user_who_interacted)).filter(
                 Interaction.id == interaction_id
             ).first()
+
+    def delete_post_by_id(self, id):
+        """Deleta posts pelo seu ID"""
+        with self.get_db() as db:
+            post = db.query(Post).filter(Post.id == id, Post.is_deleted == False).first()
+            if post:
+                post.is_deleted = True
+                db.commit()
+                return True
+            return False
+    
+    def delete_interaction_by_id(self, id):
+        """Deleta posts pelo seu ID"""
+        with self.get_db() as db:
+            interaction = db.query(Interaction).filter(Interaction.id == interaction_id, Post.is_deleted == False).first()
+            if interaction:
+                interaction.is_deleted = True
+                db.commit()
+                return True
+            return False
 
     def toggle_post_reaction(self, user_id: int, post_id: int, reaction_type: str):
         """
@@ -517,6 +564,10 @@ class DatabaseManager:
             replies = replies.all()
             return replies
     
+    def get_posts_with_most_likes(self, offset: int = 0, limit: int = 10):
+        with self.get_db() as db:
+            return db.query(Post).filter(Post.is_deleted == False).options(joinedload(Post.author_user)).offset(offset).limit(limit).all()
+    
     def get_comment_amount_for_post(self, post_id: int):
         """Conta o número de comentários para um post específico."""
         with self.get_db() as db:
@@ -534,3 +585,45 @@ class DatabaseManager:
                 Interaction.type == 'reply_comment',
                 Interaction.parent_interaction_id == comment_id
             ).count()
+    
+    # MODERAÇÃO
+    
+    def get_moderation_history(self, user_id):
+        with self.get_db() as db:
+            history = db.query(ModerationHistory).filter(ModerationHistory.user_id == user_id).order_by(ModerationHistory.created_at.desc()).all()
+            return history
+
+    def get_user_posts(self, user_id):
+        with self.get_db() as db:
+            posts = db.query(Post).filter(Post.user_id == user_id).order_by(Post.created_at.desc()).all()
+            return posts
+
+    def get_user_comments_n_replies(self, user_id):
+        with self.get_db() as db:
+            interactions = db.query(Interaction).filter(Interaction.user_id == user_id, Interaction.type.in_(['reply_comment', 'comment_post'])).order_by(Interaction.timestamp.desc()).all()
+            return interactions
+
+    def add_report(self, type, id_reported, reason, user_id):
+        with self.get_db() as db:
+            report = Report(type=type, id_reported=id_reported, reason=reason, user_id=user_id)
+            db.add(report)
+            db.commit()
+            db.refresh(report)
+            return report.id
+
+    def add_moderation_action(self, action_type, reason, is_active, start_date, end_date, moderator_id, user_id=None, post_id=None):
+        with self.get_db() as db:
+            action = ModerationHistory(
+                action_type=action_type,
+                reason=reason,
+                is_active=is_active,
+                start_date=start_date,
+                end_date=end_date,
+                moderator_id=moderator_id,
+                user_id=user_id,
+                post_id=post_id
+            )
+            db.add(action)
+            db.commit()
+            db.refresh(action)
+            return action.id

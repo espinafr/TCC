@@ -24,9 +24,10 @@ function closeModal(modalId) {
 }
 
 // Abre a interface de respostas e armazena o ID do comentário a ser respondido
-function openRepliesModal(parentCommentId) {
+function openRepliesModal(parentCommentId, customId = "") {
     const replyModal = document.getElementById('replyModal');
     replyModal.dataset.parentCommentId = parentCommentId; 
+    replyModal.dataset.parentCommentIdSufix = customId;
 
     openModal('replyModal');
 }
@@ -155,13 +156,16 @@ function renderComment(comment_content, postid) {
     const commentDislikeActiveClass = comment_content.user_reaction === 'dislike_comment' ? 'active' : '';
 
     let html = `
-        <div class="comment-item flex gap-4 mb-6" data-comment-id="${comment_content.comment.id}">
+        <div class="comment-item flex gap-4 mb-6" data-comment-id="${comment_content.comment.id}" data-comment-userid="${comment_content.comment.userid}">
             <div class="comment-profile-pic">
                 <i class="fa-solid fa-user"></i>
             </div>
             <div class="flex-grow">
                 <div id="interaction${comment_content.comment.id}box">
-                    <p class="font-semibold text-gray-800 mb-1">${comment_content.comment.username}</p>
+					<div class="flex justify-between">
+						<p class="font-semibold text-gray-800 mb-1">${comment_content.comment.username}</p>
+						<button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
+					</div>
                     <p class="text-gray-700 mb-2">${comment_content.comment.value}</p>
                     <div class="flex items-center gap-4 text-sm text-gray-500">
                         <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${commentLikeActiveClass}" id="interaction${comment_content.comment.id}likeButton">
@@ -184,12 +188,15 @@ function renderComment(comment_content, postid) {
         const replyDislikeActiveClass = comment_content.reply_user_reaction === 'dislike_comment' ? 'active' : '';
 
         html += `
-            <div class="comment-item flex gap-4 mt-4 comment-reply" data-comment-id="${comment_content.most_liked_reply.reply.id}">
+            <div class="comment-item flex gap-4 mt-4 comment-reply" data-comment-id="${comment_content.most_liked_reply.reply.id}" data-comment-userid="${comment_content.most_liked_reply.reply.userid}">
                 <div class="comment-profile-pic">
                     <i class="fa-solid fa-user"></i>
                 </div>
                 <div class="flex-grow">
-                    <p class="font-semibold text-gray-800 mb-1">${comment_content.most_liked_reply.reply.username}</p>
+					<div class="flex justify-between">
+						<p class="font-semibold text-gray-800 mb-1">${comment_content.most_liked_reply.reply.username}</p>
+						<button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
+					</div>
                     <p class="text-gray-700 mb-2">${comment_content.most_liked_reply.reply.value}</p>
                     <div class="flex items-center gap-4 text-sm text-gray-500">
                         <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${replyLikeActiveClass}" id="interaction${comment_content.most_liked_reply.reply.id}likeButton">
@@ -222,12 +229,15 @@ function renderReply(reply_content) {
     const replyDislikeActiveClass = reply_content.user_reaction === 'dislike_comment' ? 'active' : '';
 
     let html = `
-        <div class="comment-item flex gap-4 mt-4 comment-reply" data-comment-id="${reply_content.reply.id}">
+        <div class="comment-item flex gap-4 mt-4 comment-reply" data-comment-id="${reply_content.reply.id}" data-comment-userid="${reply_content.reply.userid}">
             <div class="comment-profile-pic">
                 <i class="fa-solid fa-user"></i>
             </div>
             <div class="flex-grow">
-                <p class="font-semibold text-gray-800 mb-1">${reply_content.reply.username}</p>
+				<div class="flex justify-between">
+					<p class="font-semibold text-gray-800 mb-1">${reply_content.reply.username}</p>
+					<button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
+				</div>
                 <p class="text-gray-700 mb-2">${reply_content.reply.value}</p>
                 <div class="flex items-center gap-4 text-sm text-gray-500">
                     <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 ${replyLikeActiveClass}" id="interaction${reply_content.reply.id}likeButton">
@@ -279,12 +289,17 @@ function renderPost(post_package) {
     }
 
     return `
-    <div class="timeline-post post-container bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl" data-postid="${post_package.post.id}">
-        <div class="flex justify-between items-start md:items-center mb-4">
-            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 md:mb-0">${post_package.post.title}</h1>
-            <span class="text-gray-500 text-sm md:text-base">
-                ${post_package.post.created_at}
-            </span>
+    <div class="timeline-post post-container bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl" data-postid="${post_package.post.id}" data-post-userid="${post_package.post.userid}">
+        <div class="flex justify-right items-start mb-4">
+            <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 flex-grow flex-shrink min-w-0 pr-4 break-words line-clamp-3">${post_package.post.title}</h1>
+			<div class="flex items-center space-x-4">
+				<span class="text-gray-500 text-sm md:text-base">
+					${post_package.post.created_at}
+				</span>
+				<button class="options-button self-start text-gray-500 hover:text-blue-700 focus:outline-none">
+					<i class="fas fa-ellipsis-v text-lg"></i>
+				</button>
+			</div>
         </div>
         <div class="flex flex-wrap gap-2 mb-6">
             <span class="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">${post_package.post.tag.toUpperCase()}</span>
@@ -360,129 +375,159 @@ function attachShareEvent(btn) {
 }
 
 function attachLikeEvent(btn) {
-    btn.addEventListener('click', async function() {
-        const postId = btn.closest('.post-container').dataset.postid;
+	initializeAuthButtons(
+		btn,
+		checkAuthenticationStatus,
+		async () => {
+			const postId = btn.closest('.post-container').dataset.postid;
 
-        toggleActive(btn); 
-        visualReactionUpdate(`like${postId}`, `dislike${postId}`);
+			toggleActive(btn); 
+			visualReactionUpdate(`like${postId}`, `dislike${postId}`);
 
-        await handlePostReaction(postId, 'like_post');
-    });
+			await handlePostReaction(postId, 'like_post');
+		}
+	);
 }
 
 function attachDislikeEvent(btn) {
-    btn.addEventListener('click', async function() {
-        const postId = btn.closest('.post-container').dataset.postid;
+	initializeAuthButtons(
+		btn,
+		checkAuthenticationStatus,
+		async () => {
+			const postId = btn.closest('.post-container').dataset.postid;
 
-        toggleActive(btn); 
-        visualReactionUpdate(`dislike${postId}`, `like${postId}`);
+			toggleActive(btn); 
+			visualReactionUpdate(`dislike${postId}`, `like${postId}`);
 
-        await handlePostReaction(postId, 'dislike_post');
-    });
+			await handlePostReaction(postId, 'dislike_post');
+		}
+	);
 }
 
 function attachCommentEventListeners() {
-    document.getElementById('commentModalContent').addEventListener('click', function(event) {
-        const clickedButton = event.target.closest('.comment-like-button, .comment-dislike-button, .comment-reply-button');
+	initializeAuthButtons(
+		document.getElementById('commentModalContent'),
+		checkAuthenticationStatus,
+		(event) => {
+			const clickedButton = event.target.closest('.comment-like-button, .comment-dislike-button, .comment-reply-button');
 
-        if (clickedButton) {
-            const commentItem = clickedButton.closest('.comment-item');
-            const commentId = commentItem ? commentItem.dataset.commentId : null;
+			if (clickedButton) {
+				const commentItem = clickedButton.closest('.comment-item');
+				const commentId = commentItem ? commentItem.dataset.commentId : null;
 
-            if (clickedButton.classList.contains('comment-reply-button')) {
-                openRepliesModal(commentId);
-            } else {
-                if (clickedButton.classList.contains('comment-like-button')) {
-                    handleCommentReaction(commentId, 'like_comment');
-                } else if (clickedButton.classList.contains('comment-dislike-button')) {
-                    handleCommentReaction(commentId, 'dislike_comment');
-                }
-            }
-        }
-    });
+				if (clickedButton.classList.contains('comment-reply-button')) {
+					openRepliesModal(commentId, "modal");
+				} else {
+					if (clickedButton.classList.contains('comment-like-button')) {
+						toggleActive(clickedButton);
+						visualReactionUpdate(`interaction${commentId}like`, `interaction${commentId}dislike`);
+						handleCommentReaction(commentId, 'like_comment');
+					} else if (clickedButton.classList.contains('comment-dislike-button')) {
+						toggleActive(clickedButton);
+						visualReactionUpdate(`interaction${commentId}dislike`, `interaction${commentId}like`);
+						handleCommentReaction(commentId, 'dislike_comment');
+					}
+				}
+			}
+		}
+	);
 }
 
 function attachPostEventListeners(postId, total_comments, rendered_comments) {
     // Evento de clique para os botões de resposta dos comentários
-    document.getElementById('commentsSection').addEventListener('click', () => {
-        const clickedButton = event.target.closest('.comment-like-button, .comment-dislike-button, .comment-save-button, .comment-reply-button');
+	initializeAuthButtons(
+		document.getElementById('commentsSection'),
+		checkAuthenticationStatus,
+		(event) => {
+			const clickedButton = event.target.closest('.comment-like-button, .comment-dislike-button, .comment-save-button, .comment-reply-button');
 
-        if (clickedButton) {
-            const commentItem = clickedButton.closest('.comment-item');
-            const commentId = commentItem ? commentItem.dataset.commentId : null; // Eu acho esse forma de if else muito funny
+			if (clickedButton) {
+				const commentItem = clickedButton.closest('.comment-item');
+				const commentId = commentItem ? commentItem.dataset.commentId : null; // Eu acho esse forma de if else muito funny
 
-            if (clickedButton.classList.contains('comment-reply-button')) {
-                openRepliesModal(commentId); // Resposta de comentário
-            } else {
-                toggleActive(clickedButton);
+				if (clickedButton.classList.contains('comment-reply-button')) {
+					openRepliesModal(commentId); // Resposta de comentário
+				} else {
+					toggleActive(clickedButton);
 
-                if (clickedButton.classList.contains('comment-like-button')) {
-                    visualReactionUpdate(`interaction${commentId}like`, `interaction${commentId}dislike`); // Like
-                    handleCommentReaction(commentId, 'like_comment');
-                } else if (clickedButton.classList.contains('comment-dislike-button')) {
-                    visualReactionUpdate(`interaction${commentId}dislike`, `interaction${commentId}like`); // Deslike
-                    handleCommentReaction(commentId, 'dislike_comment');
-                } else if (clickedButton.classList.contains('comment-save-button')) {
-                    // Lógica para salvar comentário
-                    alert(`Botão Salvar Comentário ${commentId} clicado! (Lógica backend a ser implementada)`);
-                }
-            }
-        }
-    });
+					if (clickedButton.classList.contains('comment-like-button')) {
+						visualReactionUpdate(`interaction${commentId}like`, `interaction${commentId}dislike`); // Like
+						handleCommentReaction(commentId, 'like_comment');
+					} else if (clickedButton.classList.contains('comment-dislike-button')) {
+						visualReactionUpdate(`interaction${commentId}dislike`, `interaction${commentId}like`); // Deslike
+						handleCommentReaction(commentId, 'dislike_comment');
+					} else if (clickedButton.classList.contains('comment-save-button')) {
+						// Lógica para salvar comentário
+						alert(`Botão Salvar Comentário ${commentId} clicado! (Lógica backend a ser implementada)`);
+					}
+				}
+			}
+		}
+	);
 
     document.getElementById('commentTextarea').addEventListener('input', toggleCommentButton);
     document.getElementById('replyTextarea').addEventListener('input', toggleReplyButton);
 
     // Publicar um comentário no post
     const commentButton = document.getElementById('commentButton');
-    commentButton.addEventListener('click', async () => {
-        if (commentButton.classList.contains('active')) {
-            const commentText = document.getElementById('commentTextarea').value.trim();
+	initializeAuthButtons(
+		commentButton,
+		checkAuthenticationStatus,
+		async () => {
+			if (commentButton.classList.contains('active')) {
+				const commentText = document.getElementById('commentTextarea').value.trim();
 
-            resetTextarea(document.getElementById('commentTextarea'));
-            toggleCommentButton();
-            toggleLoading(commentButton);
-            
-            const data = { comment_text: commentText };
-            const result = await sendApiRequest(`/api/posts/${postId}/comment`, 'POST', data);
-            if (result.success) {
-                const commentSection = document.getElementById("commentsSection");
-                commentSection.innerHTML = renderComment(result.comment_content, postId) + commentSection.innerHTML; // Adiciona o novo comentário no início da seção... Bem feito nas coxa, eu sei.
-            } else {
-                alert('Erro: ' + result.message);
-            }
-            toggleLoading(commentButton);
+				resetTextarea(document.getElementById('commentTextarea'));
+				toggleCommentButton();
+				toggleLoading(commentButton);
+				
+				const data = { comment_text: commentText };
+				const result = await sendApiRequest(`/api/posts/${postId}/comment`, 'POST', data);
+				if (result.success) {
+					const commentSection = document.getElementById("commentsSection");
+					commentSection.innerHTML = renderComment(result.comment_content, postId) + commentSection.innerHTML; // Adiciona o novo comentário no início da seção... Bem mal feito, eu sei.
+				} else {
+					alert('Erro: ' + result.message);
+				}
+				toggleLoading(commentButton);
+			}
         }
-    });
+	);
 
     // Publicar uma resposta a um comentário
     const replyButton = document.getElementById('replyButton');
-    replyButton.addEventListener('click', async () => {
-        if (replyButton.classList.contains('active')) {
-            const replyText = document.getElementById('replyTextarea').value.trim();
-            const parentCommentId = document.getElementById('replyModal').dataset.parentCommentId; 
-            
-            if (!parentCommentId) {
-                alert("Erro: ID do comentário pai não encontrado.");
-                return;
-            }
+	initializeAuthButtons(
+		replyButton,
+		checkAuthenticationStatus,
+		async () => {
+			if (replyButton.classList.contains('active')) {
+				const replyText = document.getElementById('replyTextarea').value.trim();
+				const parentCommentId = document.getElementById('replyModal').dataset.parentCommentId;
+				const parentCommentIdSufix = document.getElementById('replyModal').dataset.parentCommentIdSufix;
+				
+				if (!parentCommentId) {
+					alert("Erro: ID do comentário pai não encontrado.");
+					return;
+				}
 
-            let notifId = Date.now();
-            toggleNotification(notifId);
-            closeModal('replyModal');
+				let notifId = Date.now();
+				toggleNotification(notifId);
+				closeModal('replyModal');
 
-            const data = { reply_text: replyText };
-            const result = await sendApiRequest(`/api/comments/${parentCommentId}/reply`, 'POST', data);
-            if (result.success) {
-                const parentCommentBox = document.getElementById(`interaction${parentCommentId}box`);
-                const replyHTML = renderReply(result.reply_content);
-                parentCommentBox.insertAdjacentHTML('afterend', replyHTML);
-            } else {
-                alert('Erro: ' + result.message);
-            }
-            toggleNotification(notifId);
-        }
-    });
+				const data = { reply_text: replyText };
+				const result = await sendApiRequest(`/api/comments/${parentCommentId}/reply`, 'POST', data);
+				if (result.success) {
+					const parentCommentBox = document.getElementById(`interaction${parentCommentId}${parentCommentIdSufix}box`);
+					const replyHTML = renderReply(result.reply_content);
+					parentCommentBox.insertAdjacentHTML('afterend', replyHTML);
+					parentCommentBox.parentNode.querySelector(`[data-comment-id="${result.reply_content.reply.id}"]`).onclick = optionButton;
+				} else {
+					alert('Erro: ' + result.message);
+				}
+				toggleNotification(notifId);
+			}
+		}
+	);
     
     // Compartilhar
     document.getElementById('shareButton').addEventListener('click', () => {
@@ -494,53 +539,72 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 
     // Like
 	const likeButton = document.getElementById('likeButton');
-    likeButton.addEventListener('click', async () => {
-        toggleActive(likeButton); 
-        visualReactionUpdate(`like`, `dislike`);
+	initializeAuthButtons(
+		likeButton,
+		checkAuthenticationStatus,
+		async () => {
+			toggleActive(likeButton); 
+			visualReactionUpdate(`like`, `dislike`);
 
-        await handlePostReaction(postId, 'like_post');
-    });
+			await handlePostReaction(postId, 'like_post');
+		}
+	);
 
     // Deslike
 	const dislikeButton = document.getElementById('dislikeButton');
-    dislikeButton.addEventListener('click', async () => {
-        toggleActive(dislikeButton); 
-        visualReactionUpdate(`dislike`, `like`);
+	initializeAuthButtons(
+		dislikeButton,
+		checkAuthenticationStatus,
+		async () => {
+			toggleActive(dislikeButton); 
+			visualReactionUpdate(`dislike`, `like`);
 
-        await handlePostReaction(postId, 'dislike_post');
-    });
+			await handlePostReaction(postId, 'dislike_post');
+		}
+	);
+
+	const postModal = document.getElementById('postModal')
+	if (postModal) {
+		postModal.querySelectorAll('.options-button').forEach(button => {
+			attachOptionBtnListener(button);
+		});
+	}
 
     // Carregar mais comentários
     const loadMoreButton = document.getElementById('loadMoreComments');
     if (loadMoreButton) {
-        loadMoreButton.addEventListener('click', async function() {
-            let notifId = Date.now();
-            toggleNotification(notifId);
+		initializeAuthButtons(
+			dislikeButton,
+			checkAuthenticationStatus,
+			async function() {
+				let notifId = Date.now();
+				toggleNotification(notifId);
 
-            try {
-                const request = await fetch(`/api/posts/${postId}/comments?offset=${rendered_comments}&limit=10`);
-                const result = await request.json();
+				try {
+					const request = await fetch(`/api/posts/${postId}/comments?offset=${rendered_comments}&limit=10`);
+					const result = await request.json();
 
-                if (result.success) {
-                    const commentsSection = document.getElementById('commentsSection');
-                    result.comments.forEach(comment => {
-                        commentsSection.innerHTML += renderComment(comment, postId); // Adiciona cada comentário
-                    });
+					if (result.success) {
+						const commentsSection = document.getElementById('commentsSection');
+						result.comments.forEach(comment => {
+							commentsSection.innerHTML += renderComment(comment, postId); // Adiciona cada comentário
+						});
 
-                    rendered_comments += 5; // Incrementa o número de comentários a serem carregados
-                    // Verifica se todos os comentários foram carregados
-                    if (total_comments <= rendered_comments) {
-                        loadMoreButton.style.display = 'none'; // Esconde o botão se não houver mais comentários
-                    }
-                } else {
-                    alert('Erro ao carregar mais comentários: ' + result.message);
-                }
-            } catch (error) {
-                commentModalContent.innerHTML = 'Erro de conexão.';
-            }
-            toggleNotification(notifId);
-        });
-    }
+						rendered_comments += 5; // Incrementa o número de comentários a serem carregados
+						// Verifica se todos os comentários foram carregados
+						if (total_comments <= rendered_comments) {
+							loadMoreButton.style.display = 'none'; // Esconde o botão se não houver mais comentários
+						}
+					} else {
+						alert('Erro ao carregar mais comentários: ' + result.message);
+					}
+				} catch (error) {
+					commentModalContent.innerHTML = 'Erro de conexão.';
+				}
+				toggleNotification(notifId);
+			}
+		);
+	}
 }
 
 async function openCommentModal(commentId, postId) {
@@ -559,8 +623,12 @@ async function openCommentModal(commentId, postId) {
             // Busca o comentário original
             const originalComment = document.getElementById(`interaction${commentId}box`);
             if (originalComment) {
-                commentModalContent.appendChild(originalComment.cloneNode(true)); // Clona o comentário original
-
+				const cloneComment = originalComment.cloneNode(true);
+				cloneComment.setAttribute("id", `interaction${commentId}modalbox`);
+				cloneComment.classList.add('comment-item');
+				cloneComment.dataset.commentId = commentId;
+				cloneComment.querySelector('.options-button').remove()
+                commentModalContent.appendChild(cloneComment);
             }
 
             // Adiciona as respostas ao modal
@@ -600,8 +668,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (replyModal && replyModal.classList.contains('is-visible') && !replyModal.querySelector('.reply-modal-content').contains(event.target) && event.target.id === 'replyModal') {
             closeModal('replyModal');
         }
-
-        // Fechar modal de resposta
+		
+		// Fechar modal de comentários extras
+		const commentModal = document.getElementById('commentModal');
+        if (commentModal && commentModal.classList.contains('is-visible') && !commentModal.querySelector('.reply-modal-content').contains(event.target) && event.target.id === 'commentModal') {
+            closeModal('commentModal');
+        }
+		
+        // Fechar modal do post
         const postModal = document.getElementById('postModal');
         if (postModal && postModal.classList.contains('is-visible') && !postModal.querySelector('.post-modal-content').contains(event.target) && event.target.id === 'postModal') {
             closeModal('postModal');
@@ -638,7 +712,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Abrir um post
     document.querySelectorAll('.timeline-post').forEach(function(post) {
         post.addEventListener('click', async function(event) {
-            if (event.target.closest('.interactions-container, .interaction-button, .share-context-menu, .image-container')) {
+            if (event.target.closest('.interactions-container, .interaction-button, .share-context-menu, .image-container, .options-button')) {
                 return; 
             }
             const postId = post.dataset.postid;
@@ -653,10 +727,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const postModal = document.getElementById('postModal');
                     const modalContent = postModal.querySelector('.post-modal-content')
                     
-                    modalContent.innerHTML = `
-                        <span class="close-button" onclick="closeModal('postModal')">&times;</span>
-                        ${renderPost(data)}
-                    `;
+                    modalContent.innerHTML = renderPost(data);
                     openModal('postModal');
                     attachPostEventListeners(postId, data.total_comments, data.next_offset); // Passa o ID do post e o número total de comentários
                 }

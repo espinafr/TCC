@@ -20,7 +20,7 @@
 }
 
 .close-button {
-    position: absolute;
+    position: fixed;
     top: 15px;
     right: 35px;
     color: #f1f1f1;
@@ -114,7 +114,7 @@
     border-radius: 0.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 0.5rem 0;
-    z-index: 100;
+    z-index: 12;
     min-width: 180px;
     right: 0; 
     top: 100%;
@@ -141,7 +141,7 @@
 
 .modal {
     position: fixed;
-    z-index: 999;
+    z-index: 100;
     left: 0;
     top: 0;
     width: 100%;
@@ -175,22 +175,22 @@
 }
 
 #postModal {
-    z-index: 998;
+    z-index: 10;
 }
 
-#postModal .close-button {
-    position: absolute;
+.post-close-button {
+    position: fixed;
     top: 18px;
     right: 30px;
     color: #6B7280;
     font-size: 2.5rem;
     font-weight: bold;
     cursor: pointer;
-    z-index: 10000;
+    z-index: 11;
     transition: color 0.2s;
 }
 
-#postModal .close-button:hover {
+.post-close-button:hover {
     color: #2563EB;
 }
 
@@ -203,6 +203,10 @@
     animation: zoomIn 0.3s ease-out;
 }
 
+#replyModal {
+	z-index: 150;
+}
+
 .reply-modal-content {
     background-color: white;
     border-radius: 0.5rem;
@@ -210,8 +214,10 @@
     position: relative;
     width: 90%;
     max-width: 500px;
+	max-height: 70%;
     box-shadow: 0 10px 15px rgba(0,0,0,0.1);
     animation: slideIn 0.3s ease-out;
+	overflow-y: auto;
 }
 
 .reply-modal-content .comment-input-container {

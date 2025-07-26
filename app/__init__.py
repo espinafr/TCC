@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, session
 from flask_wtf import CSRFProtect
 import app.data_sanitizer as sanitizer
 from app.extensions import db_manager, email_service, mail, s3
@@ -18,13 +18,13 @@ def create_app(config_class=Config):
 
     with app.app_context():
         db_manager.init_all_dbs()
-        print(db_manager.save_user("admin", "admin@admin.com", "123345678", "M"))
+        print(db_manager.save_user("admin", "admin@admin.com", "123345678", "3"))
         print(db_manager.activate_user("admin@admin.com"))
 
     @app.context_processor
     def inject_global_variables():
         return dict (
-            allowed_categories=sanitizer.ALLOWED_CATEGORIES
+            logged_in=session.get('id')
         )
 
     # Registrando blueprints
@@ -33,6 +33,9 @@ def create_app(config_class=Config):
 
     from app.email import bp as email_bp
     app.register_blueprint(email_bp, url_prefix='/email')
+
+    from app.admin import bp as admin_bp
+    app.register_blueprint(admin_bp, url_prefix='/adm')
 
     from app.authentication import bp as auth_bp
     app.register_blueprint(auth_bp)

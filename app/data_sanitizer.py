@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, RadioField, TextAreaField, SelectMultipleField, SelectField, MultipleFileField
-from wtforms.validators import DataRequired, Email, Length, ValidationError, Optional
+from wtforms.validators import InputRequired, Email, Length, ValidationError, Optional
 from flask_wtf.file import FileAllowed, FileSize
 import re
 
@@ -86,48 +86,36 @@ def validate_login(form, field):
         if not field.data.isalnum() and '_' not in field.data:
             raise ValidationError('O nome de usuário só pode conter letras, números e underline.')
 
-def validate_gender(form, field):
-    if not field.data or field.data[0].lower() not in ['a', 'o', 'e']:
-        raise ValidationError('Gênero inválido.')
-
 class RegistrationForm(FlaskForm):
     email = StringField('E-mail', validators=[
-        DataRequired(message='O e-mail é obrigatório.'),
+        InputRequired(message='O e-mail é obrigatório.'),
         Email(message='Por favor, insira um e-mail válido.')
     ])
     username = StringField('Nome de Usuário', validators=[
-        DataRequired(message='O nome de usuário é obrigatório.'),
+        InputRequired(message='O nome de usuário é obrigatório.'),
         validate_username
     ])
     password = PasswordField('Senha', validators=[
-        DataRequired(message='A senha é obrigatória.'),
+        InputRequired(message='A senha é obrigatória.'),
         Length(min=8, max=20, message='A senha deve ter entre 8 e 20 caracteres.')
-    ])
-    gender = RadioField('Gênero', choices=[
-        ('a', 'Feminino'),
-        ('o', 'Masculino'),
-        ('e', 'Outro')
-    ], validators=[
-        DataRequired(message='O gênero é obrigatório.'),
-        validate_gender
     ])
 
 class LoginForm(FlaskForm):
     login = StringField('E-mail ou Nome de Usuário', validators=[
-        DataRequired(message='O login é obrigatório.'),
+        InputRequired(message='O login é obrigatório.'),
         validate_login
     ])
     password = PasswordField('Senha', validators=[
-        DataRequired(message='A senha é obrigatória.'),
+        InputRequired(message='A senha é obrigatória.'),
         Length(min=8, max=20, message='A senha deve ter entre 8 e 20 caracteres.')
     ])
 
 class PostForm(FlaskForm):
-    titulo = StringField(name='titulo', validators=[DataRequired(message='O título é obrigatório.'), Length(min=5, max=100, message="O título precisa conter entre %(min)d e %(max)d caracteres")])
-    conteudo = TextAreaField(name='conteudo', validators=[DataRequired(message='O conteúdo é obrigatório.'), Length(min=30, max=1000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
+    titulo = StringField(name='titulo', validators=[InputRequired(message='O título é obrigatório.'), Length(min=5, max=100, message="O título precisa conter entre %(min)d e %(max)d caracteres")])
+    conteudo = TextAreaField(name='conteudo', validators=[InputRequired(message='O conteúdo é obrigatório.'), Length(min=30, max=1000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
     tags = SelectField(name='tags', choices=[
         ("desen_infan", "Desenho Infantil"), ("educacao", "Educação"), ("saude", "Saúde"), ("disciplina", "Disciplina"), ("nutricao", "Nutrição"), ("comportamen", "Comportamento"), ("lazer", "Lazer"), ("tecnologia", "Tecnologia"), ("familia", "Família"), ("desafios", "Desafios")
-    ], validators=[DataRequired(message='Selecione uma categoria.'), validate_not_empty_choice], render_kw={'data-placeholder': 'true'})
+    ], validators=[InputRequired(message='Selecione uma categoria.'), validate_not_empty_choice], render_kw={'data-placeholder': 'true'})
     optionaltags = StringField(validators=[Optional(), validate_opcional])
     images = MultipleFileField(
         'Enviar Fotos (até 5, max. 10MB cada)', #label
@@ -138,3 +126,24 @@ class PostForm(FlaskForm):
             validate_fotos
         ]
     )
+
+def tiposDenuncia(form, field):
+    if field.data not in ('interacao', 'usuario', 'post'):
+        raise ValidationError("Categoria inválida")
+
+class ReportForm(FlaskForm):
+    category = RadioField('Category', validators=[InputRequired(message='Uma categoria de denúncia é obrigatória.')],
+                          choices=[('discursoOdio', 'Discurso de ódio'),
+                                   ('infoPrivada', 'Espalhar informações privadas'),
+                                   ('conteudoImproprio', 'Conteúdo impróprio'),
+                                   ('segurancaInfantil', 'Segurança infantil'),
+                                   ('abusoAssedio', 'Abuso/Assédio'),
+                                   ('spam', 'Spam'),
+                                   ('impersonacao', 'Falsidade ideológica')])
+    description = TextAreaField('Description', validators=[
+        Optional(), # Opcional significa que pode ser vazio
+        Length(max=300, message='A descrição não pode exceder 300 caracteres.')
+    ])
+    target_id = StringField('ID do denunciado', validators=[InputRequired(message='O ID do que esta sendo denunciado é obrigatório.')])
+    type = StringField('Tipo do denunciado', validators=[InputRequired(message='O tipo do denunciado é obrigatório.'), tiposDenuncia])
+    perpetrator_id = StringField('ID do perpetrador', validators=[InputRequired(message='O ID de quem fez a ofença é obrigatório.')])

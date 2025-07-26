@@ -1,5 +1,7 @@
 from flask import request, jsonify, session
 from app.extensions import login_required, db_manager
+from app.data_sanitizer import ReportForm
+from app.database import Post, Report
 from app.api import bp
 
 def get_post_with_details(post_id):
@@ -43,6 +45,7 @@ def get_post_comments(post_id, offset=0, limit=10):
             'comment': {
                 'id': comment.id,
                 'username': comment.user_who_interacted.username,
+                'userid': comment.user_who_interacted.id,
                 'value': comment.value
             },
             'likes': likes,
@@ -62,6 +65,7 @@ def get_post_comments(post_id, offset=0, limit=10):
                         'reply': {
                             'id': reply.id,
                             'username': reply.user_who_interacted.username,
+                            'userid': reply.user_who_interacted.id,
                             'value': reply.value
                         },
                         'likes': likes,
@@ -85,6 +89,7 @@ def get_comment_replies(post_id, comment_id, offset=0, limit=10):
             'reply': {
                 'id': reply.id,
                 'username': reply.user_who_interacted.username,
+                'userid': reply.user_who_interacted.id,
                 'value': reply.value
             },
             'likes': likes,
@@ -150,6 +155,7 @@ def comment_post_api(post_id):
                 "comment": {
                     "id": new_comment.id,
                     "username": new_comment.user_who_interacted.username,
+                    "userid": new_comment.user_who_interacted.id,
                     "value": new_comment.value
                 },
                 "likes": 0,
@@ -183,6 +189,7 @@ def reply_comment_api(parent_comment_id):
                 "reply": {
                     "id": new_reply.id,
                     "username": new_reply.user_who_interacted.username,
+                    "userid": new_reply.user_who_interacted.id,
                     "value": new_reply.value
                 },
                 "likes": 0,
@@ -211,6 +218,7 @@ def get_post_details_api(post_id):
             "image_urls": post_details['post'].image_urls,
             "created_at": post_details['post'].created_at.strftime('%d/%m/%Y'),
             "username": post_details['post'].author_user.username,
+            "userid": post_details['post'].author_user.id,
         },
         "comments": post_details['comments_with_details'],
         "likes": post_details['post_likes'],
@@ -265,12 +273,10 @@ def get_comment_interactions_api(comment_id):
     likes_count = db_manager.count_reactions_for_comment(comment_id, 'like_comment')
     dislikes_count = db_manager.count_reactions_for_comment(comment_id, 'dislike_comment')
 
-    user_id = session.get('id')
     user_reaction = None
-    if user_id:
-        user_reaction_obj = db_manager.get_user_comment_reaction(user_id, comment_id)
-        if user_reaction_obj:
-            user_reaction = user_reaction_obj.type # 'like_comment' ou 'dislike_comment'
+    user_reaction_obj = db_manager.get_user_comment_reaction(user_id, comment_id)
+    if user_reaction_obj:
+        user_reaction = user_reaction_obj.type # 'like_comment' ou 'dislike_comment'
 
     return jsonify({
         "success": True, 
@@ -278,3 +284,73 @@ def get_comment_interactions_api(comment_id):
         "dislikes": dislikes_count,
         "user_reaction": user_reaction
     }), 200
+    
+# Exclusão de posts e interações
+@bp.route('/post/<int:post_id>/delete', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = db_manager.get_post_by_id(post_id)
+    if post:
+        if post.author_user.id == session.get('id'):
+            db_manager.delete_post_by_id(post_id)
+            return jsonify({"success": True, "message": "Post excluído com sucesso!"}), 200
+        else:
+            return jsonify({"success": False, "message": "Você não tem permissão para executar essa ação."}), 403
+    return jsonify({"success": False, "message": "Post não encontrado."}), 404
+
+@bp.route('/interaction/<int:interaction_id>/delete', methods=['POST'])
+@login_required
+def delete_interaction(interaction_id):
+    interaction = db_manager.get_interaction_by_id(interaction_id)
+    if interaction and interaction.type in ['comment_post', 'reply_comment']:
+        if interaction.user_who_interacted.id == session.get('id'):
+            with db_manager.get_db() as db:
+                db.delete(interaction)
+                db.commit()
+                return jsonify({"success": True, "message": "Interação excluída com sucesso!"}), 200
+        else:
+            return jsonify({"success": False, "message": "Você não tem permissão para executar essa ação."}), 403
+    return jsonify({"success": False, "message": "Interação não encontrada."}), 404
+    
+# Denúncias
+@bp.route('/report', methods=['POST'])
+@login_required
+def report():
+    form = ReportForm()
+    
+    if request.is_json:
+        json_data = request.get_json()
+        if json_data:
+            form.category.data = json_data.get('category')
+            form.description.data = json_data.get('description')
+            form.type.data = json_data.get('type')
+            form.target_id.data = json_data.get('target_id')
+            form.perpetrator_id.data = json_data.get('id_dono')
+        else:
+            return jsonify({'success': False, 'message': 'Corpo da requisição JSON inválido ou vazio.'}), 400
+    else:
+        return jsonify({'success': False, 'message': 'Tipo de conteúdo não suportado. Espera-se JSON.'}), 415 # Unsupported Media Type
+
+    if form.validate():
+        user_id = session['id'] # O ID do usuário que está denunciando
+        
+        with db_manager.get_db() as db:
+            try:
+                new_report = Report(
+                    reporting_user_id=user_id,
+                    type=form.type.data,
+                    reason=form.category.data,
+                    description=form.description.data,
+                    reported_item_id=form.target_id.data,
+                    perpetrator_id=form.perpetrator_id.data
+                )
+                db.add(new_report)
+                db.commit()
+                db.refresh(new_report) # Recarrega o objeto para ter o ID gerado pelo DB
+                return jsonify({'success': True, 'message': 'Denúncia enviada com sucesso!', 'id': new_report.id}), 200
+            except Exception as e:
+                db.rollback()
+                return jsonify({'success': False, f'message': 'Erro ao salvar a denúncia. {e}.'}), 500
+    else:
+        # Erros de validação do formulário
+        return jsonify({'success': False, 'errors': form.errors, 'message': 'Dados de denúncia inválidos.'}), 400

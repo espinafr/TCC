@@ -1,24 +1,31 @@
 {% extends "base.html" %}
 {% block additional_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
-<script src="{{ url_for('static', filename='basics.js') }}"></script>
-<script src="{{ url_for('static', filename='postrequests.js') }}"></script>
 {% endblock %}
 {% block content %}
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl">
         <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8">Timeline</h1>
+		{% with messages = get_flashed_messages(with_categories=true) %}
+			{% if messages %}
+				{% for category, message in messages %}
+					<div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
+						{{ message }}
+					</div>
+				{% endfor %}
+			{% endif %}
+		{% endwith %}
         <div id="timelinePosts">
             {% for post in posts %}
-            <div class="timeline-post post-container flex flex-col md:flex-row gap-6 mb-10 p-6 rounded-lg bg-gray-50 shadow-sm border border-gray-200 hover:shadow-lg cursor-pointer transition group" data-postid="{{ post.id }}">
-                <div class="flex-1 flex flex-col justify-between">
+            <div class="timeline-post post-container flex flex-col md:flex-row gap-6 mb-10 p-6 rounded-lg bg-gray-50 shadow-sm border border-gray-200 hover:shadow-lg cursor-pointer transition group" data-postid="{{ post.id }}" data-post-userid="{{ post.userid }}">
+                <div class="flex-1 flex flex-col justify-between min-w-0">
                     <div>
                         <div class="flex items-center gap-2 mb-2">
                             <span class="comment-profile-pic"><i class="fa-solid fa-user"></i></span>
                             <span class="font-semibold text-gray-800">{{ post.author }}</span>
                             <span class="text-xs text-gray-500">• {{ post.created_at.strftime('%d/%m/%Y') }}</span>
                         </div>
-                        <h2 class="text-xl font-bold text-gray-900 mb-2">{{ post.title }}</h2>
+                        <h2 class="text-xl font-bold text-gray-900 mb-2 break-words line-clamp-3">{{ post.title }}</h2>
                         <div class="flex flex-wrap gap-2 mb-2">
                             <span class="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">{{ post.tag.upper() }}</span>
                             {% if post.optional_tags %}
@@ -60,7 +67,7 @@
                 </div>
                 {% if post.image_urls %}
                 <div class="image-container relative w-full md:w-48 h-48 flex items-center justify-center bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onclick="openModal('imageModal', '{{ post.image_urls[0] }}')">
-                    <img src="{{ post.image_urls[0] }}" alt="Imagem do Post" class="object-cover w-full h-full">
+					<img src="{{ post.image_urls[0] }}" alt="Imagem do Post" class="object-cover w-full h-full">
                     {% if post.image_urls|length > 1 %}
                     <div class="absolute inset-0 flex items-center justify-center">
                         <span class="bg-black bg-opacity-60 text-white text-lg font-bold px-4 py-2 rounded-full">+{{ post.image_urls|length - 1 }}</span>
@@ -68,6 +75,7 @@
                     {% endif %}
                 </div>
                 {% endif %}
+				<button class="options-button self-start text-gray-500 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-lg"></i></button>
             </div>
             {% endfor %}
         </div>
@@ -75,10 +83,81 @@
             <a href="{{ url_for('main.index') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">Voltar para a página inicial</a>
         </div>
     </div>
+	<div id="reportModal" class="fixed inset-0 flex items-center justify-center z-9999 hidden modal-overlay">
+		<div class="bg-white p-8 rounded-lg shadow-xl w-96 modal-content relative">
+			<h2 id="reportModalTitle" class="text-3xl font-semibold text-gray-800 mb-6 text-center">Denunciar</h2>
+
+			<form id="reportForm">
+				<div id="reportStep1" class="report-step">
+					<p class="text-gray-700 mb-4 text-center">Qual das opções melhor descreve sua denúncia?</p>
+					<div class="space-y-3 mb-6">
+						<label class="block">
+							<input type="radio" name="reportCategory" value="discursoOdio" class="mr-2 text-blue-600 focus:ring-blue-500">
+							<span class="text-gray-800 font-medium">Discurso de ódio</span>
+						</label>
+						<label class="block">
+							<input type="radio" name="reportCategory" value="infoPrivada" class="mr-2 text-blue-600 focus:ring-blue-500">
+							<span class="text-gray-800 font-medium">Espalhar informações privadas</span>
+						</label>
+						<label class="block">
+							<input type="radio" name="reportCategory" value="conteudoImproprio" class="mr-2 text-blue-600 focus:ring-blue-500">
+							<span class="text-gray-800 font-medium">Conteúdo impróprio</span>
+						</label>
+						<label class="block">
+							<input type="radio" name="reportCategory" value="segurancaInfantil" class="mr-2 text-blue-600 focus:ring-blue-500">
+							<span class="text-gray-800 font-medium">Segurança infantil</span>
+						</label>
+						<label class="block">
+							<input type="radio" name="reportCategory" value="abusoAssedio" class="mr-2 text-blue-600 focus:ring-blue-500">
+							<span class="text-gray-800 font-medium">Abuso/Assédio</span>
+						</label>
+						<label class="block">
+							<input type="radio" name="reportCategory" value="spam" class="mr-2 text-blue-600 focus:ring-blue-500">
+							<span class="text-gray-800 font-medium">Spam</span>
+						</label>
+						<label class="block">
+							<input type="radio" name="reportCategory" value="impersonacao" class="mr-2 text-blue-600 focus:ring-blue-500">
+							<span class="text-gray-800 font-medium">Falsidade ideológica</span>
+						</label>
+					</div>
+					<button type="button" id="nextReportStep" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Próximo</button>
+				</div>
+
+				<div id="reportStep2" class="report-step hidden">
+					<p class="text-gray-700 mb-4 text-center">Descreva o ocorrido (opcional, máx. 300 caracteres):</p>
+					<textarea id="reportDescription" name="reportDescription" rows="4" maxlength="300"
+						class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4"
+						placeholder="Detalhes adicionais..."></textarea>
+					<p class="text-gray-500 text-sm text-right mb-4"><span id="reportCharCount">0</span>/300</p>
+					<div class="flex space-x-4">
+						<button type="button" id="backToReportStep1" class="w-1/2 bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400 transition duration-300 font-semibold focus:outline-none">Voltar</button>
+						<button type="submit" id="submitReport" class="w-1/2 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Enviar Denúncia</button>
+					</div>
+				</div>
+
+				<div id="reportSuccess" class="report-step hidden text-center">
+					<div class="text-green-500 text-6xl mb-4">
+						<i class="fas fa-check-circle"></i>
+					</div>
+					<h3 class="text-2xl font-semibold text-gray-800 mb-2">Denúncia Enviada!</h3>
+					<p class="text-gray-700 mb-6">Agradecemos sua contribuição. Analisaremos sua denúncia o mais rápido possível.</p>
+					<button type="button" id="closeReportSuccess" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Fechar</button>
+				</div>
+			</form>
+
+			<button id="closeReportModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl focus:outline-none">
+				&times;
+			</button>
+		</div>
+	</div>
     <div id="imageModal" class="modal hidden">
         <span class="close-button" onclick="closeModal('imageModal')">&times;</span>
         <img class="image-modal-content" id="fullImage">
     </div>
+	<div id="reusableDropdown" class="hidden absolute bg-white border border-gray-200 rounded-md shadow-lg z-500 py-1">
+		<div id="dropdownContent">
+		</div>
+	</div>
     <div id="replyModal" class="modal hidden">
         <div class="reply-modal-content">
             <span class="close-button-modal" onclick="closeModal('replyModal')">&times;</span>
@@ -101,10 +180,13 @@
             </div>
         </div>
     <div id="postModal" class="modal hidden">
+		<span class="post-close-button" onclick="closeModal('postModal')">&times;</span>
         <div class="post-modal-content relative">
-            <span class="close-button" onclick="closeModal('postModal')">&times;</span>
         </div>
     </div>
     <div id="notificationContainer"></div>
 </body>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='postrequests.js') }}"></script>
 {% endblock %}

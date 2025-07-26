@@ -33,6 +33,19 @@ body {
     animation: fadeIn 0.3s ease-out;
 }
 
+#__loginModal, #reportModal {
+    background-color: #00002a3b;
+    backdrop-filter: blur(4px) brightness(0.9) contrast(1.1) saturate(1.2);
+}
+
+.modal-overlay {
+	animation: fadeIn 0.3s ease-out forwards;
+}
+
+.modal-content {
+	animation: zoomIn 0.3s ease-out forwards;
+}
+
 @keyframes fadeIn {
     from {opacity: 0;}
     to {opacity: 1;}

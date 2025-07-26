@@ -47,27 +47,6 @@
                 <label class="block text-gray-700">Senha</label>
                 <input type="password" name="password" class="border p-2 w-full rounded" required>
             </div>
-            <div class="mb-4">
-                {% if form.gender.errors %}
-                    <ul class="error-message">
-                        {% for error in form.gender.errors %}
-                            <li class="text-red-500">{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                <div class="flex gap-2">
-                    <label for="a" class="block text-gray-700">Feminino</label>
-                    <input type="radio" name="gender" value="a" required>    
-                </div>
-                <div class="flex gap-2">
-                    <label for="o" class="block text-gray-700">Masculino</label>
-                    <input type="radio" name="gender" value="o" required>
-                </div>
-                <div class="flex gap-2">
-                    <label for="e" class="block text-gray-700">Outro</label>
-                    <input type="radio" name="gender" value="e" required>
-                </div>
-            </div>
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button> <!-- Fazer animação de espera -->
         </form>
         <p class="mt-4">Já tem uma conta? <a href="{{ url_for('authentication.login') }}" class="text-blue-600 hover:underline">Entre.</a></p>

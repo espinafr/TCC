@@ -82,101 +82,101 @@
             </div>
             <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer">Publicar</button>
         </form>
-
-        <script>
-            let selectedTags = [];
-
-            function toggleSelectedTag(select) {
-                const value = select.value;
-                if (!value) return;
-
-                const index = selectedTags.indexOf(value);
-                if (index === -1) {
-                    if (selectedTags.length >= 5) {
-                        alert('Maximum 5 optional tags allowed!');
-                        select.value = '';
-                        return;
-                    }
-                    selectedTags.push(value);
-                } else {
-                    selectedTags.splice(index, 1);
-                }
-
-                updateSelectedTagsDisplay();
-                select.value = '';
-            }
-
-            function updateSelectedTagsDisplay() {
-                const display = document.getElementById('selectedTags');
-                const hiddenInput = document.getElementById('hiddenOptionalTags');
-                display.innerHTML = '';
-
-                selectedTags.forEach(tag => {
-                    const tagElement = document.createElement('span');
-                    tagElement.className = 'bg-blue-200 px-2 py-1 rounded flex items-center';
-                    tagElement.textContent = tag;
-                    const removeButton = document.createElement('button');
-                    removeButton.textContent = '×';
-                    removeButton.className = 'ml-2 text-red-400 hover:text-red-300';
-                    removeButton.onclick = () => {
-                        selectedTags = selectedTags.filter(t => t !== tag);
-                        updateSelectedTagsDisplay();
-                    };
-                    tagElement.appendChild(removeButton);
-                    display.appendChild(tagElement);
-                });
-
-                hiddenInput.value = selectedTags.join(',');
-            }
-
-            function previewImages(event) {
-                const preview = document.getElementById('imagePreview');
-                preview.innerHTML = '';
-                const files = event.target.files;
-                if (files.length > 4) {
-                    alert('Maximum 4 images allowed!');
-                    event.target.value = '';
-                    return;
-                }
-                for (let i = 0; i < files.length; i++) {
-                    const img = document.createElement('img');
-                    img.src = URL.createObjectURL(files[i]);
-                    img.style.width = '100px';
-                    img.style.height = '100px';
-                    img.onmouseover = () => img.style.transform = 'scale(1.1)';
-                    img.onmouseout = () => img.style.transform = 'scale(1)';
-                    preview.appendChild(img);
-                }
-            }
-
-            // Drag and drop image handling
-            const form = document.querySelector('form');
-            form.addEventListener('dragover', (e) => e.preventDefault());
-            form.addEventListener('drop', (e) => {
-                e.preventDefault();
-                const files = e.dataTransfer.files;
-                const input = document.querySelector('input[type="file"]');
-                const dataTransfer = new DataTransfer();
-                for (let i = 0; i < files.length && i < 4; i++) {
-                    dataTransfer.items.add(files[i]);
-                }
-                input.files = dataTransfer.files;
-                previewImages({ target: input });
-            });
-            
-            const textarea = document.querySelector('textarea');
-            textarea.addEventListener('input', (e) => {
-                if (e.data === '@') {
-                    const popup = document.createElement('div');
-                    popup.className = 'absolute bg-gray-800 border border-gray-700 p-2 rounded';
-                    popup.innerHTML = '<div>@pearson</div><div>@john</div>';
-                    popup.style.top = textarea.getBoundingClientRect().bottom + 'px';
-                    popup.style.left = textarea.getBoundingClientRect().left + 'px';
-                    document.body.appendChild(popup);
-                    setTimeout(() => popup.remove(), 2000);
-                }
-            });
-        </script>
     </div>
 </body>
+{% endblock %}
+{% block scripts %}
+<script>
+	let selectedTags = [];
+	function toggleSelectedTag(select) {
+		const value = select.value;
+		if (!value) return;
+
+		const index = selectedTags.indexOf(value);
+		if (index === -1) {
+			if (selectedTags.length >= 5) {
+				alert('Maximum 5 optional tags allowed!');
+				select.value = '';
+				return;
+			}
+			selectedTags.push(value);
+		} else {
+			selectedTags.splice(index, 1);
+		}
+
+		updateSelectedTagsDisplay();
+		select.value = '';
+	}
+
+	function updateSelectedTagsDisplay() {
+		const display = document.getElementById('selectedTags');
+		const hiddenInput = document.getElementById('hiddenOptionalTags');
+		display.innerHTML = '';
+
+		selectedTags.forEach(tag => {
+			const tagElement = document.createElement('span');
+			tagElement.className = 'bg-blue-200 px-2 py-1 rounded flex items-center';
+			tagElement.textContent = tag;
+			const removeButton = document.createElement('button');
+			removeButton.textContent = '×';
+			removeButton.className = 'ml-2 text-red-400 hover:text-red-300';
+			removeButton.onclick = () => {
+				selectedTags = selectedTags.filter(t => t !== tag);
+				updateSelectedTagsDisplay();
+			};
+			tagElement.appendChild(removeButton);
+			display.appendChild(tagElement);
+		});
+
+		hiddenInput.value = selectedTags.join(',');
+	}
+
+	function previewImages(event) {
+		const preview = document.getElementById('imagePreview');
+		preview.innerHTML = '';
+		const files = event.target.files;
+		if (files.length > 4) {
+			alert('Maximum 4 images allowed!');
+			event.target.value = '';
+			return;
+		}
+		for (let i = 0; i < files.length; i++) {
+			const img = document.createElement('img');
+			img.src = URL.createObjectURL(files[i]);
+			img.style.width = '100px';
+			img.style.height = '100px';
+			img.onmouseover = () => img.style.transform = 'scale(1.1)';
+			img.onmouseout = () => img.style.transform = 'scale(1)';
+			preview.appendChild(img);
+		}
+	}
+
+	// Drag and drop image handling
+	const form = document.querySelector('form');
+	form.addEventListener('dragover', (e) => e.preventDefault());
+	form.addEventListener('drop', (e) => {
+		e.preventDefault();
+		const files = e.dataTransfer.files;
+		const input = document.querySelector('input[type="file"]');
+		const dataTransfer = new DataTransfer();
+		for (let i = 0; i < files.length && i < 4; i++) {
+			dataTransfer.items.add(files[i]);
+		}
+		input.files = dataTransfer.files;
+		previewImages({ target: input });
+	});
+
+	const textarea = document.querySelector('textarea');
+	textarea.addEventListener('input', (e) => {
+		if (e.data === '@') {
+			const popup = document.createElement('div');
+			popup.className = 'absolute bg-gray-800 border border-gray-700 p-2 rounded';
+			popup.innerHTML = '<div>@pearson</div><div>@john</div>';
+			popup.style.top = textarea.getBoundingClientRect().bottom + 'px';
+			popup.style.left = textarea.getBoundingClientRect().left + 'px';
+			document.body.appendChild(popup);
+			setTimeout(() => popup.remove(), 2000);
+		}
+	});
+</script>
 {% endblock %}
