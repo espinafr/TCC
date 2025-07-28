@@ -1,11 +1,10 @@
-from flask import session, redirect, url_for, flash, current_app, g
+from flask import session, abort, g
 from functools import wraps
 from datetime import datetime
 from app.database import DatabaseManager, User, ModerationHistory
 from flask_mail import Mail
 from app.email_service import EmailService
 import boto3
-import json
 
 # Inicializando serviços
 mail = Mail()
@@ -65,15 +64,10 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         load_logged_in_user() # Carrega o usuário e verifica status
-        
         if not g.user:
-            flash('Faça login para acessar esta página.', 'error')
-            return redirect(url_for('authentication.login'))
-        
+            abort(401) # Não autorizado
         if g.is_banned_or_deactivated:
-            flash('Sua conta está inativa devido a uma ação de moderação. Por favor, entre em contato com o suporte.', 'error')
-            session.clear() # Opcional: limpar a sessão se o usuário estiver banido/desativado
-            return redirect(url_for('authentication.login')) # Ou uma página específica de erro/informação
+            abort(403) # Proibido
             
         return f(*args, **kwargs)
     return decorated_function
@@ -87,20 +81,12 @@ def power_required(required_power=1):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             load_logged_in_user() # Carrega o usuário e verifica status
-
             if not g.user:
-                flash('Faça login para acessar esta página.', 'error')
-                return redirect(url_for('authentication.login'))
-            
+                abort(401) # Não autorizado
             if g.is_banned_or_deactivated:
-                flash('Sua conta está inativa devido a uma ação de moderação. Por favor, entre em contato com o suporte.', 'error')
-                session.clear()
-                return redirect(url_for('authentication.login'))
-
+                abort(403) # Proibido
             if g.user.power < required_power:
-                flash(f'Você não tem permissão para acessar esta página. É necessário um nível de acesso {required_power} ou superior.', 'error')
-                return redirect(url_for('main.index')) # Redirecione para uma página padrão ou de erro
-
+                abort(403) # Proibido
             return f(*args, **kwargs)
         return decorated_function
     return decorator

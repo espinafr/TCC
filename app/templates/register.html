@@ -47,9 +47,17 @@
                 <label class="block text-gray-700">Senha</label>
                 <input type="password" name="password" class="border p-2 w-full rounded" required>
             </div>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button> <!-- Fazer animação de espera -->
+            <button id="submitbtn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button>
         </form>
         <p class="mt-4">Já tem uma conta? <a href="{{ url_for('authentication.login') }}" class="text-blue-600 hover:underline">Entre.</a></p>
     </div>
 </body>
+{% endblock %}
+{% block scripts %}
+<script>
+const loadingBtn = document.getElementById('submitbtn');
+loadingBtn.addEventListener('click', function(event) {
+    toggleLoading(loadingBtn);
+});
+</script>
 {% endblock %}

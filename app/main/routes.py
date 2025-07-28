@@ -2,6 +2,7 @@ from flask import render_template, session
 from app.main import bp
 from app.extensions import login_required, db_manager
 from app.recommendation import RecommendationEngine, CollaborativeFilteringStrategy, ContentBasedStrategy
+import json
 
 # Inicializa o sistema de recomendação e registra as estratégias
 recommendation_engine = RecommendationEngine(db_manager)
@@ -26,7 +27,6 @@ def get_interactions(post_id):
 
 @login_required
 def get_recommendations():
-    # Exemplo: pega o user_id do parâmetro de query ou do token (ajuste conforme autenticação)
     user_id = session.get('id')
 
     # Obtém os posts recomendados
@@ -68,13 +68,12 @@ def get_top_rated():
             'created_at': post.created_at,
             'author': post.author_user.username,
             'userid': post.author_user.id,
-            'image_urls': post.image_urls,
+            'image_urls': json.loads(post.image_urls) if post.image_urls else [], 
             'likes': post_reactions["likes"],
             'dislikes': post_reactions["dislikes"],
             'comments': post_reactions["comments"],
             'user_reaction': ""
         })
-    print(posts)
     return posts
 
 @bp.route('/', methods=['GET', 'POST'])

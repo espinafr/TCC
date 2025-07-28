@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block additional_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
+<style>
+  .profile-banner {
+    background: linear-gradient(135deg, #3b82f6 60%, #60a5fa 100%);
+    min-height: 180px;
+    border-radius: 1.5rem 1.5rem 0 0;
+    position: relative;
+  }
+  .profile-avatar {
+    position: absolute;
+    left: 2rem;
+    bottom: -3rem;
+    border: 5px solid #fff;
+    border-radius: 9999px;
+    background: #e5e7eb;
+    width: 110px;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .badge-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 1rem;
+    background: #0055ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0.5rem 0.5rem 0;
+    box-shadow: 0 2px 8px 0 #0001;
+    transition: transform 0.1s;
+  }
+  .badge-icon:hover {
+    transform: scale(1.08);
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="flex flex-col items-center w-full min-h-screen bg-gray-100 py-8 px-2">
+  <div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl relative">
+    <!-- Banner -->
+    <div class="profile-banner"></div>
+    <!-- Avatar -->
+    <div class="profile-avatar shadow-lg" style="top: 140px;">
+    {% if user.profile_image_url %}
+        <img src="{{ user.profile_image_url }}" alt="Foto de perfil" class="object-cover w-full h-full rounded-full">
+      {% else %}
+        <i class="fa-solid fa-user text-blue-500 text-6xl"></i>
+      {% endif %}
+    </div>
+    <!-- Profile Info -->
+    <div class="pt-20 pb-6 px-8 flex flex-col items-start">
+      <div class="flex flex-col md:flex-row md:items-center w-full justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">{{ user.display_name }}</h1>
+          <div class="text-gray-500 text-base mb-2">@{{ user.username }}</div>
+        </div>
+        {% if can_edit_profile %}
+        <a href="{{ url_for('users.edit_profile') }}" class="mt-4 md:mt-0 bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-full transition">Editar Perfil</a>
+        {% endif %}
+      </div>
+      <div class="text-gray-700 mt-2 mb-2">{{ user.bio or 'Sem bio ainda.' }}</div>
+      <div class="flex flex-wrap gap-4 text-gray-500 text-sm mt-2">
+        <div><i class="fa-regular fa-calendar"></i> Entrou em {{ user.creation_date.strftime('%d/%m/%Y') }}</div>
+      </div>
+    </div>
+    <!-- Badges -->
+    <div class="px-8 pb-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-2">Selos</h2>
+      <div class="flex flex-wrap items-center">
+        {% if user.badges %}
+          {% for badge in user.badges %}
+            <div class="badge-icon" title="{{ badge.name }}">
+              <img src="{{ badge.icon_url }}" alt="{{ badge.name }}" class="w-10 h-10 object-contain">
+            </div>
+          {% endfor %}
+        {% else %}
+          <span class="text-gray-400">Nenhum selo ainda.</span>
+        {% endif %}
+      </div>
+    </div>
+    <!-- User Posts -->
+    <div class="px-8 pb-8">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Posts</h2>
+      <div class="flex flex-col gap-6">
+        {% for post in user.posts %}
+        <div class="timeline-post post-container flex flex-col md:flex-row gap-6 p-6 rounded-lg bg-gray-50 shadow-sm border border-gray-200 hover:shadow-lg cursor-pointer transition group" data-postid="{{ post.id }}" data-post-userid="{{ post.userid }}">
+          <div class="flex-1 flex flex-col justify-between min-w-0">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="comment-profile-pic"><i class="fa-solid fa-user"></i></span>
+                <span class="font-semibold text-gray-800">{{ post.author }}</span>
+                <span class="text-xs text-gray-500">• {{ post.created_at.strftime('%d/%m/%Y') }}</span>
+              </div>
+              <h2 class="text-xl font-bold text-gray-900 mb-2 break-words line-clamp-3">{{ post.title }}</h2>
+              <div class="flex flex-wrap gap-2 mb-2">
+                <span class="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">{{ post.tag.upper() }}</span>
+              </div>
+              <div class="post-content text-gray-700 leading-relaxed text-base md:text-lg my-4">{% if post.content|length > 350 %}{{ post.content[:350] }}... <a target="_blank" href="{{ url_for('posts.view_post', post_id=post.id) }}" class="text-blue-500 hover:underline">Ler Mais</a>{% else %}{{ post.content }}{% endif %}</div>
+            </div>
+            <div class="flex items-center gap-4 interactions-container">
+              <button class="interaction-button like-button {% if post.user_reaction == 'like_post' %}active{% endif %}" id="like{{ post.id }}Button">
+                <i class="fa-solid fa-thumbs-up"></i>
+                <span id="like{{ post.id }}Count">{{ post.likes }}</span>
+              </button>
+              <button class="interaction-button dislike-button {% if post.user_reaction == 'dislike_post' %}active{% endif %}" id="dislike{{ post.id }}Button">
+                <i class="fa-solid fa-thumbs-down"></i>
+                <span id="dislike{{ post.id }}Count">{{ post.dislikes }}</span>
+              </button>
+              <button class="interaction-button" id="saveButton{{ post.id }}">
+                <i class="fa-solid fa-bookmark"></i>
+                <span>Salvar</span>
+              </button>
+            </div>
+          </div>
+          {% if post.image_urls %}
+          <div class="image-container relative w-full md:w-48 h-48 flex items-center justify-center bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onclick="openModal('imageModal', '{{ post.image_urls[0] }}')">
+            <img src="{{ post.image_urls[0] }}" alt="Imagem do Post" class="object-cover w-full h-full">
+            {% if post.image_urls|length > 1 %}
+            <div class="absolute inset-0 flex items-center justify-center">
+              <span class="bg-black bg-opacity-60 text-white text-lg font-bold px-4 py-2 rounded-full">+{{ post.image_urls|length - 1 }}</span>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="text-gray-400 text-center py-8">Nenhum post ainda.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+<div id="imageModal" class="modal hidden">
+  <span class="close-button" onclick="closeModal('imageModal')">&times;</span>
+  <img class="image-modal-content" id="fullImage">
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='postrequests.js') }}"></script>
+<script>
+function openModal(modalId, imageUrl) {
+  const modal = document.getElementById(modalId);
+  if (modalId === 'imageModal' && imageUrl) {
+    document.getElementById('fullImage').src = imageUrl;
+  }
+  modal.classList.remove('hidden');
+}
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  modal.classList.add('hidden');
+}
+</script>
+{% endblock %}

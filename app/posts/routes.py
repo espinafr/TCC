@@ -1,5 +1,5 @@
-from flask import render_template, redirect, url_for, flash, session
-from app.extensions import login_required, db_manager, s3, current_app
+from flask import render_template, redirect, url_for, flash, session, current_app
+from app.extensions import login_required, db_manager, s3
 from app.api.routes import get_post_with_details
 from botocore.exceptions import ClientError
 import app.data_sanitizer as sanitizer

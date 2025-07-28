@@ -1,6 +1,5 @@
-from flask import Flask, session
+from flask import Flask, session, render_template, flash, redirect, url_for
 from flask_wtf import CSRFProtect
-import app.data_sanitizer as sanitizer
 from app.extensions import db_manager, email_service, mail, s3
 from config import Config
 
@@ -45,6 +44,20 @@ def create_app(config_class=Config):
 
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
+
+    from app.users import bp as users_bp
+    app.register_blueprint(users_bp, url_prefix="/usuario")
+
+    # Registrando error handlers para códigos HTTP
+    @app.errorhandler(401)
+    def unauthorized_error(error):
+        flash('Faça login para acessar esta página.', 'warning')
+        return redirect(url_for('authentication.login'))
+
+    @app.errorhandler(403)
+    def forbidden_error(error):
+        flash('Você não tem permissão para acessar esta página.', 'error')
+        return redirect(url_for('main.index'))
 
     @app.route("/oiiii")
     def test_page():
