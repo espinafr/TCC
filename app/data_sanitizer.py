@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, RadioField, TextAreaField, SelectMultipleField, SelectField, MultipleFileField
-from wtforms.validators import InputRequired, Email, Length, ValidationError, Optional
+from wtforms import StringField, PasswordField, RadioField, TextAreaField, IntegerField, SelectField, MultipleFileField, DateField
+from wtforms.validators import InputRequired, DataRequired, Email, Length, ValidationError, Optional
 from flask_wtf.file import FileAllowed, FileSize
 import re
 
@@ -141,9 +141,25 @@ class ReportForm(FlaskForm):
                                    ('spam', 'Spam'),
                                    ('impersonacao', 'Falsidade ideológica')])
     description = TextAreaField('Description', validators=[
-        Optional(), # Opcional significa que pode ser vazio
+        Optional(),
         Length(max=300, message='A descrição não pode exceder 300 caracteres.')
     ])
     target_id = StringField('ID do denunciado', validators=[InputRequired(message='O ID do que esta sendo denunciado é obrigatório.')])
     type = StringField('Tipo do denunciado', validators=[InputRequired(message='O tipo do denunciado é obrigatório.'), tiposDenuncia])
     perpetrator_id = StringField('ID do perpetrador', validators=[InputRequired(message='O ID de quem fez a ofença é obrigatório.')])
+
+class ModerationForm(FlaskForm):
+    type = RadioField('Tipo', validators=[InputRequired(message='O tipo de ação de moderação é obrigatória.')],
+                          choices=[('user', 'Usuário'),
+                                   ('post', 'Post')])
+    target_id = StringField('ID à ser moderado', validators=[InputRequired(message='O ID à ser moderado é obrigatório.')])
+    reason = TextAreaField('Razão', validators=[InputRequired(message='O motivo da punição é obrigatória.'), Length(max=500, message='O motivo não pode exceder 500 caracteres.')])
+    end_date = DateField('Data de fim', validators=[Optional()])
+    mod_action = RadioField('Ação de moderação', validators=[InputRequired(message='A ação de moderação é obrigatória.')],
+                          choices=[('silenciar', 'Silenciar'),
+                                   ('advertir', 'Advertir'),
+                                   ('desativar', 'Desativar'),
+                                   ('banir', 'Banir'),
+                                   ('deletar', 'Deletar post'),
+                                   ('desativar', 'Desativar post'),
+                                   ('shadowban', 'Shadow-ban')])

@@ -240,14 +240,14 @@ function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = u
 }
 
 // Inicializa a funcionalidade do popup de login para botões que exigem autenticação.
-function initializeAuthButtons(_button, isAuthenticatedCheck, popupSuccessCallback, extraArgs = undefined) {
+function initializeAuthButtons(_button, isAuthenticatedCheck, popupSuccessCallback, extraArgs = null) {
     _button.addEventListener('click', (event) => {
 		event.preventDefault(); // Previne a ação padrão do botão, se houver
 
 		if (!isAuthenticatedCheck()) {
 			showLoginPopup(popupSuccessCallback, event, extraArgs);
 		} else {
-			popupSuccessCallback(event);
+			popupSuccessCallback(event, extraArgs);
 		}
     });
 }
@@ -269,7 +269,7 @@ function showReusableDropdown(buttonElement, options, dataAttributes = {}) {
 		item.href = '#';
 		item.className = 'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap';
 		item.textContent = option.text;
-				
+		
 		initializeAuthButtons(
 			item,
 			checkAuthenticationStatus,
@@ -307,7 +307,7 @@ document.addEventListener('click', (event) => {
 window.addEventListener('scroll', hideReusableDropdown);
 window.addEventListener('resize', hideReusableDropdown);
 
-async function deletePost(data) {
+async function deletePost(_, data) {
 	if (confirm(`Tem certeza que deseja deletar o post de ID: ${data.target_id}?`)) {
 		try {
 			const response = await sendApiRequest(`/api/post/${data.target_id}/delete`, 'POST', {});
@@ -325,7 +325,7 @@ async function deletePost(data) {
 	}
 }
 
-async function deleteInteraction(data) {
+async function deleteInteraction(_, data) {
 	if (confirm(`Tem certeza que deseja deletar a interação de ID: ${data.target_id}?`)) {
 		try {
 			const response = await sendApiRequest(`/api/interaction/${data.target_id}/delete`, 'POST', {});
@@ -343,17 +343,17 @@ async function deleteInteraction(data) {
 	}
 }
 
-function reportItem(data) {
+function reportItem(_, data) {
     showReportPopup(data);
 }
 
-function followUser(data) {
+function followUser(_, data) {
 	console.log(`Seguir Usuário ID: ${data.userId} (Username: ${data.username})`);
 	alert(`Seguindo ${data.username}!`);
 	// Lógica para enviar requisição de seguir
 }
 
-function blockUser(data) {
+function blockUser(_, data) {
 	if (confirm(`Tem certeza que deseja bloquear o Usuário ID: ${data.userId} (Username: ${data.username})?`)) {
 		console.log(`Bloquear Usuário ID: ${data.userId} (Username: ${data.username})`);
 		alert(`Bloqueando ${data.username}!`);
@@ -361,7 +361,7 @@ function blockUser(data) {
 	}
 }
 
-function sendMessage(data) {
+function sendMessage(_, data) {
 	console.log(`Enviar mensagem para Usuário ID: ${data.userId} (Username: ${data.username})`);
 	alert(`Abrindo chat com ${data.username}.`);
 	// Lógica para abrir chat
@@ -376,7 +376,7 @@ function optionButton(event) {
 		const postId = parentElement.dataset.postid;
 		const ownerId = parentElement.dataset.postUserid;
 
-		data = { target_id: postId, type: 'post', id_dono: ownerId };
+		data = { target_id: postId, type: 'post', perpetrator_id: ownerId };
 		
 		if (getUserId() === ownerId) {
 			options = [
@@ -391,7 +391,7 @@ function optionButton(event) {
 	} else if (parentElement.classList.contains('profile-card')) { // Para usuários
 		const userId = parentElement.dataset.userId;
 
-		data = { target_id: userId, type: 'usuario', id_dono: user_id };
+		data = { target_id: userId, type: 'usuario', perpetrator_id: userId };
 
 		options = [
 			{ text: 'Denunciar', action: reportItem }//,
@@ -403,7 +403,7 @@ function optionButton(event) {
 		const interactionId = parentElement.dataset.commentId;
 		const ownerId = parentElement.dataset.commentUserid;
 
-		data = { target_id: interactionId, type: 'interacao', id_dono: ownerId };
+		data = { target_id: interactionId, type: 'interacao', perpetrator_id: ownerId };
 
 		if (getUserId() === ownerId) {
 		 	options = [
@@ -534,7 +534,8 @@ reportForm.addEventListener('submit', async (e) => {
         category: selectedCategory,
         description: description,
 		type: currentReportTargetData['type'],
-		target_id: currentReportTargetData['target_id']
+		target_id: currentReportTargetData['target_id'],
+		perpetrator_id: currentReportTargetData['perpetrator_id']
     };
 
     try {

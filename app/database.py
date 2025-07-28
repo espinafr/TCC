@@ -94,7 +94,7 @@ class Report(Base):
     reported_item_id = Column(Integer, nullable=False)
     perpetrator_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     
-    status = Column(String(50), default='pending', nullable=False) # pending, in_review, resolved, rejected, archived
+    status = Column(String(50), default='pendente', nullable=False) # pendente, em_revisao, resolvido, rejeitado, arquivado
     moderator_id = Column(Integer, ForeignKey('users.id'), nullable=True) # O moderador que lidou com o relatório
     resolved_at = Column(DateTime, nullable=True)
     creation_date = Column(DateTime, default=datetime.now)
@@ -111,14 +111,14 @@ class ModerationHistory(Base):
     __tablename__ = 'moderation_history'
     id = Column(Integer, primary_key=True, index=True)
     action_type = Column(String(50), nullable=False) # mute, shadow-ban, ban, deactivation
-    reason = Column(Text, nullable=False)
+    reason = Column(String(500), nullable=False)
     is_active = Column(Boolean, default=True)
-    start_date = Column(DateTime, nullable=False)
-    end_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=True)
     moderator_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     created_at = Column(DateTime, default=datetime.now)
     user_id = Column(Integer, ForeignKey('users.id'))
-    post_id = Column(Integer, ForeignKey('posts.id'), nullable=True)
+    target_id = Column(Integer, nullable=False)
+    target_type = Column(String(50), nullable=False)
     
     # Relacionamentos
     moderator = relationship("User", foreign_keys=[moderator_id], back_populates="moderations_made")
@@ -259,7 +259,14 @@ class DatabaseManager:
             if user and user.active: # Apenas usuários ativos podem logar
                 try:
                     self.ph.verify(user.password, password)
-                    return user # Retorna o objeto User se o login for bem-sucedido
+
+                    active_penalties = self.check_and_update_user_penalties(user.id)
+                    
+                    is_banned = any(p.action_type == 'banir' for p in active_penalties)
+                    if is_banned:
+                        return None # Usuário está banido, nega o login
+
+                    return user # Senha correta e sem banimento, retorna o objeto User
                 except exceptions.VerifyMismatchError:
                     return None # Senha incorreta
             return None # Usuário não encontrado ou não ativo
@@ -292,12 +299,12 @@ class DatabaseManager:
                 return True
             return False
     
-    def delete_interaction_by_id(self, id):
+    def delete_interaction_by_id(self, interaction_id):
         """Deleta posts pelo seu ID"""
         with self.get_db() as db:
-            interaction = db.query(Interaction).filter(Interaction.id == interaction_id, Post.is_deleted == False).first()
+            interaction = db.query(Interaction).filter(Interaction.id == interaction_id, Interaction.is_deleted == False).first()
             if interaction:
-                interaction.is_deleted = True
+                interaction.is_deleted = True # Corrigido: atualiza o campo correto
                 db.commit()
                 return True
             return False
@@ -585,13 +592,6 @@ class DatabaseManager:
                 Interaction.type == 'reply_comment',
                 Interaction.parent_interaction_id == comment_id
             ).count()
-    
-    # MODERAÇÃO
-    
-    def get_moderation_history(self, user_id):
-        with self.get_db() as db:
-            history = db.query(ModerationHistory).filter(ModerationHistory.user_id == user_id).order_by(ModerationHistory.created_at.desc()).all()
-            return history
 
     def get_user_posts(self, user_id):
         with self.get_db() as db:
@@ -602,28 +602,20 @@ class DatabaseManager:
         with self.get_db() as db:
             interactions = db.query(Interaction).filter(Interaction.user_id == user_id, Interaction.type.in_(['reply_comment', 'comment_post'])).order_by(Interaction.timestamp.desc()).all()
             return interactions
-
-    def add_report(self, type, id_reported, reason, user_id):
+    
+    def check_and_update_user_penalties(self, user_id: int):
         with self.get_db() as db:
-            report = Report(type=type, id_reported=id_reported, reason=reason, user_id=user_id)
-            db.add(report)
-            db.commit()
-            db.refresh(report)
-            return report.id
+            now = datetime.now()
 
-    def add_moderation_action(self, action_type, reason, is_active, start_date, end_date, moderator_id, user_id=None, post_id=None):
-        with self.get_db() as db:
-            action = ModerationHistory(
-                action_type=action_type,
-                reason=reason,
-                is_active=is_active,
-                start_date=start_date,
-                end_date=end_date,
-                moderator_id=moderator_id,
-                user_id=user_id,
-                post_id=post_id
-            )
-            db.add(action)
+            db.query(ModerationHistory).filter(
+                ModerationHistory.user_id == user_id,
+                ModerationHistory.is_active == True,
+                ModerationHistory.end_date != None,
+                ModerationHistory.end_date < now
+            ).update({"is_active": False}, synchronize_session=False)
             db.commit()
-            db.refresh(action)
-            return action.id
+
+            return db.query(ModerationHistory).filter(
+                ModerationHistory.user_id == user_id,
+                ModerationHistory.is_active == True
+            ).all()

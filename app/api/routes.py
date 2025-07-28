@@ -274,7 +274,7 @@ def get_comment_interactions_api(comment_id):
     dislikes_count = db_manager.count_reactions_for_comment(comment_id, 'dislike_comment')
 
     user_reaction = None
-    user_reaction_obj = db_manager.get_user_comment_reaction(user_id, comment_id)
+    user_reaction_obj = db_manager.get_user_comment_reaction(session.get('id'), comment_id)
     if user_reaction_obj:
         user_reaction = user_reaction_obj.type # 'like_comment' ou 'dislike_comment'
 
@@ -316,20 +316,11 @@ def delete_interaction(interaction_id):
 @bp.route('/report', methods=['POST'])
 @login_required
 def report():
-    form = ReportForm()
+    json_data = request.get_json()
+    if not json_data:
+        return jsonify({'success': False, 'message': 'Corpo da requisição JSON inválido ou vazio.'}), 400
     
-    if request.is_json:
-        json_data = request.get_json()
-        if json_data:
-            form.category.data = json_data.get('category')
-            form.description.data = json_data.get('description')
-            form.type.data = json_data.get('type')
-            form.target_id.data = json_data.get('target_id')
-            form.perpetrator_id.data = json_data.get('id_dono')
-        else:
-            return jsonify({'success': False, 'message': 'Corpo da requisição JSON inválido ou vazio.'}), 400
-    else:
-        return jsonify({'success': False, 'message': 'Tipo de conteúdo não suportado. Espera-se JSON.'}), 415 # Unsupported Media Type
+    form = ReportForm(data=json_data)
 
     if form.validate():
         user_id = session['id'] # O ID do usuário que está denunciando

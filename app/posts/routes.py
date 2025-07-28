@@ -6,6 +6,7 @@ import app.data_sanitizer as sanitizer
 from app.database import Post
 from app.posts import bp
 from PIL import Image
+import json
 import uuid
 import os
 import io
