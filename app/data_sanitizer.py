@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, RadioField, TextAreaField, IntegerField, SelectField, MultipleFileField, DateField
+from wtforms import StringField, PasswordField, RadioField, TextAreaField, FileField, SelectField, MultipleFileField, DateField, BooleanField
 from wtforms.validators import InputRequired, DataRequired, Email, Length, ValidationError, Optional
 from flask_wtf.file import FileAllowed, FileSize
 import re
@@ -114,7 +114,7 @@ class PostForm(FlaskForm):
     titulo = StringField(name='titulo', validators=[InputRequired(message='O título é obrigatório.'), Length(min=5, max=100, message="O título precisa conter entre %(min)d e %(max)d caracteres")])
     conteudo = TextAreaField(name='conteudo', validators=[InputRequired(message='O conteúdo é obrigatório.'), Length(min=30, max=1000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
     tags = SelectField(name='tags', choices=[
-        ("desen_infan", "Desenho Infantil"), ("educacao", "Educação"), ("saude", "Saúde"), ("disciplina", "Disciplina"), ("nutricao", "Nutrição"), ("comportamen", "Comportamento"), ("lazer", "Lazer"), ("tecnologia", "Tecnologia"), ("familia", "Família"), ("desafios", "Desafios")
+        ("Desenho Infantil", "Desenho Infantil"), ("Educação", "Educação"), ("Saúde", "Saúde"), ("Disciplina", "Disciplina"), ("Nutrição", "Nutrição"), ("Comportamento", "Comportamento"), ("Lazer", "Lazer"), ("Tecnologia", "Tecnologia"), ("Família", "Família"), ("Desafios", "Desafios")
     ], validators=[InputRequired(message='Selecione uma categoria.'), validate_not_empty_choice], render_kw={'data-placeholder': 'true'})
     optionaltags = StringField(validators=[Optional(), validate_opcional])
     images = MultipleFileField(

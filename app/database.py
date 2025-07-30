@@ -19,7 +19,7 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, nullable=False)
+    username = Column(String(32), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
     power = Column(SmallInteger, default=0)
@@ -27,8 +27,7 @@ class User(Base):
     active = Column(Boolean, default=False)
 
     # Relacionamentos
-    posts = relationship("Post", back_populates="author_user")
-    interactions = relationship("Interaction", foreign_keys="[Interaction.user_id]", back_populates="user_who_interacted")
+    user_details = relationship("UserDetails", foreign_keys="[UserDetails.user_id]", back_populates="user")
     
     # Modereção
     moderations_received = relationship("ModerationHistory", foreign_keys="[ModerationHistory.user_id]", back_populates="offending_user")
@@ -41,11 +40,30 @@ class User(Base):
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
 
+class UserDetails(Base):
+    __tablename__ = 'users_details'
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), unique=True, nullable=False)
+    display_name = Column(String(32), nullable=True, default=None)
+    bio = Column(Text, nullable=True, default=None)
+    badges = Column(Text, nullable=True, default="{}")
+    icon_url = Column(Text, nullable=True, default=None)
+    banner_url = Column(Text, nullable=True, default=None)
+
+    # Relacionamentos
+    user = relationship("User", foreign_keys=[user_id], back_populates="user_details")
+    posts = relationship("Post", foreign_keys="[Post.user_id]", back_populates="author_user")
+    interactions = relationship("Interaction", foreign_keys="[Interaction.user_id]", back_populates="user_who_interacted")
+
+    def __repr__(self):
+        return f"<UserDetails(id={self.id}, display_name='{self.display_name}', user_id='{self.user_id}')>"
+
 class Post(Base):
     __tablename__ = 'posts'
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users_details.user_id'), nullable=False)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     tag = Column(String(25))
@@ -55,7 +73,7 @@ class Post(Base):
     is_deleted = Column(Boolean, default=False)
 
     # Relacionamentos
-    author_user = relationship("User", back_populates="posts")
+    author_user = relationship("UserDetails", foreign_keys=[user_id], back_populates="posts")
     interactions = relationship("Interaction", foreign_keys="[Interaction.post_id]", back_populates="post_being_interacted")
     
     def __repr__(self):
@@ -65,7 +83,7 @@ class Interaction(Base):
     __tablename__ = "interactions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users_details.user_id'), nullable=False)
     post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)
     parent_interaction_id = Column(Integer, ForeignKey('interactions.id'), nullable=True) 
     type = Column(String(50), nullable=False)  # 'like_post', 'dislike_post', 'comment_post', 'like_comment', 'dislike_comment', 'reply_comment', 'view_post', 'share_post'
@@ -74,7 +92,7 @@ class Interaction(Base):
     timestamp = Column(DateTime, default=datetime.now)
 
     # Relacionamentos
-    user_who_interacted = relationship("User", back_populates="interactions", foreign_keys=[user_id])
+    user_who_interacted = relationship("UserDetails", back_populates="interactions", foreign_keys=[user_id])
     post_being_interacted = relationship("Post", back_populates="interactions", foreign_keys=[post_id])
     
     # Hierarquia de comentários
@@ -139,14 +157,15 @@ class DatabaseManager:
             db.close()
 
     # Helper para obter usuário de forma consistente
-    def _get_user_by_field(self, db, field_name: str, value):
-        if field_name == 'email':
-            return db.query(User).filter(User.email == value).first()
-        elif field_name == 'username':
-            return db.query(User).filter(User.username == value).first()
-        elif field_name == 'id':
-            return db.query(User).filter(User.id == value).first()
-        return None
+    def _get_user_by_field(self, field_name: str, value):
+        with self.get_db() as db:
+            if field_name == 'email':
+                return db.query(User).filter(User.email == value).first()
+            elif field_name == 'username':
+                return db.query(User).filter(User.username == value).first()
+            elif field_name == 'id':
+                return db.query(User).filter(User.id == value).first()
+            return None
 
     # Helper para registrar interações
     def _register_interaction(self, user_id: int, post_id: int, interaction_type: str, value: str = None, parent_interaction_id: int = None):
@@ -178,10 +197,16 @@ class DatabaseManager:
         except Exception as e:
             print(f"Um erro inesperado ocorreu durante a inicialização do DB: {e}")
     
-    def get_user(self, type: str, value):
+    def get_user(self, _type: str, value):
         """Retorna um usuário pelo tipo (email, username, id) e valor."""
         with self.get_db() as db:
-            user = self._get_user_by_field(db, type, value)
+            user = self._get_user_by_field(_type, value)
+            return user if user else False
+
+    def get_user_details(self, user_id: int):
+        """Retorna os detalhes do perfil de um usuário a partir do ID"""
+        with self.get_db() as db:
+            user = db.query(UserDetails).options(joinedload(UserDetails.user)).filter(UserDetails.user_id == user_id).first()
             return user if user else False
 
     def check_user_activation(self, _type, identification):
@@ -190,7 +215,7 @@ class DatabaseManager:
         Retorna (True, True) para sucesso, (False, mensagem) para erro/problema.
         """
         with self.get_db() as db:
-            user_data = self._get_user_by_field(db, _type, identification)
+            user_data = self._get_user_by_field(_type, identification)
 
             if user_data:
                 if not user_data.active: # active é False (0)
@@ -248,14 +273,33 @@ class DatabaseManager:
     def activate_user(self, email):
         """Ativa a conta de um usuário."""
         with self.get_db() as db:
-            result = db.query(User).filter(User.email == email).update({"active": True})
-            db.commit()
-            return result > 0 # Retorna True se o usuário foi encontrado e atualizado
+            user = self._get_user_by_field('email', email)
+            if user:
+                user.active = True
+                db.commit()
+            return user.id if user else False # Retorna o ID se o usuário foi encontrado e atualizado
+
+    def create_user_profile(self, user_id):
+        """Cria o perfil do usuário."""
+        with self.get_db() as db:
+            try:
+                new_profile = UserDetails(user_id=user_id)
+                db.add(new_profile)
+                db.commit()
+                return True
+            except IntegrityError as e:
+                db.rollback()
+                print(f"Erro ao criar perfil de usuário: {e}")
+                return False
+            except Exception as e:
+                db.rollback()
+                print(f"Erro inesperado ao criar perfil de usuário: {e}")
+                return False
 
     def logto_user(self, login, password, _type):
         """Verifica as credenciais do usuário para login."""
         with self.get_db() as db:
-            user = self._get_user_by_field(db, _type, login)
+            user = self._get_user_by_field(_type, login)
             if user and user.active: # Apenas usuários ativos podem logar
                 try:
                     self.ph.verify(user.password, password)
@@ -274,7 +318,7 @@ class DatabaseManager:
     def get_post_by_id(self, id):
         """Obtém um post pelo seu ID."""
         with self.get_db() as db:
-            post = db.query(Post).options(joinedload(Post.author_user)).filter(Post.id == id, Post.is_deleted == False).first()
+            post = db.query(Post).filter(Post.id == id, Post.is_deleted == False).options(joinedload(Post.author_user).joinedload(UserDetails.user)).first()
             if post:
                 if post.image_urls:
                     post.image_urls = json.loads(post.image_urls)
@@ -573,7 +617,7 @@ class DatabaseManager:
     
     def get_posts_with_most_likes(self, offset: int = 0, limit: int = 10):
         with self.get_db() as db:
-            return db.query(Post).filter(Post.is_deleted == False).options(joinedload(Post.author_user)).offset(offset).limit(limit).all()
+            return db.query(Post).filter(Post.is_deleted == False).options(joinedload(Post.author_user).joinedload(UserDetails.user)).offset(offset).limit(limit).all()
     
     def get_comment_amount_for_post(self, post_id: int):
         """Conta o número de comentários para um post específico."""
@@ -595,7 +639,7 @@ class DatabaseManager:
 
     def get_user_posts(self, user_id):
         with self.get_db() as db:
-            posts = db.query(Post).filter(Post.user_id == user_id).order_by(Post.created_at.desc()).all()
+            posts = db.query(Post).filter(Post.user_id == user_id).options(joinedload(Post.author_user).joinedload(UserDetails.user)).order_by(Post.created_at.desc()).all()
             return posts
 
     def get_user_comments_n_replies(self, user_id):

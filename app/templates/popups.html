@@ -1,0 +1,102 @@
+<div id="reusableDropdown" class="hidden absolute bg-white border border-gray-200 rounded-md shadow-lg z-500 py-1">
+    <div id="dropdownContent">
+    </div>
+</div>
+<div id="__loginModal" class="fixed inset-0 flex items-center justify-center z-10000 modal-overlay bg-transparent backdrop-blur-[4px] backdrop-brightness-90 backdrop-contrast-110 backdrop-saturate-120 hidden">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-96 modal-content relative">
+        <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Login</h2>
+
+        <form id="__loginForm">
+            <div class="mb-5">
+                <label for="login" class="block text-gray-700 text-sm font-medium mb-2">Login</label>
+                <input type="text" id="__login" name="login" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Seu nome de usuário ou e-mail" required>
+            </div>
+
+            <div class="mb-6 relative">
+                <label for="password" class="block text-gray-700 text-sm font-medium mb-2">Senha</label>
+                <input type="password" id="__password" name="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10" placeholder="Sua senha" required>
+                <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer mt-7" id="__togglePassword">
+                    <i class="fas fa-eye text-gray-500" id="__eyeIcon"></i>
+                </span>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Entrar</button>
+        </form>
+
+        <p class="text-center text-gray-600 text-sm mt-6">
+            Não tem uma conta? <a href="/registrar" id="__registerLink" class="text-blue-600 hover:underline font-medium">Registre-se.</a>
+        </p>
+
+        <button id="__closeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl focus:outline-none">
+            &times;
+        </button>
+    </div>
+</div>
+<div id="reportModal" class="fixed inset-0 flex items-center justify-center z-9999 bg-transparent backdrop-blur-[4px] backdrop-brightness-90 backdrop-contrast-110 backdrop-saturate-120 hidden modal-overlay">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-96 modal-content relative">
+        <h2 id="reportModalTitle" class="text-3xl font-semibold text-gray-800 mb-6 text-center">Denunciar</h2>
+
+        <form id="reportForm">
+            <div id="reportStep1" class="report-step">
+                <p class="text-gray-700 mb-4 text-center">Qual das opções melhor descreve sua denúncia?</p>
+                <div class="space-y-3 mb-6">
+                    <label class="block">
+                        <input type="radio" name="reportCategory" value="discursoOdio" class="mr-2 text-blue-600 focus:ring-blue-500">
+                        <span class="text-gray-800 font-medium">Discurso de ódio</span>
+                    </label>
+                    <label class="block">
+                        <input type="radio" name="reportCategory" value="infoPrivada" class="mr-2 text-blue-600 focus:ring-blue-500">
+                        <span class="text-gray-800 font-medium">Espalhar informações privadas</span>
+                    </label>
+                    <label class="block">
+                        <input type="radio" name="reportCategory" value="conteudoImproprio" class="mr-2 text-blue-600 focus:ring-blue-500">
+                        <span class="text-gray-800 font-medium">Conteúdo impróprio</span>
+                    </label>
+                    <label class="block">
+                        <input type="radio" name="reportCategory" value="segurancaInfantil" class="mr-2 text-blue-600 focus:ring-blue-500">
+                        <span class="text-gray-800 font-medium">Segurança infantil</span>
+                    </label>
+                    <label class="block">
+                        <input type="radio" name="reportCategory" value="abusoAssedio" class="mr-2 text-blue-600 focus:ring-blue-500">
+                        <span class="text-gray-800 font-medium">Abuso/Assédio</span>
+                    </label>
+                    <label class="block">
+                        <input type="radio" name="reportCategory" value="spam" class="mr-2 text-blue-600 focus:ring-blue-500">
+                        <span class="text-gray-800 font-medium">Spam</span>
+                    </label>
+                    <label class="block">
+                        <input type="radio" name="reportCategory" value="impersonacao" class="mr-2 text-blue-600 focus:ring-blue-500">
+                        <span class="text-gray-800 font-medium">Falsidade ideológica</span>
+                    </label>
+                </div>
+                <button type="button" id="nextReportStep" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Próximo</button>
+            </div>
+
+            <div id="reportStep2" class="report-step hidden">
+                <p class="text-gray-700 mb-4 text-center">Descreva o ocorrido (opcional, máx. 300 caracteres):</p>
+                <textarea id="reportDescription" name="reportDescription" rows="4" maxlength="300"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4"
+                    placeholder="Detalhes adicionais..."></textarea>
+                <p class="text-gray-500 text-sm text-right mb-4"><span id="reportCharCount">0</span>/300</p>
+                <div class="flex space-x-4">
+                    <button type="button" id="backToReportStep1" class="w-1/2 bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400 transition duration-300 font-semibold focus:outline-none">Voltar</button>
+                    <button type="submit" id="submitReport" class="w-1/2 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Enviar Denúncia</button>
+                </div>
+            </div>
+
+            <div id="reportSuccess" class="report-step hidden text-center">
+                <div class="text-green-500 text-6xl mb-4">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800 mb-2">Denúncia Enviada!</h3>
+                <p class="text-gray-700 mb-6">Agradecemos sua contribuição. Analisaremos sua denúncia o mais rápido possível.</p>
+                <button type="button" id="closeReportSuccess" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Fechar</button>
+            </div>
+        </form>
+
+        <button id="closeReportModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl focus:outline-none">
+            &times;
+        </button>
+    </div>
+</div>
+<div id="notificationContainer" class="fixed z-[1000] -translate-x-2/4 flex flex-col items-center select-none pointer-events-none left-2/4 top-0"></div>

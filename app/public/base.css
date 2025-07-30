@@ -3,21 +3,6 @@ body {
     box-sizing: border-box;
 }
 
-#notificationContainer {
-    position: fixed;
-    z-index: 1000;
-    left: 50%;
-    top: 0;
-    transform: translateX(-50%);
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    user-select: none;
-    pointer-events: none;
-}
-
 #notificationContainer > div{
     padding: 15px 20px;
     border-radius: 8px;
@@ -31,11 +16,6 @@ body {
     
     transition: .2s;
     animation: fadeIn 0.3s ease-out;
-}
-
-#__loginModal, #reportModal {
-    background-color: #00002a3b;
-    backdrop-filter: blur(4px) brightness(0.9) contrast(1.1) saturate(1.2);
 }
 
 .modal-overlay {

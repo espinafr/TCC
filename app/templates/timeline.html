@@ -21,8 +21,17 @@
                 <div class="flex-1 flex flex-col justify-between min-w-0">
                     <div>
                         <div class="flex items-center gap-2 mb-2">
-                            <span class="comment-profile-pic"><i class="fa-solid fa-user"></i></span>
-                            <span class="font-semibold text-gray-800">{{ post.author }}</span>
+                            <span class="profile-pic">
+                                    {% if post.authoricon %}
+                                        <img src="{{ post.authoricon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
+                                    {% else %}
+                                        <i class="fa-solid fa-user"></i>
+                                    {% endif %}
+                                </span>
+                                <a href="/usuario/{{ post.userid }}" class="flex flex-col author-link">
+                                    <span class="font-semibold text-gray-800">{{ post.author }}</span>
+                                    <span class="text-gray-400 text-xs">@{{ post.authorat }}</span>
+                                </a>
                             <span class="text-xs text-gray-500">• {{ post.created_at.strftime('%d/%m/%Y') }}</span>
                         </div>
                         <h2 class="text-xl font-bold text-gray-900 mb-2 break-words line-clamp-3">{{ post.title }}</h2>
@@ -39,27 +48,27 @@
                         <div class="post-content text-gray-700 leading-relaxed text-base md:text-lg my-4">{% if post.content|length > 350 %}{{ post.content[:350] }}... <a target="_blank" href="{{ url_for('posts.view_post', post_id=post.id) }}" class="text-blue-500 hover:underline">Ler Mais</a>{% else %}{{ post.content }}{% endif %}</div>
                     </div>
                     <div class="flex items-center gap-4 interactions-container">
-                        <button class="interaction-button like-button {% if post.user_reaction == 'like_post' %}active{% endif %}" id="like{{ post.id }}Button">
+                        <button class="interaction-button like-button cursor-pointer {% if post.user_reaction == 'like_post' %}active{% endif %}" id="like{{ post.id }}Button">
                             <i class="fa-solid fa-thumbs-up"></i>
                             <span id="like{{ post.id }}Count">{{ post.likes }}</span>
                         </button>
-                        <button class="interaction-button dislike-button {% if post.user_reaction == 'dislike_post' %}active{% endif %}" id="dislike{{ post.id }}Button">
+                        <button class="interaction-button dislike-button cursor-pointer {% if post.user_reaction == 'dislike_post' %}active{% endif %}" id="dislike{{ post.id }}Button">
                             <i class="fa-solid fa-thumbs-down"></i>
                             <span id="dislike{{ post.id }}Count">{{ post.dislikes }}</span>
                         </button>
                         <div class="relative shareContainer">
-                            <button class="interaction-button shareButton">
+                            <button class="interaction-button cursor-pointer shareButton">
                                 <i class="fa-solid fa-share-alt"></i>
                                 <span>Compartilhar</span>
                             </button>
                             <div id="shareContextMenu{{ post.id }}" class="share-context-menu hidden">
-                                <button onclick="copyPostUrl('{{ post.id }}')">
+                                <button onclick="copyPostUrl('{{ post.id }}')" class="cursor-pointer">
                                     <i class="fa-solid fa-copy"></i>
                                     Copiar URL do Post
                                 </button>
                             </div>
                         </div>
-                        <button class="interaction-button" id="saveButton{{ post.id }}">
+                        <button class="interaction-button cursor-pointer" id="saveButton{{ post.id }}">
                             <i class="fa-solid fa-bookmark"></i>
                             <span>Salvar</span>
                         </button>
@@ -70,12 +79,12 @@
 					<img src="{{ post.image_urls[0] }}" alt="Imagem do Post" class="object-cover w-full h-full">
                     {% if post.image_urls|length > 1 %}
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="bg-black bg-opacity-60 text-white text-lg font-bold px-4 py-2 rounded-full">+{{ post.image_urls|length - 1 }}</span>
+                        <span class="bg-black/60 text-white text-lg font-bold px-4 py-2 rounded-full">+{{ post.image_urls|length - 1 }}</span>
                     </div>
                     {% endif %}
                 </div>
                 {% endif %}
-				<button class="options-button self-start text-gray-500 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-lg"></i></button>
+				<button class="options-button self-start cursor-pointer text-gray-500 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-lg"></i></button>
             </div>
             {% endfor %}
         </div>
@@ -83,88 +92,22 @@
             <a href="{{ url_for('main.index') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">Voltar para a página inicial</a>
         </div>
     </div>
-	<div id="reportModal" class="fixed inset-0 flex items-center justify-center z-9999 hidden modal-overlay">
-		<div class="bg-white p-8 rounded-lg shadow-xl w-96 modal-content relative">
-			<h2 id="reportModalTitle" class="text-3xl font-semibold text-gray-800 mb-6 text-center">Denunciar</h2>
-
-			<form id="reportForm">
-				<div id="reportStep1" class="report-step">
-					<p class="text-gray-700 mb-4 text-center">Qual das opções melhor descreve sua denúncia?</p>
-					<div class="space-y-3 mb-6">
-						<label class="block">
-							<input type="radio" name="reportCategory" value="discursoOdio" class="mr-2 text-blue-600 focus:ring-blue-500">
-							<span class="text-gray-800 font-medium">Discurso de ódio</span>
-						</label>
-						<label class="block">
-							<input type="radio" name="reportCategory" value="infoPrivada" class="mr-2 text-blue-600 focus:ring-blue-500">
-							<span class="text-gray-800 font-medium">Espalhar informações privadas</span>
-						</label>
-						<label class="block">
-							<input type="radio" name="reportCategory" value="conteudoImproprio" class="mr-2 text-blue-600 focus:ring-blue-500">
-							<span class="text-gray-800 font-medium">Conteúdo impróprio</span>
-						</label>
-						<label class="block">
-							<input type="radio" name="reportCategory" value="segurancaInfantil" class="mr-2 text-blue-600 focus:ring-blue-500">
-							<span class="text-gray-800 font-medium">Segurança infantil</span>
-						</label>
-						<label class="block">
-							<input type="radio" name="reportCategory" value="abusoAssedio" class="mr-2 text-blue-600 focus:ring-blue-500">
-							<span class="text-gray-800 font-medium">Abuso/Assédio</span>
-						</label>
-						<label class="block">
-							<input type="radio" name="reportCategory" value="spam" class="mr-2 text-blue-600 focus:ring-blue-500">
-							<span class="text-gray-800 font-medium">Spam</span>
-						</label>
-						<label class="block">
-							<input type="radio" name="reportCategory" value="impersonacao" class="mr-2 text-blue-600 focus:ring-blue-500">
-							<span class="text-gray-800 font-medium">Falsidade ideológica</span>
-						</label>
-					</div>
-					<button type="button" id="nextReportStep" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Próximo</button>
-				</div>
-
-				<div id="reportStep2" class="report-step hidden">
-					<p class="text-gray-700 mb-4 text-center">Descreva o ocorrido (opcional, máx. 300 caracteres):</p>
-					<textarea id="reportDescription" name="reportDescription" rows="4" maxlength="300"
-						class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4"
-						placeholder="Detalhes adicionais..."></textarea>
-					<p class="text-gray-500 text-sm text-right mb-4"><span id="reportCharCount">0</span>/300</p>
-					<div class="flex space-x-4">
-						<button type="button" id="backToReportStep1" class="w-1/2 bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400 transition duration-300 font-semibold focus:outline-none">Voltar</button>
-						<button type="submit" id="submitReport" class="w-1/2 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Enviar Denúncia</button>
-					</div>
-				</div>
-
-				<div id="reportSuccess" class="report-step hidden text-center">
-					<div class="text-green-500 text-6xl mb-4">
-						<i class="fas fa-check-circle"></i>
-					</div>
-					<h3 class="text-2xl font-semibold text-gray-800 mb-2">Denúncia Enviada!</h3>
-					<p class="text-gray-700 mb-6">Agradecemos sua contribuição. Analisaremos sua denúncia o mais rápido possível.</p>
-					<button type="button" id="closeReportSuccess" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Fechar</button>
-				</div>
-			</form>
-
-			<button id="closeReportModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl focus:outline-none">
-				&times;
-			</button>
-		</div>
-	</div>
+    {% include 'popups.html' %}
     <div id="imageModal" class="modal hidden">
-        <span class="close-button" onclick="closeModal('imageModal')">&times;</span>
+        <span class="close-button cursor-pointer" onclick="closeModal('imageModal')">&times;</span>
         <img class="image-modal-content" id="fullImage">
     </div>
-	<div id="reusableDropdown" class="hidden absolute bg-white border border-gray-200 rounded-md shadow-lg z-500 py-1">
-		<div id="dropdownContent">
-		</div>
-	</div>
     <div id="replyModal" class="modal hidden">
         <div class="reply-modal-content">
-            <span class="close-button-modal" onclick="closeModal('replyModal')">&times;</span>
+            <span class="close-button-modal cursor-pointer" onclick="closeModal('replyModal')">&times;</span>
             <h3 class="text-xl font-bold text-gray-800 mb-4">Responder Comentário</h3>
             <div class="comment-input-container">
                 <div class="comment-profile-pic">
-                    <i class="fa-solid fa-user"></i>
+                    {% if user_icon %}
+                        <img src="{{ user_icon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
+                    {% else %}
+                        <i class="fa-solid fa-user"></i>
+                    {% endif %}
                 </div>
                 <textarea id="replyTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva sua resposta!" oninput="adjustTextareaHeight(this); toggleReplyButton();"></textarea>
                 <button id="replyButton" class="comment-button">Responder</button>
@@ -173,18 +116,17 @@
     </div>
     <div id="commentModal" class="modal hidden">
             <div class="reply-modal-content">
-                <span class="close-button-modal" onclick="closeModal('commentModal')">&times;</span>
+                <span class="close-button-modal cursor-pointer" onclick="closeModal('commentModal')">&times;</span>
                 <div id="commentModalContent">
                     <!-- Conteúdo do comentário e suas respostas será carregado aqui -->
                 </div>
             </div>
         </div>
     <div id="postModal" class="modal hidden">
-		<span class="post-close-button" onclick="closeModal('postModal')">&times;</span>
+		<span class="post-close-button cursor-pointer" onclick="closeModal('postModal')">&times;</span>
         <div class="post-modal-content relative">
         </div>
     </div>
-    <div id="notificationContainer"></div>
 </body>
 {% endblock %}
 {% block scripts %}

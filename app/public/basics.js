@@ -106,51 +106,6 @@ function toggleLoading(object) {
 // Popup de login
 // Cria e exibe um popup de login no documento.
 function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = undefined) {
-    // Verifica se o modal já existe para evitar duplicação
-    if (document.getElementById('__loginModal')) {
-        const existingModal = document.getElementById('__loginModal');
-        existingModal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        return; // Sai da função se o modal já está na DOM
-    }
-
-    const popupHtml = `
-        <div id="__loginModal" class="fixed inset-0 flex items-center justify-center z-10000 modal-overlay">
-            <div class="bg-white p-8 rounded-lg shadow-xl w-96 modal-content relative">
-                <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Login</h2>
-
-                <form id="__loginForm">
-                    <div class="mb-5">
-                        <label for="login" class="block text-gray-700 text-sm font-medium mb-2">Login</label>
-                        <input type="text" id="__login" name="login" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Seu nome de usuário ou e-mail" required>
-                    </div>
-
-                    <div class="mb-6 relative">
-                        <label for="password" class="block text-gray-700 text-sm font-medium mb-2">Senha</label>
-                        <input type="password" id="__password" name="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10" placeholder="Sua senha" required>
-                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer mt-7" id="__togglePassword">
-                            <i class="fas fa-eye text-gray-500" id="__eyeIcon"></i>
-                        </span>
-                    </div>
-
-                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Entrar</button>
-                </form>
-
-                <p class="text-center text-gray-600 text-sm mt-6">
-                    Não tem uma conta? <a href="/registrar" id="__registerLink" class="text-blue-600 hover:underline font-medium">Registre-se.</a>
-                </p>
-
-                <button id="__closeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl focus:outline-none">
-                    &times;
-                </button>
-            </div>
-        </div>
-    `;
-
-    // Adiciona o HTML do popup ao body
-    document.body.insertAdjacentHTML('beforeend', popupHtml);
-
-    // Seleciona os elementos recém-adicionados
     const loginModal = document.getElementById('__loginModal');
     const closeModalBtn = document.getElementById('__closeModal');
     const togglePassword = document.getElementById('__togglePassword');
@@ -304,8 +259,10 @@ document.addEventListener('click', (event) => {
 });
 
 // Fechar o dropdown ao rolar a página
-window.addEventListener('scroll', hideReusableDropdown);
-window.addEventListener('resize', hideReusableDropdown);
+if (reusableDropdown) {
+    window.addEventListener('scroll', hideReusableDropdown);
+    window.addEventListener('resize', hideReusableDropdown);
+}
 
 async function deletePost(_, data) {
 	if (confirm(`Tem certeza que deseja deletar o post de ID: ${data.target_id}?`)) {
@@ -424,12 +381,6 @@ function attachOptionBtnListener(button) {
 		optionButton(event);
 	});
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-	document.querySelectorAll('.options-button').forEach(button => {
-		attachOptionBtnListener(button);
-	});
-});
 
 // Popup de denúncia
 const reportModal = document.getElementById('reportModal');
@@ -555,3 +506,28 @@ reportForm.addEventListener('submit', async (e) => {
     }
 });
 closeReportSuccessBtn.addEventListener('click', hideReportPopup);
+
+// Counter
+function startCounterListener(input) {
+    const counter = document.getElementById(input.id+"Counter");
+
+    input.addEventListener("focus", (event) => {
+        counter.classList.remove("hidden");
+    });
+    input.addEventListener("blur", (event) => {
+        counter.classList.add("hidden");
+    });
+    input.addEventListener("keyup", (event) => {
+        counter.textContent = input.value.length + " / " + input.maxLength;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+	document.querySelectorAll('.options-button').forEach(button => {
+		attachOptionBtnListener(button);
+	});
+
+    document.querySelectorAll('[maxlength]').forEach(input => {
+		startCounterListener(input);
+	});
+});

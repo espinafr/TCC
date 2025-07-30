@@ -1,20 +1,17 @@
 from flask import render_template, redirect, url_for, flash, session, current_app
 from app.extensions import login_required, db_manager, s3
-from app.api.routes import get_post_with_details
+from app.api.routes import get_post_with_details, get_user_icon
 from botocore.exceptions import ClientError
-import app.data_sanitizer as sanitizer
+from app.data_sanitizer import PostForm, ALLOWED_CATEGORIES
 from app.database import Post
 from app.posts import bp
 from PIL import Image
-import json
-import uuid
-import os
-import io
+import json, uuid, os, io
 
 @bp.route('/create_post', methods=['GET', 'POST'])
 @login_required
 def create_post():
-    form = sanitizer.PostForm()
+    form = PostForm()
     if form.validate_on_submit():
         uploaded_files_info = []
         
@@ -29,7 +26,7 @@ def create_post():
                     img_byte_arr = io.BytesIO()
 
                     # Salva a imagem no buffer sem metadados EXIF.
-                    if file_extension == '.jpeg' or file_extension == '.jpg':
+                    if file_extension in ['.jpeg', '.jpg']:
                         img.save(img_byte_arr, format='JPEG', optimize=True)
                     elif file_extension == '.png':
                         img.save(img_byte_arr, format='PNG', optimize=True)
@@ -78,7 +75,7 @@ def create_post():
                 db.rollback()
                 flash('Erro ao criar post. Tente novamente.', 'danger')
     
-    return render_template('post.html', form=form, allowed_categories=sanitizer.ALLOWED_CATEGORIES)
+    return render_template('post.html', form=form, allowed_categories=ALLOWED_CATEGORIES)
 
 @bp.route('/post/<int:post_id>', methods=['GET'])
 @login_required
@@ -95,4 +92,5 @@ def view_post(post_id):
                            post_dislikes=post['post_dislikes'],
                            user_post_reaction=post['user_post_reaction'],
                            next_offset=post['next_offset'],
-                           total_comments=post['total_comments'])
+                           total_comments=post['total_comments'],
+                           user_icon=get_user_icon(session.get('id')))

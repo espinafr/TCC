@@ -4,6 +4,10 @@ from app.data_sanitizer import ReportForm
 from app.database import Post, Report
 from app.api import bp
 
+def get_user_icon(user_id):
+    user = db_manager.get_user_details(user_id)
+    return user.icon_url if user and user.icon_url else None
+
 def get_post_with_details(post_id):
     post = db_manager.get_post_by_id(post_id)
     if not post:
@@ -20,6 +24,8 @@ def get_post_with_details(post_id):
         if user_post_reaction:
             user_post_reaction_type = user_post_reaction.type
 
+    user_icon = get_user_icon(user_id)
+
     # Carregar comentários e suas respostas com contagens e reações do usuário
     comments_with_details = get_post_comments(post_id, offset=0, limit=10)
     comment_count = db_manager.get_comment_amount_for_post(post_id)
@@ -30,6 +36,7 @@ def get_post_with_details(post_id):
         'post_likes': post_likes,
         'post_dislikes': post_dislikes,
         'user_post_reaction': user_post_reaction_type,
+        'user_icon': user_icon,
         'comment_count': comment_count,
         'next_offset': len(comments_with_details),
         'total_comments': comment_count
@@ -44,8 +51,9 @@ def get_post_comments(post_id, offset=0, limit=10):
         comment_content = {
             'comment': {
                 'id': comment.id,
-                'username': comment.user_who_interacted.username,
+                'username': comment.user_who_interacted.display_name,
                 'userid': comment.user_who_interacted.id,
+                "usericon": comment.user_who_interacted.icon_url,
                 'value': comment.value
             },
             'likes': likes,
@@ -64,8 +72,9 @@ def get_post_comments(post_id, offset=0, limit=10):
                     comment_content['most_liked_reply'] = {
                         'reply': {
                             'id': reply.id,
-                            'username': reply.user_who_interacted.username,
-                            'userid': reply.user_who_interacted.id,
+                            'username': reply.user_who_interacted.display_name,
+                            'userid': reply.user_who_interacted.user_id,
+                            'usericon': reply.user_who_interacted.icon_url,
                             'value': reply.value
                         },
                         'likes': likes,
@@ -88,8 +97,9 @@ def get_comment_replies(post_id, comment_id, offset=0, limit=10):
         reply_content = {
             'reply': {
                 'id': reply.id,
-                'username': reply.user_who_interacted.username,
-                'userid': reply.user_who_interacted.id,
+                'username': reply.user_who_interacted.display_name,
+                'userid': reply.user_who_interacted.user_id,
+                "usericon": reply.user_who_interacted.icon_url,
                 'value': reply.value
             },
             'likes': likes,
@@ -154,8 +164,9 @@ def comment_post_api(post_id):
             "comment_content": {
                 "comment": {
                     "id": new_comment.id,
-                    "username": new_comment.user_who_interacted.username,
-                    "userid": new_comment.user_who_interacted.id,
+                    "username": new_comment.user_who_interacted.display_name,
+                    "userid": new_comment.user_who_interacted.user_id,
+                    "usericon": new_comment.user_who_interacted.icon_url,
                     "value": new_comment.value
                 },
                 "likes": 0,
@@ -188,8 +199,9 @@ def reply_comment_api(parent_comment_id):
             "reply_content": {
                 "reply": {
                     "id": new_reply.id,
-                    "username": new_reply.user_who_interacted.username,
-                    "userid": new_reply.user_who_interacted.id,
+                    "username": new_reply.user_who_interacted.display_name,
+                    "userid": new_reply.user_who_interacted.user_id,
+                    "usericon": new_reply.user_who_interacted.icon_url,
                     "value": new_reply.value
                 },
                 "likes": 0,
@@ -217,9 +229,11 @@ def get_post_details_api(post_id):
             "optional_tags": post_details['post'].optional_tags,
             "image_urls": post_details['post'].image_urls,
             "created_at": post_details['post'].created_at.strftime('%d/%m/%Y'),
-            "username": post_details['post'].author_user.username,
-            "userid": post_details['post'].author_user.id,
+            "username": post_details['post'].author_user.display_name,
+            "userat": post_details['post'].author_user.user.username,
+            "userid": post_details['post'].author_user.user_id,
         },
+        "usericon": post_details['user_icon'],
         "comments": post_details['comments_with_details'],
         "likes": post_details['post_likes'],
         "dislikes": post_details['post_dislikes'],

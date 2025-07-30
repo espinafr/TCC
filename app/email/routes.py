@@ -7,7 +7,9 @@ def confirm_email(token):
     success, result = email_service.verify_token(token)
     success, email_or_error = email_service.verify_token(token)
     if success:
-        if db_manager.activate_user(email_or_error):
+        user = db_manager.activate_user(email_or_error)
+        if user:
+            db_manager.create_user_profile(user.id)
             flash('E-mail confirmado com sucesso! Faça login para continuar.', 'success')
             return redirect(url_for('authentication.login'))
         else:

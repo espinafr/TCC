@@ -1,6 +1,7 @@
 from flask import render_template, session
 from app.main import bp
 from app.extensions import login_required, db_manager
+from app.api.routes import get_user_icon
 from app.recommendation import RecommendationEngine, CollaborativeFilteringStrategy, ContentBasedStrategy
 import json
 
@@ -45,8 +46,10 @@ def get_recommendations():
                     'tag': post.tag,
                     'optional_tags': post.optional_tags,
                     'created_at': post.created_at,
-                    'author': post.author_user.username,
-                    'userid': post.author_user.id,
+                    'author': post.author_user.display_name,
+                    'authorat': post.author_user.user.username,
+                    'authoricon': post.author_user.icon_url,
+                    'userid': post.author_user.user_id,
                     'image_urls': post.image_urls,
                     'likes': post_reactions["likes"],
                     'dislikes': post_reactions["dislikes"],
@@ -66,8 +69,10 @@ def get_top_rated():
             'tag': post.tag,
             'optional_tags': post.optional_tags,
             'created_at': post.created_at,
-            'author': post.author_user.username,
-            'userid': post.author_user.id,
+            'author': post.author_user.display_name,
+            'authorat': post.author_user.user.username,
+            'authoricon': post.author_user.icon_url,
+            'userid': post.author_user.user_id,
             'image_urls': json.loads(post.image_urls) if post.image_urls else [], 
             'likes': post_reactions["likes"],
             'dislikes': post_reactions["dislikes"],
@@ -80,7 +85,7 @@ def get_top_rated():
 def index():
     if session.get('id'):
         recommendations = get_recommendations()
-        return render_template('timeline.html', posts=recommendations)
+        return render_template('timeline.html', posts=recommendations, user_icon=get_user_icon(session.get('id')))
     else:
         top_rated = get_top_rated()
         return render_template('timeline.html', posts=top_rated)

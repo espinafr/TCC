@@ -50,9 +50,9 @@ function toggleCommentButton() {
     const textarea = document.getElementById('commentTextarea');
     const button = document.getElementById('commentButton');
     if (textarea.value.trim().length > 0) {
-        button.classList.add('active');
+        button.classList.add('active', 'cursor-pointer');
     } else {
-        button.classList.remove('active');
+        button.classList.remove('active', 'cursor-pointer');
     }
 }
 
@@ -60,9 +60,9 @@ function toggleReplyButton() {
     const textarea = document.getElementById('replyTextarea');
     const button = document.getElementById('replyButton');
     if (textarea.value.trim().length > 0) {
-        button.classList.add('active');
+        button.classList.add('active', 'cursor-pointer');
     } else {
-        button.classList.remove('active');
+        button.classList.remove('active', 'cursor-pointer');
     }
 }
 
@@ -158,12 +158,12 @@ function renderComment(comment_content, postid) {
     let html = `
         <div class="comment-item flex gap-4 mb-6" data-comment-id="${comment_content.comment.id}" data-comment-userid="${comment_content.comment.userid}">
             <div class="comment-profile-pic">
-                <i class="fa-solid fa-user"></i>
+                ${ comment_content.comment.usericon ? '<img src='+comment_content.comment.usericon+' alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">' : '<i class="fa-solid fa-user"></i>'}
             </div>
             <div class="flex-grow">
                 <div id="interaction${comment_content.comment.id}box">
 					<div class="flex justify-between">
-						<p class="font-semibold text-gray-800 mb-1">${comment_content.comment.username}</p>
+                        <a class="font-semibold text-gray-800 mb-1 hover:underline" target="_blank" href="/usuario/${comment_content.comment.userid}">${comment_content.comment.username}</a>
 						<button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
 					</div>
                     <p class="text-gray-700 mb-2">${comment_content.comment.value}</p>
@@ -190,11 +190,11 @@ function renderComment(comment_content, postid) {
         html += `
             <div class="comment-item flex gap-4 mt-4 comment-reply" data-comment-id="${comment_content.most_liked_reply.reply.id}" data-comment-userid="${comment_content.most_liked_reply.reply.userid}">
                 <div class="comment-profile-pic">
-                    <i class="fa-solid fa-user"></i>
+                    ${ comment_content.most_liked_reply.reply.usericon ? '<img src='+comment_content.most_liked_reply.reply.usericon+' alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">' : '<i class="fa-solid fa-user"></i>'}
                 </div>
                 <div class="flex-grow">
 					<div class="flex justify-between">
-						<p class="font-semibold text-gray-800 mb-1">${comment_content.most_liked_reply.reply.username}</p>
+						<a class="font-semibold text-gray-800 mb-1 hover:underline" target="_blank" href="/usuario/${comment_content.most_liked_reply.reply.userid}">${comment_content.most_liked_reply.reply.username}</a>
 						<button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
 					</div>
                     <p class="text-gray-700 mb-2">${comment_content.most_liked_reply.reply.value}</p>
@@ -231,11 +231,11 @@ function renderReply(reply_content) {
     let html = `
         <div class="comment-item flex gap-4 mt-4 comment-reply" data-comment-id="${reply_content.reply.id}" data-comment-userid="${reply_content.reply.userid}">
             <div class="comment-profile-pic">
-                <i class="fa-solid fa-user"></i>
+                ${ reply_content.reply.usericon ? '<img src='+reply_content.reply.usericon+' alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">' : '<i class="fa-solid fa-user"></i>'}
             </div>
             <div class="flex-grow">
 				<div class="flex justify-between">
-					<p class="font-semibold text-gray-800 mb-1">${reply_content.reply.username}</p>
+                    <a class="font-semibold text-gray-800 mb-1 hover:underline" target="_blank" href="/usuario/${reply_content.reply.userid}">${reply_content.reply.username}</a>
 					<button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
 				</div>
                 <p class="text-gray-700 mb-2">${reply_content.reply.value}</p>
@@ -310,37 +310,37 @@ function renderPost(post_package) {
             ${imagesHtml}
         </div>
         <div class="my-2 text-gray-600 text-sm">
-            Postado por: <span class="font-semibold">${post_package.post.username}</span>
+            Postado por: <a href="/usuario/{{ post.author_user.user_id }}" class="font-semibold text-blue-500 hover:underline">${post_package.post.username || post_package.post.userat}</a>
         </div>
         <div class="flex items-center gap-4 border-t border-gray-200 pt-4 mb-8">
-            <button class="interaction-button${post_package.user_post_reaction === 'like_post' ? ' active' : ''}" id="likeButton">
+            <button class="interaction-button cursor-pointer ${post_package.user_post_reaction === 'like_post' ? 'active' : ''}" id="likeButton">
                 <i class="fa-solid fa-thumbs-up"></i>
                 <span id="likeCount">${post_package.likes}</span>
             </button>
-            <button class="interaction-button${post_package.user_post_reaction === 'dislike_post' ? ' active' : ''}" id="dislikeButton">
+            <button class="interaction-button cursor-pointer ${post_package.user_post_reaction === 'dislike_post' ? 'active' : ''}" id="dislikeButton">
                 <i class="fa-solid fa-thumbs-down"></i>
                 <span id="dislikeCount">${post_package.dislikes}</span>
             </button>
             <div class="relative shareContainer">
-                <button class="interaction-button shareButton" id="shareButton">
+                <button class="interaction-button cursor-pointer shareButton" id="shareButton">
                     <i class="fa-solid fa-share-alt"></i>
                     <span>Compartilhar</span>
                 </button>
-                <div id="shareContextMenu${post_package.post.id}" class="share-context-menu hidden">
-                    <button onclick="copyPostUrl('${post_package.post.id}')">
+                <div id="shareContextMenu" class="share-context-menu hidden">
+                    <button onclick="copyPostUrl('${post_package.post.id}')" class="cursor-pointer">
                         <i class="fa-solid fa-copy"></i>
                         Copiar URL do Post
                     </button>
                 </div>
             </div>
-            <button class="interaction-button" id="saveButton">
+            <button class="interaction-button cursor-pointer" id="saveButton">
                 <i class="fa-solid fa-bookmark"></i>
                 <span>Salvar</span>
             </button>
         </div>
         <div class="comment-input-container mb-8">
             <div class="comment-profile-pic">
-                <i class="fa-solid fa-user"></i>
+                ${ post_package.usericon ? '<img src='+post_package.usericon+' alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">' : '<i class="fa-solid fa-user"></i>'}
             </div>
             <textarea id="commentTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva um comentário!" oninput="adjustTextareaHeight(this); toggleCommentButton();"></textarea>
             <button id="commentButton" class="comment-button">Comentar</button>
@@ -354,7 +354,7 @@ function renderPost(post_package) {
             <button id="loadMoreComments" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
                 Carregar mais comentários
             </button>` : ''}
-            <a href="/" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
+            <a href="/" class="inline-block cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
                 Voltar para a página inicial
             </a>
         </div>
@@ -712,7 +712,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Abrir um post
     document.querySelectorAll('.timeline-post').forEach(function(post) {
         post.addEventListener('click', async function(event) {
-            if (event.target.closest('.interactions-container, .interaction-button, .share-context-menu, .image-container, .options-button')) {
+            if (event.target.closest('.interactions-container, .interaction-button, .share-context-menu, .image-container, .options-button, .author-link')) {
                 return; 
             }
             const postId = post.dataset.postid;
