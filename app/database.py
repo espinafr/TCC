@@ -273,10 +273,11 @@ class DatabaseManager:
     def activate_user(self, email):
         """Ativa a conta de um usuário."""
         with self.get_db() as db:
-            user = self._get_user_by_field('email', email)
+            user = db.query(User).filter(User.email == value).first()
             if user:
                 user.active = True
                 db.commit()
+                db.refresh()
             return user.id if user else False # Retorna o ID se o usuário foi encontrado e atualizado
 
     def create_user_profile(self, user_id):
