@@ -277,7 +277,6 @@ class DatabaseManager:
             if user:
                 user.active = True
                 db.commit()
-                db.refresh()
             return user.id if user else False # Retorna o ID se o usuário foi encontrado e atualizado
 
     def create_user_profile(self, user_id):
