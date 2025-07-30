@@ -6,65 +6,65 @@
 {% endblock %}
 {% block content %}
 <body class="bg-gray-100 min-h-screen flex">
-    <div class="admin-menu bg-white shadow-lg rounded-lg p-4 w-64 flex-shrink-0 hidden md:block">
-        <h2 class="text-xl font-bold mb-1 text-blue-700">Administração</h2>
-        <p class="text-m1 font-bold mb-6">Olá {{username}}!</p>
-        <ul class="space-y-2">
+	<div class="admin-menu bg-white shadow-lg rounded-lg p-4 w-64 flex-shrink-0 hidden md:block">
+		<h2 class="text-xl font-bold mb-1 text-blue-700">Administração</h2>
+		<p class="text-m1 font-bold mb-6">Olá {{username}}!</p>
+		<ul class="space-y-2">
 			<a href="{{ url_for('main.index') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">Página principal</a>
-            <li><button class="admin-tab-btn w-full text-left px-4 py-2 rounded-lg transition font-semibold bg-blue-100 text-blue-700" data-tab="reports">Denúncias</button></li>
-            <li><button class="admin-tab-btn w-full text-left px-4 py-2 rounded-lg transition font-semibold hover:bg-blue-50" data-tab="hunt">Caçar usuário</button></li>
-            <li><button class="admin-tab-btn w-full text-left px-4 py-2 rounded-lg transition font-semibold hover:bg-blue-50" data-tab="moderate">Moderar</button></li>
-            <li><button class="admin-tab-btn w-full text-left px-4 py-2 rounded-lg transition font-semibold hover:bg-blue-50" data-tab="stats">Estatísticas</button></li>
-        </ul>
-    </div>
-    <div class="w-full flex flex-col items-center md:items-start p-4">
-        <!-- Denúncias -->
-        <div id="tab-reports" class="admin-tab-content w-full max-w-3xl">
-            <h3 class="text-2xl font-bold mb-4">Denúncias</h3>
-            <button id="loadReportsBtn" class="bg-blue-600 text-white px-4 py-2 rounded mb-4">Carregar denúncias</button>
-            <div id="reportsTableContainer"></div>
-        </div>
-        <!-- Caçar usuário -->
-        <div id="tab-hunt" class="admin-tab-content w-full max-w-3xl mx-auto hidden">
-            <h3 class="text-2xl font-bold mb-4">Caçar usuário</h3>
-            <form id="huntForm" class="mb-4 flex flex-col gap-4">
-                <input type="number" name="user_id" placeholder="ID do usuário" class="border rounded p-2" required>
-                <div class="flex gap-4">
-                    <label><input type="checkbox" name="include_reports"> Incluir denúncias</label>
-                    <label><input type="checkbox" name="include_posts"> Incluir post</label>
-                    <label><input type="checkbox" name="include_interactions"> Incluir interações</label>
-                </div>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Buscar</button>
-            </form>
-            <div id="huntResults"></div>
-        </div>
-        <!-- Moderar -->
-        <div id="tab-moderate" class="admin-tab-content w-full max-w-3xl mx-auto hidden">
-            <h3 class="text-2xl font-bold mb-4">Moderar</h3>
-            <div class="flex gap-4 mb-4">
-                <button id="modUserBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Usuário</button>
-                <button id="modPostBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Post</button>
-                <button id="modInteractionBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Interação</button>
-            </div>
-            <form id="moderateForm" class="flex flex-col gap-4">
-                <input type="number" name="target_id" placeholder="ID" class="border rounded p-2" required>
-                <input type="text" name="reason" placeholder="Razão" class="border rounded p-2" required>
-                <div class="flex gap-4">
+			<li><button class="admin-tab-btn w-full text-left px-4 py-2 rounded-lg transition font-semibold bg-blue-100 text-blue-700" data-tab="reports">Denúncias</button></li>
+			<li><button class="admin-tab-btn w-full text-left px-4 py-2 rounded-lg transition font-semibold hover:bg-blue-50" data-tab="hunt">Caçar usuário</button></li>
+			<li><button class="admin-tab-btn w-full text-left px-4 py-2 rounded-lg transition font-semibold hover:bg-blue-50" data-tab="moderate">Moderar</button></li>
+			<li><button class="admin-tab-btn w-full text-left px-4 py-2 rounded-lg transition font-semibold hover:bg-blue-50" data-tab="stats">Estatísticas</button></li>
+		</ul>
+	</div>
+	<div class="w-full flex flex-col items-center md:items-start p-4">
+		<!-- Denúncias -->
+		<div id="tab-reports" class="admin-tab-content w-full max-w-3xl">
+			<h3 class="text-2xl font-bold mb-4">Denúncias</h3>
+			<button id="loadReportsBtn" class="bg-blue-600 text-white px-4 py-2 rounded mb-4">Carregar denúncias</button>
+			<div id="reportsTableContainer"></div>
+		</div>
+		<!-- Caçar usuário -->
+		<div id="tab-hunt" class="admin-tab-content w-full max-w-3xl mx-auto hidden">
+			<h3 class="text-2xl font-bold mb-4">Caçar usuário</h3>
+			<form id="huntForm" class="mb-4 flex flex-col gap-4">
+				<input type="number" name="user_id" placeholder="ID do usuário" class="border rounded p-2" required>
+				<div class="flex gap-4">
+					<label><input type="checkbox" name="include_reports"> Incluir denúncias</label>
+					<label><input type="checkbox" name="include_posts"> Incluir post</label>
+					<label><input type="checkbox" name="include_interactions"> Incluir interações</label>
+				</div>
+				<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Buscar</button>
+			</form>
+			<div id="huntResults"></div>
+		</div>
+		<!-- Moderar -->
+		<div id="tab-moderate" class="admin-tab-content w-full max-w-3xl mx-auto hidden">
+			<h3 class="text-2xl font-bold mb-4">Moderar</h3>
+			<div class="flex gap-4 mb-4">
+				<button id="modUserBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Usuário</button>
+				<button id="modPostBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Post</button>
+				<button id="modInteractionBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Interação</button>
+			</div>
+			<form id="moderateForm" class="flex flex-col gap-4">
+				<input type="number" name="target_id" placeholder="ID" class="border rounded p-2" required>
+				<input type="text" name="reason" placeholder="Razão" class="border rounded p-2" required>
+				<div class="flex gap-4">
 					<label for="end_date">Data de fim: <input type="date" name="end_date" class="border rounded p-2"></label>                 
-                </div>
-                <div id="modOptions"></div>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Enviar</button>
-            </form>
-            <div id="moderateResult"></div>
-        </div>
-        <!-- Estatísticas -->
-        <div id="tab-stats" class="admin-tab-content w-full max-w-3xl hidden">
-            <h3 class="text-2xl font-bold mb-4">Estatísticas</h3>
-            <button id="generateStatsBtn" class="bg-blue-600 text-white px-4 py-2 rounded mb-4">Gerar estatísticas</button>
-            <canvas id="statsChart" width="400" height="200" class="mb-4"></canvas>
-            <div id="statsResult"></div>
-        </div>
-    </div>
+				</div>
+				<div id="modOptions"></div>
+				<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Enviar</button>
+			</form>
+			<div id="moderateResult"></div>
+		</div>
+		<!-- Estatísticas -->
+		<div id="tab-stats" class="admin-tab-content w-full max-w-3xl hidden">
+			<h3 class="text-2xl font-bold mb-4">Estatísticas</h3>
+			<button id="generateStatsBtn" class="bg-blue-600 text-white px-4 py-2 rounded mb-4">Gerar estatísticas</button>
+			<canvas id="statsChart" width="400" height="200" class="mb-4"></canvas>
+			<div id="statsResult"></div>
+		</div>
+	</div>
 </body>
 {% endblock %}
 {% block scripts %}
@@ -80,7 +80,7 @@
 		btn.addEventListener('click', () => showTab(btn.dataset.tab));
 	});
 	showTab('reports');
-
+	
 	// Denúncias
 	document.getElementById('loadReportsBtn').addEventListener('click', async function() {
 		const res = await fetch('/adm/reports');
@@ -97,8 +97,8 @@
 			<th class="py-3 px-6 text-left">Resolvido em</th>
 			<th class="py-3 px-6 text-left">Criado em</th>
 			<th class="py-3 px-6 text-center rounded-tr-lg">Ação</th></thead><tbody>`;
-		for (const r of data.reports) {
-			html += `<tr class="border-b border-gray-200 hover:bg-blue-50">
+			for (const r of data.reports) {
+				html += `<tr class="border-b border-gray-200 hover:bg-blue-50">
 			<td class="py-3 px-6 text-left whitespace-nowrap"><span class="font-medium report-id">${r.id}</span></td>
 			<td class="py-3 px-6 text-left">${r.category}</td>
 			<td class="py-3 px-6 text-left">${r.description}</td>
@@ -119,220 +119,220 @@
 			<td class="py-3 px-6 text-left">${r.creation_date}</td>
 			<td class="py-3 px-6 text-center">${r.status === 'pendente' ? `<button class="resolve-report-btn bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2 rounded-full text-xs" data-report-id="${r.id}" title="Marcar como resolvido">✅</button>` : ''}</td>
 			</tr>`;
-		}
-		html += '</tbody></table>';
-		document.getElementById('reportsTableContainer').innerHTML = html;
-	});
-
-	// Resolver denúncia
-	document.getElementById('reportsTableContainer').addEventListener('click', async function(event) {
-		if (event.target.classList.contains('resolve-report-btn')) {
-			const button = event.target;
-			const reportId = button.dataset.reportId;
-			const result = await sendApiRequest(`/adm/reports/${reportId}/resolve`, 'POST', null)
-			if (result.success) {
-				const row = button.closest('tr');
-				row.querySelector('.report-status').textContent = 'resolvido';
-				button.remove(); // Remove o botão após o sucesso
-			} else {
-				alert('Erro ao resolver denúncia: ' + result.message);
-			}
-		}
-	});
-
-	// Caçar usuário
-	document.getElementById('huntForm').addEventListener('submit', async function(event) {
-		event.preventDefault();
-		const form = event.target;
-		const user_id = form.user_id.value;
-		const include_reports = form.include_reports.checked;
-		const include_posts = form.include_posts.checked;
-		const include_interactions = form.include_interactions.checked;
-		const res = await fetch(`/adm/hunt?user_id=${user_id}&include_posts=${include_posts}&include_interactions=${include_interactions}&include_reports=${include_reports}`);
-		const data = await res.json();
-		let html = '';
-		if (data.moderation_history && data.moderation_history.length) {
-			html += '<h4 class="font-bold mt-4 mb-2">Histórico de Moderação</h4>';
-			html += '<div class="overflow-x-auto mb-4"><table class="min-w-full bg-white rounded-lg shadow-md">' +
-				'<thead class="bg-blue-100 text-blue-800 uppercase text-sm leading-normal"><tr>' +
-				'<th class="py-3 px-6 text-left rounded-tl-lg">Tipo</th>' +
-				'<th class="py-3 px-6 text-left">Razão</th>' +
-				'<th class="py-3 px-6 text-left">Alvo</th>' +
-				'<th class="py-3 px-6 text-left">Em vigor</th>' +
-				'<th class="py-3 px-6 text-left">Emitido em</th>' +
-				'<th class="py-3 px-6 text-left">Fim</th>' +
-				'<th class="py-3 px-6 text-left rounded-tr-lg">ID Moderador</th>' +
-				'</tr></thead>' +
-				'<tbody class="text-gray-700 text-sm font-light">';
-			for (const historico of data.moderation_history) {
-				html += `<tr class="border-b border-gray-200 hover:bg-blue-50">` +
-					`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.action_type}</td>` +
-					`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.reason}</td>` +
-					`<td class="py-3 px-6 text-left whitespace-nowrap"><a href="/${historico.target_type}/${historico.target_id}" class="text-blue-600 hover:underline" target="_blank">${historico.target_type}</a></td>` +
-					`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.is_active ? 'Sim' : 'Não'}</td>` +
-					`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.created_at}</td>` +
-					`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.end_date}</td>` +
-					`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.moderator_id}</td>` +
-					`</tr>`;
-			}
-			html += '</tbody></table></div>';
-		} else {
-			html += '<h5 class="font-bold mt-4 mb-2">Sem histórico de moderação</h5>';
-		}
-		if (data.reports) {
-			if (data.reports.length) {
-				html += '<h4 class="font-bold mt-4 mb-2">Denúncias</h4>';
-				html += '<div class="overflow-x-auto mb-4"><table class="min-w-full bg-white rounded-lg shadow-md">' +
-					'<thead class="bg-blue-100 text-blue-800 uppercase text-sm leading-normal"><tr>' +
-					'<th class="py-3 px-6 text-left rounded-tl-lg">ID</th>' +
-					'<th class="py-3 px-6 text-left rounded-tr-lg">Perpetrador</th>' +
-					'<th class="py-3 px-6 text-left">Categoria</th>' +
-					'<th class="py-3 px-6 text-left">Tipo</th>' +
-					'<th class="py-3 px-6 text-left rounded-tr-lg">ID Reportado</th>' +
-					'<th class="py-3 px-6 text-left rounded-tr-lg">Descrição</th>' +
-					'<th class="py-3 px-6 text-left rounded-tr-lg">Status</th>' +
-					'<th class="py-3 px-6 text-left rounded-tr-lg">ID Moderador</th>' +
-					'<th class="py-3 px-6 text-left rounded-tr-lg">Resolvido em</th>' +
-					'<th class="py-3 px-6 text-left rounded-tr-lg">Reportado em</th>' +
-					'</tr></thead>' +
-					'<tbody class="text-gray-700 text-sm font-light">';
-				for (const report of data.reports) {
-					html += `<tr class="border-b border-gray-200 hover:bg-blue-50">` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${report.id}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap"><a href="/usuario/${report.perpetrator_id}" class="text-blue-600 hover:underline" target="_blank">${report.perpetrator_id}</a></td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${report.category}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap"><a href="/${report.type}/${report.reported_item_id}" class="text-blue-600 hover:underline" target="_blank">${report.type}</a></td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${report.reported_item_id}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${report.description}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${report.status}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${report.moderator_id}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${report.resolved_at}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${report.creation_date}</td>` +
-						`</tr>`;
 				}
-				html += '</tbody></table></div>';
-			} else {
-				html += '<h5 class="font-bold mt-4 mb-2">O usuário nunca foi denunciado</h5>';
-			}
-		}
-		if (data.posts) {
-			if (data.posts.length) {
-				html += '<h4 class="font-bold mt-4 mb-2">Posts</h4>';
-				html += '<div class="overflow-x-auto mb-4"><table class="min-w-full bg-white rounded-lg shadow-md">' +
-					'<thead class="bg-blue-100 text-blue-800 uppercase text-sm leading-normal"><tr>' +
-					'<th class="py-3 px-6 text-left rounded-tl-lg">ID</th>' +
-					'<th class="py-3 px-6 text-left">Deletado?</th>' +
-					'<th class="py-3 px-6 text-left">Título</th>' +
-					'<th class="py-3 px-6 text-left rounded-tr-lg">Data</th>' +
-					'</tr></thead>' +
-					'<tbody class="text-gray-700 text-sm font-light">';
-				for (const p of data.posts) {
-					html += `<tr class="border-b border-gray-200 hover:bg-blue-50">` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap"><a href="/post/${p.id}" target="_blank" class="text-blue-600 hover:underline">${p.id}</a></td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${p.is_deleted}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${p.titulo}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${p.creation_date}</td>` +
-						`</tr>`;
+				html += '</tbody></table>';
+				document.getElementById('reportsTableContainer').innerHTML = html;
+			});
+			
+			// Resolver denúncia
+			document.getElementById('reportsTableContainer').addEventListener('click', async function(event) {
+				if (event.target.classList.contains('resolve-report-btn')) {
+					const button = event.target;
+					const reportId = button.dataset.reportId;
+					const result = await sendApiRequest(`/adm/reports/${reportId}/resolve`, 'POST', null)
+					if (result.success) {
+						const row = button.closest('tr');
+						row.querySelector('.report-status').textContent = 'resolvido';
+						button.remove(); // Remove o botão após o sucesso
+					} else {
+						alert('Erro ao resolver denúncia: ' + result.message);
+					}
 				}
-				html += '</tbody></table></div>';
-			} else {
-				html += '<h5 class="font-bold mt-4 mb-2">O usuário não tem posts</h5>';
-			}
-		}
-		if (data.interactions) {
-			if (data.interactions.length) {
-				html += '<h4 class="font-bold mt-4 mb-2">Interações</h4>';
-				html += '<div class="overflow-x-auto mb-4"><table class="min-w-full bg-white rounded-lg shadow-md">' +
-					'<thead class="bg-blue-100 text-blue-800 uppercase text-sm leading-normal"><tr>' +
-					'<th class="py-3 px-6 text-left rounded-tl-lg">ID</th>' +
-					'<th class="py-3 px-6 text-left">ID Post</th>' +
-					'<th class="py-3 px-6 text-left">Tipo</th>' +
-					'<th class="py-3 px-6 text-left">Conteúdo</th>' +
-					'<th class="py-3 px-6 text-left rounded-tr-lg">Data</th>' +
-					'</tr></thead>' +
-					'<tbody class="text-gray-700 text-sm font-light">';
-				for (const interaction of data.interactions) {
-					html += `<tr class="border-b border-gray-200 hover:bg-blue-50">` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.id}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.post_id}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.type}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.value}</td>` +
-						`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.creation_date}</td>` +
-						`</tr>`;
-				}
-				html += '</tbody></table></div>';
-			} else {
-				html += '<h5 class="font-bold mt-4 mb-2">O usuário não tem comentários ou respostas</h5>';
-			}
-		}
-		document.getElementById('huntResults').innerHTML = html;
-	});
-
-	// Moderar
-	let modType = 'user';
-	function renderModOptions() {
-		let html = '';
-		if (modType === 'user') {
-			html += '<div class="flex gap-4">';
-			html += '<label><input type="radio" name="mod_action" value="silenciar" required> Silenciar</label>';
-			html += '<label><input type="radio" name="mod_action" value="advertir" required> Advertir</label>';
-			html += '<label><input type="radio" name="mod_action" value="desativar" required> Desativar</label>';
-			html += '<label><input type="radio" name="mod_action" value="banir" required> Banir</label>';
-			html += '</div>';
-		} else if (modType === 'post') {
-			html += '<div class="flex gap-4">';
-			html += '<label><input type="radio" name="mod_action" value="deletar" required> Deletar post</label>';
-			html += '<label><input type="radio" name="mod_action" value="desativar" required> Desativar post</label>';
-			html += '<label><input type="radio" name="mod_action" value="shadowban" required> Shadow-ban</label>';
-			html += '</div>';
-		} else if (modType === 'interaction') {
-			html += '<div class="flex gap-4">';
-			html += '<label><input type="radio" name="mod_action" value="deletar" required> Deletar interação</label>';
-			html += '</div>';
-		}
-		document.getElementById('modOptions').innerHTML = html;
-	}
-	document.getElementById('modUserBtn').addEventListener('click', function() {
-		modType = 'user';
-		renderModOptions();
-	});
-	document.getElementById('modPostBtn').addEventListener('click', function() {
-		modType = 'post';
-		renderModOptions();
-	});
-	document.getElementById('modInteractionBtn').addEventListener('click', function() {
-		modType = 'interaction';
-		renderModOptions();
-	});
-	renderModOptions();
-	document.getElementById('moderateForm').addEventListener('submit', async function(event) {
-		event.preventDefault();
-		const form = event.target;
-		const data = {
-			type: modType,
-			target_id: form.target_id.value,
-			reason: form.reason.value,
-			end_date: form.end_date.value,
-			mod_action: form.mod_action.value
-		};
-		const result = await sendApiRequest(`/adm/feeltheweightofthehammer`, 'POST', data);
-		
-		if (result.success) {
-			document.getElementById('moderateResult').innerHTML = `<div class="mt-4 p-2 bg-blue-100 rounded">${result.message || 'Ação realizada.'}</div>`;
-		} else {
-			alert('Erro: ' + result.message);
-		}
-	});
-
-	// Estatísticas
-	document.getElementById('generateStatsBtn').addEventListener('click', async function() {
-		const res = await fetch('/adm/analytics');
-		const data = await res.json();
-		if (data.chart) {
-			const ctx = document.getElementById('statsChart').getContext('2d');
-			new Chart(ctx, data.chart);
-		}
-		document.getElementById('statsResult').innerHTML = data.text || '';
-	});
-</script>
-{% endblock %}
+			});
+			
+			// Caçar usuário
+			document.getElementById('huntForm').addEventListener('submit', async function(event) {
+				event.preventDefault();
+				const form = event.target;
+				const user_id = form.user_id.value;
+				const include_reports = form.include_reports.checked;
+				const include_posts = form.include_posts.checked;
+				const include_interactions = form.include_interactions.checked;
+				const res = await fetch(`/adm/hunt?user_id=${user_id}&include_posts=${include_posts}&include_interactions=${include_interactions}&include_reports=${include_reports}`);
+				const data = await res.json();
+				let html = '';
+				if (data.moderation_history && data.moderation_history.length) {
+					html += '<h4 class="font-bold mt-4 mb-2">Histórico de Moderação</h4>';
+					html += '<div class="overflow-x-auto mb-4"><table class="min-w-full bg-white rounded-lg shadow-md">' +
+						'<thead class="bg-blue-100 text-blue-800 uppercase text-sm leading-normal"><tr>' +
+							'<th class="py-3 px-6 text-left rounded-tl-lg">Tipo</th>' +
+							'<th class="py-3 px-6 text-left">Razão</th>' +
+							'<th class="py-3 px-6 text-left">Alvo</th>' +
+							'<th class="py-3 px-6 text-left">Em vigor</th>' +
+							'<th class="py-3 px-6 text-left">Emitido em</th>' +
+							'<th class="py-3 px-6 text-left">Fim</th>' +
+							'<th class="py-3 px-6 text-left rounded-tr-lg">ID Moderador</th>' +
+							'</tr></thead>' +
+							'<tbody class="text-gray-700 text-sm font-light">';
+								for (const historico of data.moderation_history) {
+									html += `<tr class="border-b border-gray-200 hover:bg-blue-50">` +
+										`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.action_type}</td>` +
+										`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.reason}</td>` +
+										`<td class="py-3 px-6 text-left whitespace-nowrap"><a href="/${historico.target_type}/${historico.target_id}" class="text-blue-600 hover:underline" target="_blank">${historico.target_type}</a></td>` +
+										`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.is_active ? 'Sim' : 'Não'}</td>` +
+										`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.created_at}</td>` +
+										`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.end_date}</td>` +
+										`<td class="py-3 px-6 text-left whitespace-nowrap">${historico.moderator_id}</td>` +
+										`</tr>`;
+									}
+									html += '</tbody></table></div>';
+								} else {
+									html += '<h5 class="font-bold mt-4 mb-2">Sem histórico de moderação</h5>';
+								}
+								if (data.reports) {
+									if (data.reports.length) {
+										html += '<h4 class="font-bold mt-4 mb-2">Denúncias</h4>';
+										html += '<div class="overflow-x-auto mb-4"><table class="min-w-full bg-white rounded-lg shadow-md">' +
+											'<thead class="bg-blue-100 text-blue-800 uppercase text-sm leading-normal"><tr>' +
+												'<th class="py-3 px-6 text-left rounded-tl-lg">ID</th>' +
+												'<th class="py-3 px-6 text-left rounded-tr-lg">Perpetrador</th>' +
+												'<th class="py-3 px-6 text-left">Categoria</th>' +
+												'<th class="py-3 px-6 text-left">Tipo</th>' +
+												'<th class="py-3 px-6 text-left rounded-tr-lg">ID Reportado</th>' +
+												'<th class="py-3 px-6 text-left rounded-tr-lg">Descrição</th>' +
+												'<th class="py-3 px-6 text-left rounded-tr-lg">Status</th>' +
+												'<th class="py-3 px-6 text-left rounded-tr-lg">ID Moderador</th>' +
+												'<th class="py-3 px-6 text-left rounded-tr-lg">Resolvido em</th>' +
+												'<th class="py-3 px-6 text-left rounded-tr-lg">Reportado em</th>' +
+												'</tr></thead>' +
+												'<tbody class="text-gray-700 text-sm font-light">';
+													for (const report of data.reports) {
+														html += `<tr class="border-b border-gray-200 hover:bg-blue-50">` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap">${report.id}</td>` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap"><a href="/usuario/${report.perpetrator_id}" class="text-blue-600 hover:underline" target="_blank">${report.perpetrator_id}</a></td>` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap">${report.category}</td>` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap"><a href="/${report.type}/${report.reported_item_id}" class="text-blue-600 hover:underline" target="_blank">${report.type}</a></td>` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap">${report.reported_item_id}</td>` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap">${report.description}</td>` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap">${report.status}</td>` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap">${report.moderator_id}</td>` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap">${report.resolved_at}</td>` +
+															`<td class="py-3 px-6 text-left whitespace-nowrap">${report.creation_date}</td>` +
+															`</tr>`;
+														}
+														html += '</tbody></table></div>';
+													} else {
+														html += '<h5 class="font-bold mt-4 mb-2">O usuário nunca foi denunciado</h5>';
+													}
+												}
+												if (data.posts) {
+													if (data.posts.length) {
+														html += '<h4 class="font-bold mt-4 mb-2">Posts</h4>';
+														html += '<div class="overflow-x-auto mb-4"><table class="min-w-full bg-white rounded-lg shadow-md">' +
+															'<thead class="bg-blue-100 text-blue-800 uppercase text-sm leading-normal"><tr>' +
+																'<th class="py-3 px-6 text-left rounded-tl-lg">ID</th>' +
+																'<th class="py-3 px-6 text-left">Deletado?</th>' +
+																'<th class="py-3 px-6 text-left">Título</th>' +
+																'<th class="py-3 px-6 text-left rounded-tr-lg">Data</th>' +
+																'</tr></thead>' +
+																'<tbody class="text-gray-700 text-sm font-light">';
+																	for (const p of data.posts) {
+																		html += `<tr class="border-b border-gray-200 hover:bg-blue-50">` +
+																			`<td class="py-3 px-6 text-left whitespace-nowrap"><a href="/post/${p.id}" target="_blank" class="text-blue-600 hover:underline">${p.id}</a></td>` +
+																			`<td class="py-3 px-6 text-left whitespace-nowrap">${p.is_deleted}</td>` +
+																			`<td class="py-3 px-6 text-left whitespace-nowrap">${p.titulo}</td>` +
+																			`<td class="py-3 px-6 text-left whitespace-nowrap">${p.creation_date}</td>` +
+																			`</tr>`;
+																		}
+																		html += '</tbody></table></div>';
+																	} else {
+																		html += '<h5 class="font-bold mt-4 mb-2">O usuário não tem posts</h5>';
+																	}
+																}
+																if (data.interactions) {
+																	if (data.interactions.length) {
+																		html += '<h4 class="font-bold mt-4 mb-2">Interações</h4>';
+																		html += '<div class="overflow-x-auto mb-4"><table class="min-w-full bg-white rounded-lg shadow-md">' +
+																			'<thead class="bg-blue-100 text-blue-800 uppercase text-sm leading-normal"><tr>' +
+																				'<th class="py-3 px-6 text-left rounded-tl-lg">ID</th>' +
+																				'<th class="py-3 px-6 text-left">ID Post</th>' +
+																				'<th class="py-3 px-6 text-left">Tipo</th>' +
+																				'<th class="py-3 px-6 text-left">Conteúdo</th>' +
+																				'<th class="py-3 px-6 text-left rounded-tr-lg">Data</th>' +
+																				'</tr></thead>' +
+																				'<tbody class="text-gray-700 text-sm font-light">';
+																					for (const interaction of data.interactions) {
+																						html += `<tr class="border-b border-gray-200 hover:bg-blue-50">` +
+																							`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.id}</td>` +
+																							`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.post_id}</td>` +
+																							`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.type}</td>` +
+																							`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.value}</td>` +
+																							`<td class="py-3 px-6 text-left whitespace-nowrap">${interaction.creation_date}</td>` +
+																							`</tr>`;
+																						}
+																						html += '</tbody></table></div>';
+																					} else {
+																						html += '<h5 class="font-bold mt-4 mb-2">O usuário não tem comentários ou respostas</h5>';
+																					}
+																				}
+																				document.getElementById('huntResults').innerHTML = html;
+																			});
+																			
+																			// Moderar
+																			let modType = 'user';
+																			function renderModOptions() {
+																				let html = '';
+																				if (modType === 'user') {
+																					html += '<div class="flex gap-4">';
+																						html += '<label><input type="radio" name="mod_action" value="silenciar" required> Silenciar</label>';
+																						html += '<label><input type="radio" name="mod_action" value="advertir" required> Advertir</label>';
+																						html += '<label><input type="radio" name="mod_action" value="desativar" required> Desativar</label>';
+																						html += '<label><input type="radio" name="mod_action" value="banir" required> Banir</label>';
+																						html += '</div>';
+																					} else if (modType === 'post') {
+																						html += '<div class="flex gap-4">';
+																							html += '<label><input type="radio" name="mod_action" value="deletar" required> Deletar post</label>';
+																							html += '<label><input type="radio" name="mod_action" value="desativar" required> Desativar post</label>';
+																							html += '<label><input type="radio" name="mod_action" value="shadowban" required> Shadow-ban</label>';
+																							html += '</div>';
+																						} else if (modType === 'interaction') {
+																							html += '<div class="flex gap-4">';
+																								html += '<label><input type="radio" name="mod_action" value="deletar" required> Deletar interação</label>';
+																								html += '</div>';
+																							}
+																							document.getElementById('modOptions').innerHTML = html;
+																						}
+																						document.getElementById('modUserBtn').addEventListener('click', function() {
+																							modType = 'user';
+																							renderModOptions();
+																						});
+																						document.getElementById('modPostBtn').addEventListener('click', function() {
+																							modType = 'post';
+																							renderModOptions();
+																						});
+																						document.getElementById('modInteractionBtn').addEventListener('click', function() {
+																							modType = 'interaction';
+																							renderModOptions();
+																						});
+																						renderModOptions();
+																						document.getElementById('moderateForm').addEventListener('submit', async function(event) {
+																							event.preventDefault();
+																							const form = event.target;
+																							const data = {
+																								type: modType,
+																								target_id: form.target_id.value,
+																								reason: form.reason.value,
+																								end_date: form.end_date.value,
+																								mod_action: form.mod_action.value
+																							};
+																							const result = await sendApiRequest(`/adm/feeltheweightofthehammer`, 'POST', data);
+																							
+																							if (result.success) {
+																								document.getElementById('moderateResult').innerHTML = `<div class="mt-4 p-2 bg-blue-100 rounded">${result.message || 'Ação realizada.'}</div>`;
+																							} else {
+																								alert('Erro: ' + result.message);
+																							}
+																						});
+																						
+																						// Estatísticas
+																						document.getElementById('generateStatsBtn').addEventListener('click', async function() {
+																							const res = await fetch('/adm/analytics');
+																							const data = await res.json();
+																							if (data.chart) {
+																								const ctx = document.getElementById('statsChart').getContext('2d');
+																								new Chart(ctx, data.chart);
+																							}
+																							document.getElementById('statsResult').innerHTML = data.text || '';
+																						});
+																					</script>
+																					{% endblock %}

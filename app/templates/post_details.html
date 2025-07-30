@@ -4,7 +4,7 @@
 {% endblock %}
 {% block content %}
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="post-container bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl" data-postid="{{ post.id }}" data-post-userid="{{ post.userid }}">
+	<div class="post-container bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl" data-postid="{{ post.id }}" data-post-userid="{{ post.userid }}">
 		{% with messages = get_flashed_messages(with_categories=true) %}
 			{% if messages %}
 				{% for category, message in messages %}
@@ -14,8 +14,8 @@
 				{% endfor %}
 			{% endif %}
 		{% endwith %}
-        <div class="flex justify-between items-start md:items-center mb-4">
-            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 flex-grow flex-shrink min-w-0 pr-4 break-words line-clamp-4">{% if post.authoricon %}<img src="{{ post.authoricon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full"> • {% endif %}{{ post.title }}</h1>
+		<div class="flex justify-between items-start md:items-center mb-4">
+			<h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 flex-grow flex-shrink min-w-0 pr-4 break-words line-clamp-4">{% if post.authoricon %}<img src="{{ post.authoricon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full"> • {% endif %}{{ post.title }}</h1>
 			<div class="flex items-center space-x-4">
 				<span class="text-gray-500 text-sm md:text-base">
 					{{ post.created_at.strftime('%b %d, %Y') }}
@@ -24,197 +24,197 @@
 					<i class="fas fa-ellipsis-v text-lg"></i>
 				</button>
 			</div>
-        </div>
+		</div>
 
-        <div class="flex flex-wrap gap-2 mb-6">
-            <span class="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                {{ post.tag.upper() }}
-            </span>
-            {% if post.optional_tags %}
-                {% for tag in post.optional_tags.split(',') %}
-                    {% if tag.strip() %}
-                        <span class="bg-gray-300 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full">
-                            {{ tag.strip().upper() }}
-                        </span>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        </div>
+		<div class="flex flex-wrap gap-2 mb-6">
+			<span class="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+				{{ post.tag.upper() }}
+			</span>
+			{% if post.optional_tags %}
+				{% for tag in post.optional_tags.split(',') %}
+					{% if tag.strip() %}
+						<span class="bg-gray-300 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full">
+							{{ tag.strip().upper() }}
+						</span>
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+		</div>
 
-        <div class="post-content text-gray-700 leading-relaxed text-base md:text-lg mb-8">{{ post.content | trim }}</div>
+		<div class="post-content text-gray-700 leading-relaxed text-base md:text-lg mb-8">{{ post.content | trim }}</div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            {% if post.image_urls %}
-                {% for image_url in post.image_urls %}
-                    <div class="bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center h-48 md:h-64 cursor-pointer hover:opacity-90 transition-opacity" onclick="openModal('imageModal', '{{ image_url }}')">
-                        <img src="{{ image_url }}" alt="Imagem do Post" class="object-cover w-full h-full">
-                    </div>
-                {% endfor %}
-            {% endif %}
-        </div>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+			{% if post.image_urls %}
+				{% for image_url in post.image_urls %}
+					<div class="bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center h-48 md:h-64 cursor-pointer hover:opacity-90 transition-opacity" onclick="openModal('imageModal', '{{ image_url }}')">
+						<img src="{{ image_url }}" alt="Imagem do Post" class="object-cover w-full h-full">
+					</div>
+				{% endfor %}
+			{% endif %}
+		</div>
 
-        <div class="my-2 text-gray-600 text-sm">
-            Postado por: <a href="/usuario/{{ post.author_user.user_id }}" class="font-semibold text-blue-500 hover:underline">{{ post.author_user.display_name or post.author_user.user.username }}</a>
-        </div>
+		<div class="my-2 text-gray-600 text-sm">
+			Postado por: <a href="/usuario/{{ post.author_user.user_id }}" class="font-semibold text-blue-500 hover:underline">{{ post.author_user.display_name or post.author_user.user.username }}</a>
+		</div>
 
-        <div class="flex items-center gap-4 border-t border-gray-200 pt-4 mb-8">
-            <button class="interaction-button cursor-pointer{% if user_post_reaction == 'like_post' %} active{% endif %}" id="likeButton">
-                <i class="fa-solid fa-thumbs-up"></i>
-                <span id="likeCount">{{ post_likes }}</span>
-            </button>
-            <button class="interaction-button cursor-pointer{% if user_post_reaction == 'dislike_post' %} active{% endif %}" id="dislikeButton">
-                <i class="fa-solid fa-thumbs-down"></i>
-                <span id="dislikeCount">{{ post_dislikes }}</span>
-            </button>
-            <div class="relative shareContainer">
-                <button class="interaction-button cursor-pointer shareButton" id="shareButton">
-                    <i class="fa-solid fa-share-alt"></i>
-                    <span>Compartilhar</span>
-                </button>
-                <div id="shareContextMenu{{ post.id }}" class="share-context-menu hidden">
-                    <button onclick="copyPostUrl('{{ post.id }}')">
-                        <i class="fa-solid fa-copy"></i>
-                        Copiar URL do Post
-                    </button>
-                </div>
-            </div>
-            <button class="interaction-button cursor-pointer" id="saveButton">
-                <i class="fa-solid fa-bookmark"></i>
-                <span>Salvar</span>
-            </button>
-        </div>
+		<div class="flex items-center gap-4 border-t border-gray-200 pt-4 mb-8">
+			<button class="interaction-button cursor-pointer{% if user_post_reaction == 'like_post' %} active{% endif %}" id="likeButton">
+				<i class="fa-solid fa-thumbs-up"></i>
+				<span id="likeCount">{{ post_likes }}</span>
+			</button>
+			<button class="interaction-button cursor-pointer{% if user_post_reaction == 'dislike_post' %} active{% endif %}" id="dislikeButton">
+				<i class="fa-solid fa-thumbs-down"></i>
+				<span id="dislikeCount">{{ post_dislikes }}</span>
+			</button>
+			<div class="relative shareContainer">
+				<button class="interaction-button cursor-pointer shareButton" id="shareButton">
+					<i class="fa-solid fa-share-alt"></i>
+					<span>Compartilhar</span>
+				</button>
+				<div id="shareContextMenu{{ post.id }}" class="share-context-menu hidden">
+					<button onclick="copyPostUrl('{{ post.id }}')">
+						<i class="fa-solid fa-copy"></i>
+						Copiar URL do Post
+					</button>
+				</div>
+			</div>
+			<button class="interaction-button cursor-pointer" id="saveButton">
+				<i class="fa-solid fa-bookmark"></i>
+				<span>Salvar</span>
+			</button>
+		</div>
 
-        <div class="comment-input-container mb-8">
-            <div class="comment-profile-pic">
-                {% if user_icon %}
-                    <img src="{{ user_icon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
-                {% else %}
-                    <i class="fa-solid fa-user"></i>
-                {% endif %}
-            </div>
-            <textarea id="commentTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva um comentário!" oninput="adjustTextareaHeight(this); toggleCommentButton();"></textarea>
-            <button id="commentButton" class="comment-button">Comentar</button>
-        </div>
+		<div class="comment-input-container mb-8">
+			<div class="comment-profile-pic">
+				{% if user_icon %}
+					<img src="{{ user_icon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
+				{% else %}
+					<i class="fa-solid fa-user"></i>
+				{% endif %}
+			</div>
+			<textarea id="commentTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva um comentário!" oninput="adjustTextareaHeight(this); toggleCommentButton();"></textarea>
+			<button id="commentButton" class="comment-button">Comentar</button>
+		</div>
 
-        <div class="border-t border-blue-200 mb-8"></div>
+		<div class="border-t border-blue-200 mb-8"></div>
 
-        <div id="commentsSection">
-            {% for comment_content in comments %}
-            <div class="comment-item flex gap-4 mb-6" data-comment-id="{{ comment_content.comment.id }}" data-comment-userid="{{ comment_content.comment.userid }}">
-                <div class="comment-profile-pic">
-                    {% if comment_content.comment.usericon %}
-                    <img src={{comment_content.comment.usericon}} alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
-                    {% else %}
-                    <i class="fa-solid fa-user"></i>
-                    {% endif %}
-                </div>
-                <div class="flex-grow">
-                    <div id="interaction{{ comment_content.comment.id }}box">
-                        <div class="flex justify-between">
-                            <a class="font-semibold text-gray-800 mb-1 hover:underline" target="_blank" href="/usuario/{{ comment_content.comment.id }}">{{ comment_content.comment.username }}</a>
-                            <button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
-                        </div>
-                        <p class="text-gray-700 mb-2">{{ comment_content.comment.value }}</p>
-                        <div class="flex items-center gap-4 text-sm text-gray-500">
-                            <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ comment_content.comment.id }}likeButton">
-                                <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ comment_content.comment.id }}likeCount">{{ comment_content.likes }}</span>
-                            </button>
-                            <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ comment_content.comment.id }}dislikeButton">
-                                <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ comment_content.comment.id }}dislikeCount">{{ comment_content.dislikes }}</span>
-                            </button>
-                            <button class="interaction-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openRepliesModal('{{ comment_content.comment.id }}')">
-                                <i class="fa-solid fa-reply"></i>
-                            </button>
-                            <button class="interaction-button comment-save-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500">
-                                <i class="fa-solid fa-bookmark"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    {% if comment_content.most_liked_reply %}
-                        <div class="comment-item flex gap-4 mt-4" data-comment-id="{{ comment_content.most_liked_reply.reply.id }}" data-comment-userid="{{ comment_content.comment.userid }}">
-                            <div class="comment-profile-pic">
-                                {% if comment_content.most_liked_reply.reply.usericon %}
-                                <img src={{comment_content.most_liked_reply.reply.usericon}} alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
-                                {% else %}
-                                <i class="fa-solid fa-user"></i>
-                                {% endif %}
-                            </div>
-                            <div class="flex-grow">
-					            <div class="flex justify-between">
-                                    <a class="font-semibold text-gray-800 mb-1 hover:underline" target="_blank" href="/usuario/{{ comment_content.most_liked_reply.reply.userid }}">{{ comment_content.most_liked_reply.reply.username }}</a>
-                                    <button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
-                                </div>
-                                <p class="text-gray-700 mb-2">{{ comment_content.most_liked_reply.reply.value }}</p>
-                                <div class="flex items-center gap-4 text-sm text-gray-500">
-                                    <button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.reply_user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ comment_content.most_liked_reply.reply.id }}likeButton">
-                                        <i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ comment_content.most_liked_reply.reply.id }}likeCount">{{ comment_content.most_liked_reply.likes }}</span>
-                                    </button>
-                                    <button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.reply_user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ comment_content.most_liked_reply.reply.id }}dislikeButton">
-                                        <i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ comment_content.most_liked_reply.reply.id }}dislikeCount">{{ comment_content.most_liked_reply.dislikes }}</span>
-                                    </button>
-                                    <button class="interaction-button comment-reply-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openRepliesModal('{{ comment_content.most_liked_reply.reply.id }}')">
-                                        <i class="fa-solid fa-reply"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
+		<div id="commentsSection">
+			{% for comment_content in comments %}
+			<div class="comment-item flex gap-4 mb-6" data-comment-id="{{ comment_content.comment.id }}" data-comment-userid="{{ comment_content.comment.userid }}">
+				<div class="comment-profile-pic">
+					{% if comment_content.comment.usericon %}
+					<img src={{comment_content.comment.usericon}} alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
+					{% else %}
+					<i class="fa-solid fa-user"></i>
+					{% endif %}
+				</div>
+				<div class="flex-grow">
+					<div id="interaction{{ comment_content.comment.id }}box">
+						<div class="flex justify-between">
+							<a class="font-semibold text-gray-800 mb-1 hover:underline" target="_blank" href="/usuario/{{ comment_content.comment.id }}">{{ comment_content.comment.username }}</a>
+							<button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
+						</div>
+						<p class="text-gray-700 mb-2">{{ comment_content.comment.value }}</p>
+						<div class="flex items-center gap-4 text-sm text-gray-500">
+							<button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ comment_content.comment.id }}likeButton">
+								<i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ comment_content.comment.id }}likeCount">{{ comment_content.likes }}</span>
+							</button>
+							<button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ comment_content.comment.id }}dislikeButton">
+								<i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ comment_content.comment.id }}dislikeCount">{{ comment_content.dislikes }}</span>
+							</button>
+							<button class="interaction-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openRepliesModal('{{ comment_content.comment.id }}')">
+								<i class="fa-solid fa-reply"></i>
+							</button>
+							<button class="interaction-button comment-save-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500">
+								<i class="fa-solid fa-bookmark"></i>
+							</button>
+						</div>
+					</div>
+					
+					{% if comment_content.most_liked_reply %}
+						<div class="comment-item flex gap-4 mt-4" data-comment-id="{{ comment_content.most_liked_reply.reply.id }}" data-comment-userid="{{ comment_content.comment.userid }}">
+							<div class="comment-profile-pic">
+								{% if comment_content.most_liked_reply.reply.usericon %}
+								<img src={{comment_content.most_liked_reply.reply.usericon}} alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
+								{% else %}
+								<i class="fa-solid fa-user"></i>
+								{% endif %}
+							</div>
+							<div class="flex-grow">
+								<div class="flex justify-between">
+									<a class="font-semibold text-gray-800 mb-1 hover:underline" target="_blank" href="/usuario/{{ comment_content.most_liked_reply.reply.userid }}">{{ comment_content.most_liked_reply.reply.username }}</a>
+									<button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
+								</div>
+								<p class="text-gray-700 mb-2">{{ comment_content.most_liked_reply.reply.value }}</p>
+								<div class="flex items-center gap-4 text-sm text-gray-500">
+									<button class="interaction-button comment-like-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.reply_user_reaction == 'like_comment' %}active{% endif %}" id="interaction{{ comment_content.most_liked_reply.reply.id }}likeButton">
+										<i class="fa-solid fa-thumbs-up"></i> <span class="comment-like-count" id="interaction{{ comment_content.most_liked_reply.reply.id }}likeCount">{{ comment_content.most_liked_reply.likes }}</span>
+									</button>
+									<button class="interaction-button comment-dislike-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500 {% if comment_content.reply_user_reaction == 'dislike_comment' %}active{% endif %}" id="interaction{{ comment_content.most_liked_reply.reply.id }}dislikeButton">
+										<i class="fa-solid fa-thumbs-down"></i> <span class="comment-dislike-count" id="interaction{{ comment_content.most_liked_reply.reply.id }}dislikeCount">{{ comment_content.most_liked_reply.dislikes }}</span>
+									</button>
+									<button class="interaction-button comment-reply-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openRepliesModal('{{ comment_content.most_liked_reply.reply.id }}')">
+										<i class="fa-solid fa-reply"></i>
+									</button>
+								</div>
+							</div>
+						</div>
+					{% endif %}
 
-                    {% if comment_content.total_replies > 1 %}
-                        <button class="interaction-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openCommentModal('{{ comment_content.comment.id }}', '{{ post.id }}')">
-                            Ver mais {{ comment_content.total_replies - 1 }} respostas
-                        </button>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+					{% if comment_content.total_replies > 1 %}
+						<button class="interaction-button px-2 py-1 bg-transparent hover:bg-blue-100 hover:text-blue-500" onclick="openCommentModal('{{ comment_content.comment.id }}', '{{ post.id }}')">
+							Ver mais {{ comment_content.total_replies - 1 }} respostas
+						</button>
+					{% endif %}
+				</div>
+			</div>
+			{% endfor %}
+		</div>
 
-        <div class="mt-8 text-center">
-            {% if total_comments - comments|length > 0 %}
-            <button id="loadMoreComments" class="inline-block bg-blue-600 cursor-pointer hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
-                Carregar mais comentários
-            </button>
-            {% endif %}
-            <a href="{{ url_for('main.index') }}" class="inline-block bg-blue-600 cursor-pointer hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
-                Voltar para a página inicial
-            </a>
-        </div>
-    </div>
+		<div class="mt-8 text-center">
+			{% if total_comments - comments|length > 0 %}
+			<button id="loadMoreComments" class="inline-block bg-blue-600 cursor-pointer hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
+				Carregar mais comentários
+			</button>
+			{% endif %}
+			<a href="{{ url_for('main.index') }}" class="inline-block bg-blue-600 cursor-pointer hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
+				Voltar para a página inicial
+			</a>
+		</div>
+	</div>
 
-    <div id="commentModal" class="modal hidden">
-            <div class="reply-modal-content">
-                <span class="close-button-modal" onclick="closeModal('commentModal')">&times;</span>
-                <div id="commentModalContent">
-                    <!-- Conteúdo do comentário e suas respostas será carregado aqui -->
-                </div>
-            </div>
-        </div>
+	<div id="commentModal" class="modal hidden">
+			<div class="reply-modal-content">
+				<span class="close-button-modal" onclick="closeModal('commentModal')">&times;</span>
+				<div id="commentModalContent">
+					<!-- Conteúdo do comentário e suas respostas será carregado aqui -->
+				</div>
+			</div>
+		</div>
 
-    <div id="imageModal" class="modal hidden">
-        <span class="close-button" onclick="closeModal('imageModal')">&times;</span>
-        <img class="image-modal-content" id="fullImage">
-    </div>
+	<div id="imageModal" class="modal hidden">
+		<span class="close-button" onclick="closeModal('imageModal')">&times;</span>
+		<img class="image-modal-content" id="fullImage">
+	</div>
 
-    <div id="replyModal" class="modal hidden">
-        <div class="reply-modal-content">
-            <span class="close-button-modal" onclick="closeModal('replyModal')">&times;</span>
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Responder Comentário</h3>
-            <div class="comment-input-container">
-                <div class="comment-profile-pic">
-                    {% if user_icon %}
-                        <img src="{{ user_icon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
-                    {% else %}
-                        <i class="fa-solid fa-user"></i>
-                    {% endif %}
-                </div>
-                <textarea id="replyTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva sua resposta!" oninput="adjustTextareaHeight(this); toggleReplyButton();"></textarea>
-                <button id="replyButton" class="comment-button">Responder</button>
-            </div>
-        </div>
-    </div>
-    {% include 'popups.html' %}
+	<div id="replyModal" class="modal hidden">
+		<div class="reply-modal-content">
+			<span class="close-button-modal" onclick="closeModal('replyModal')">&times;</span>
+			<h3 class="text-xl font-bold text-gray-800 mb-4">Responder Comentário</h3>
+			<div class="comment-input-container">
+				<div class="comment-profile-pic">
+					{% if user_icon %}
+						<img src="{{ user_icon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
+					{% else %}
+						<i class="fa-solid fa-user"></i>
+					{% endif %}
+				</div>
+				<textarea id="replyTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva sua resposta!" oninput="adjustTextareaHeight(this); toggleReplyButton();"></textarea>
+				<button id="replyButton" class="comment-button">Responder</button>
+			</div>
+		</div>
+	</div>
+	{% include 'popups.html' %}
 </body>
 <script>
 

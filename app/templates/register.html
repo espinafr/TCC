@@ -1,63 +1,63 @@
 {% extends "base.html" %}
 {% block content %}
 <body class="bg-blue-100">
-    <div class="max-w-md mx-auto p-6 mt-10 bg-white rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-4">Registre-se</h1>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <form method="POST" action="{{ url_for('authentication.register') }}">
-            {{ form.hidden_tag() }}
-            <div class="mb-4">
-                {% if form.username.errors %}
-                    <ul class="error-message">
-                        {% for error in form.username.errors %}
-                            <li class="text-red-500">{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                <label class="block text-gray-700">Usuário</label>
-                <input type="text" name="username" class="border p-2 w-full rounded" required>
-            </div>
-            <div class="mb-4">
-                {% if form.email.errors %}
-                    <ul class="error-message">
-                        {% for error in form.email.errors %}
-                            <li class="text-red-500">{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                <label class="block text-gray-700">E-mail</label>
-                <input type="email" name="email" class="border p-2 w-full rounded" required>
-            </div>
-            <div class="mb-4">
-                {% if form.password.errors %}
-                    <ul class="error-message">
-                        {% for error in form.password.errors %}
-                            <li class="text-red-500">{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                <label class="block text-gray-700">Senha</label>
-                <input type="password" name="password" class="border p-2 w-full rounded" required>
-            </div>
-            <button id="submitbtn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button>
-        </form>
-        <p class="mt-4">Já tem uma conta? <a href="{{ url_for('authentication.login') }}" class="text-blue-600 hover:underline">Entre.</a></p>
-    </div>
+	<div class="max-w-md mx-auto p-6 mt-10 bg-white rounded-lg shadow-md">
+		<h1 class="text-2xl font-bold mb-4">Registre-se</h1>
+		{% with messages = get_flashed_messages(with_categories=true) %}
+			{% if messages %}
+				{% for category, message in messages %}
+					<div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
+						{{ message }}
+					</div>
+				{% endfor %}
+			{% endif %}
+		{% endwith %}
+		<form method="POST" action="{{ url_for('authentication.register') }}">
+			{{ form.hidden_tag() }}
+			<div class="mb-4">
+				{% if form.username.errors %}
+					<ul class="error-message">
+						{% for error in form.username.errors %}
+							<li class="text-red-500">{{ error }}</li>
+						{% endfor %}
+					</ul>
+				{% endif %}
+				<label class="block text-gray-700">Usuário</label>
+				<input type="text" name="username" class="border p-2 w-full rounded" required>
+			</div>
+			<div class="mb-4">
+				{% if form.email.errors %}
+					<ul class="error-message">
+						{% for error in form.email.errors %}
+							<li class="text-red-500">{{ error }}</li>
+						{% endfor %}
+					</ul>
+				{% endif %}
+				<label class="block text-gray-700">E-mail</label>
+				<input type="email" name="email" class="border p-2 w-full rounded" required>
+			</div>
+			<div class="mb-4">
+				{% if form.password.errors %}
+					<ul class="error-message">
+						{% for error in form.password.errors %}
+							<li class="text-red-500">{{ error }}</li>
+						{% endfor %}
+					</ul>
+				{% endif %}
+				<label class="block text-gray-700">Senha</label>
+				<input type="password" name="password" class="border p-2 w-full rounded" required>
+			</div>
+			<button id="submitbtn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button>
+		</form>
+		<p class="mt-4">Já tem uma conta? <a href="{{ url_for('authentication.login') }}" class="text-blue-600 hover:underline">Entre.</a></p>
+	</div>
 </body>
 {% endblock %}
 {% block scripts %}
 <script>
 const loadingBtn = document.getElementById('submitbtn');
 loadingBtn.addEventListener('click', function(event) {
-    toggleLoading(loadingBtn);
+	toggleLoading(loadingBtn);
 });
 </script>
 {% endblock %}
