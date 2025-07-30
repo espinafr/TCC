@@ -2,7 +2,7 @@ version: '3.8'
 services:
   web:
     build: .
-    command: gunicorn -b 0.0.0.0:5000 app:app
+    command: gunicorn -b 0.0.0.0:5000 app:create_app()
     ports:
       - "5000:5000"
     environment:
