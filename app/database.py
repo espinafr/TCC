@@ -273,7 +273,7 @@ class DatabaseManager:
     def activate_user(self, email):
         """Ativa a conta de um usuário."""
         with self.get_db() as db:
-            user = db.query(User).filter(User.email == value).first()
+            user = db.query(User).filter(User.email == email).first()
             if user:
                 user.active = True
                 db.commit()
