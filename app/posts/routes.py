@@ -8,7 +8,7 @@ from app.posts import bp
 from PIL import Image
 import json, uuid, os, io
 
-@bp.route('/create_post', methods=['GET', 'POST'])
+@bp.route('/escrever', methods=['GET', 'POST'])
 @login_required
 def create_post():
     form = PostForm()

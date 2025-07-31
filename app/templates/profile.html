@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}@{{ user.username }}{% endblock %}
 {% block additional_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
 <style>
@@ -255,212 +256,205 @@
 <script>
 	let bannerFile = null, removeBanner = false;
 	let picFile = null, removePic = false;
-	document.addEventListener('DOMContentLoaded', () => {
-		// Cropar imagens
-		let cropper = null;
-		let croppingType = null; // 'profile' ou 'banner'
-		let croppedBlob = null;
 
-		const cropModal = document.getElementById('cropModal');
-		const cropImage = document.getElementById('cropImage');
-		const applyCropBtn = document.getElementById('applyCropBtn');
-		const cancelCropBtn = document.getElementById('cancelCropBtn');
+	// Cropar imagens
+	let cropper = null;
+	let croppingType = null; // 'profile' ou 'banner'
+	let croppedBlob = null;
 
-		function openCropper(file, aspectRatio) {
-			const reader = new FileReader();
-			reader.onload = event => {
-				cropImage.src = event.target.result;
-				cropModal.classList.remove('hidden');
-				if (cropper) cropper.destroy();
-				cropper = new Cropper(cropImage, {
-					aspectRatio: aspectRatio,
-					viewMode: 1,
-					autoCropArea: 1,
-					movable: false,
-					zoomable: true,
-					scalable: false,
-					rotatable: false,
-					responsive: true,
-					background: false,
-				});
-			};
-			reader.readAsDataURL(file);
-		}
+	const cropModal = document.getElementById('cropModal');
+	const cropImage = document.getElementById('cropImage');
+	const applyCropBtn = document.getElementById('applyCropBtn');
+	const cancelCropBtn = document.getElementById('cancelCropBtn');
 
-		// Aplicar crop
-		applyCropBtn.onclick = function () {
-			if (!cropper) return;
-			cropper.getCroppedCanvas().toBlob(blob => {
-				croppedBlob = blob;
-				if (croppingType === 'profile') {
-					// Preview
-					const url = URL.createObjectURL(blob);
-					if (editProfilePicPreview.tagName === 'IMG') {
-						editProfilePicPreview.src = url;
-					} else {
-						const img = document.createElement('img');
-						img.id = 'editProfilePicPreview';
-						img.src = url;
-						img.className = 'object-cover w-full h-full';
-						editProfilePicPreview.replaceWith(img);
-					}
-					// Salvar para envio
-					picFile = blob;
-				} else if (croppingType === 'banner') {
-					const url = URL.createObjectURL(blob);
-					editBannerPreview.src = url;
-					editBannerPreview.classList.remove('hidden');
-					removeBannerBtn.classList.remove('hidden');
-					bannerFile = blob;
-				}
-				closeCropper();
-			}, 'image/jpeg', 0.95);
-		};
-
-		cancelCropBtn.onclick = closeCropper;
-		function closeCropper() {
-			cropModal.classList.add('hidden');
+	function openCropper(file, aspectRatio) {
+		const reader = new FileReader();
+		reader.onload = event => {
+			cropImage.src = event.target.result;
+			cropModal.classList.remove('hidden');
 			if (cropper) cropper.destroy();
-			cropper = null;
-			cropImage.src = '';
-		}
-
-		// Abrir modal
-		const editBtn = document.getElementById('editProfileBtn');
-		const modal = document.getElementById('editProfileModal');
-		const form = document.getElementById('editProfileForm');
-		const closeBtn = document.getElementById('closeEditProfileModal');
-		
-		// Banner
-		const bannerBtn = document.getElementById('editBannerBtn');
-		const bannerInput = document.getElementById('editBannerInput');
-		const bannerPreview = document.getElementById('editBannerPreview');
-		const removeBannerBtn = document.getElementById('removeBannerBtn');
-		
-		// Profile Pic
-		const picBtn = document.getElementById('editProfilePicBtn');
-		const editProfilePicInput = document.getElementById('editProfilePicInput');
-		const picPreview = document.getElementById('editProfilePicPreview');
-
-		// Abrir modal ao clicar em "Editar Perfil"
-		if (editBtn) {
-			editBtn.addEventListener('click', e => {
-				e.preventDefault();
-				document.getElementById('editBio').value = `${"{{ user.bio }}" != "None" ? "{{ user.bio }}" : ""}`;
-				modal.classList.remove('hidden');
-				document.body.style.overflow = 'hidden';
+			cropper = new Cropper(cropImage, {
+				aspectRatio: aspectRatio,
+				viewMode: 1,
+				autoCropArea: 1,
+				movable: false,
+				zoomable: true,
+				scalable: false,
+				rotatable: false,
+				responsive: true,
+				background: false,
 			});
-		}
-		// Fechar modal
-		closeBtn.addEventListener('click', () => {
-			modal.classList.add('hidden');
-			document.body.style.overflow = '';
-			resetEditProfileModal();
-		});
+		};
+		reader.readAsDataURL(file);
+	}
 
-		// Banner preview
-		bannerBtn.addEventListener('click', () => bannerInput.click());
-		bannerInput.addEventListener('change', e => {
-			if (e.target.files && e.target.files[0]) {
-				bannerFile = e.target.files[0];
-				removeBanner = false;
-				const reader = new FileReader();
-				reader.onload = ev => {
-					bannerPreview.src = ev.target.result;
-					bannerPreview.classList.remove('hidden');
-					removeBannerBtn.classList.remove('hidden');
-				};
-				reader.readAsDataURL(bannerFile);
+	// Aplicar crop
+	applyCropBtn.onclick = function () {
+		if (!cropper) return;
+		cropper.getCroppedCanvas().toBlob(blob => {
+			croppedBlob = blob;
+			if (croppingType === 'profile') {
+				// Preview
+				const url = URL.createObjectURL(blob);
+				if (editProfilePicPreview.tagName === 'IMG') {
+					editProfilePicPreview.src = url;
+				} else {
+					const img = document.createElement('img');
+					img.id = 'editProfilePicPreview';
+					img.src = url;
+					img.className = 'object-cover w-full h-full';
+					editProfilePicPreview.replaceWith(img);
+				}
+				// Salvar para envio
+				picFile = blob;
+			} else if (croppingType === 'banner') {
+				const url = URL.createObjectURL(blob);
+				editBannerPreview.src = url;
+				editBannerPreview.classList.remove('hidden');
+				removeBannerBtn.classList.remove('hidden');
+				bannerFile = blob;
 			}
-		});
+			closeCropper();
+		}, 'image/jpeg', 0.95);
+	};
 
-		removeBannerBtn.addEventListener('click', () => {
-			bannerFile = null;
-			removeBanner = true;
+	cancelCropBtn.onclick = closeCropper;
+	function closeCropper() {
+		cropModal.classList.add('hidden');
+		if (cropper) cropper.destroy();
+		cropper = null;
+		cropImage.src = '';
+	}
+
+	// Abrir modal
+	const editBtn = document.getElementById('editProfileBtn');
+	const modal = document.getElementById('editProfileModal');
+	const form = document.getElementById('editProfileForm');
+	const closeBtn = document.getElementById('closeEditProfileModal');
+	
+	// Banner
+	const bannerBtn = document.getElementById('editBannerBtn');
+	const bannerInput = document.getElementById('editBannerInput');
+	const bannerPreview = document.getElementById('editBannerPreview');
+	const removeBannerBtn = document.getElementById('removeBannerBtn');
+	
+	// Profile Pic
+	const picBtn = document.getElementById('editProfilePicBtn');
+	const editProfilePicInput = document.getElementById('editProfilePicInput');
+	const picPreview = document.getElementById('editProfilePicPreview');
+
+	// Abrir modal ao clicar em "Editar Perfil"
+	if (editBtn) {
+		editBtn.addEventListener('click', e => {
+			e.preventDefault();
+			document.getElementById('editBio').value = `${"{{ user.bio }}" != "None" ? "{{ user.bio }}" : ""}`;
+			modal.classList.remove('hidden');
+			document.body.style.overflow = 'hidden';
+		});
+	}
+	// Fechar modal
+	closeBtn.addEventListener('click', () => {
+		modal.classList.add('hidden');
+		document.body.style.overflow = '';
+		resetEditProfileModal();
+	});
+
+	// Banner preview
+	bannerBtn.addEventListener('click', () => bannerInput.click());
+	bannerInput.addEventListener('change', e => {
+		if (e.target.files && e.target.files[0]) {
+			bannerFile = e.target.files[0];
+			removeBanner = false;
+			const reader = new FileReader();
+			reader.onload = ev => {
+				bannerPreview.src = ev.target.result;
+				bannerPreview.classList.remove('hidden');
+				removeBannerBtn.classList.remove('hidden');
+			};
+			reader.readAsDataURL(bannerFile);
+		}
+	});
+
+	removeBannerBtn.addEventListener('click', () => {
+		bannerFile = null;
+		removeBanner = true;
+		bannerPreview.src = '';
+		bannerPreview.classList.add('hidden');
+		removeBannerBtn.classList.add('hidden');
+	})
+
+	picBtn.addEventListener('click', () => editProfilePicInput.click());
+	editProfilePicInput.addEventListener('change', e => {
+		if (e.target.files && e.target.files[0]) {
+			croppingType = 'profile';
+			openCropper(e.target.files[0], 1);
+		}
+	});
+	editBannerInput.addEventListener('change', e => {
+		if (e.target.files && e.target.files[0]) {
+			croppingType = 'banner';
+			openCropper(e.target.files[0], 56 / 15);
+		}
+	});
+	
+	function resetEditProfileModal() {
+		form.reset();
+		bannerFile = null; removeBanner = false;
+		picFile = null; removePic = false;
+		if (bannerPreview) {
+			{% if user.banner_url %}
+			bannerPreview.src = "{{ user.banner_url }}";
+			bannerPreview.classList.remove('hidden');
+			removeBannerBtn.classList.remove('hidden');
+			{% else %}
 			bannerPreview.src = '';
 			bannerPreview.classList.add('hidden');
 			removeBannerBtn.classList.add('hidden');
-		})
-
-		picBtn.addEventListener('click', () => editProfilePicInput.click());
-		editProfilePicInput.addEventListener('change', e => {
-			if (e.target.files && e.target.files[0]) {
-				croppingType = 'profile';
-				openCropper(e.target.files[0], 1);
-			}
-		});
-		editBannerInput.addEventListener('change', e => {
-			if (e.target.files && e.target.files[0]) {
-				croppingType = 'banner';
-				openCropper(e.target.files[0], 16 / 9);
-			}
-		});
-		
-		function resetEditProfileModal() {
-			form.reset();
-			bannerFile = null; removeBanner = false;
-			picFile = null; removePic = false;
-			if (bannerPreview) {
-				{% if user.banner_url %}
-				bannerPreview.src = "{{ user.banner_url }}";
-				bannerPreview.classList.remove('hidden');
-				removeBannerBtn.classList.remove('hidden');
-				{% else %}
-				bannerPreview.src = '';
-				bannerPreview.classList.add('hidden');
-				removeBannerBtn.classList.add('hidden');
-				{% endif %}
-			}
-			if (picPreview) {
-				{% if user.profile_image_url %}
-				picPreview.src = "{{ user.profile_image_url }}";
-				{% else %}
-				const span = document.createElement('span');
-				span.id = 'editProfilePicPreview';
-				span.className = 'flex items-center justify-center w-full h-full text-blue-500 text-5xl';
-				span.innerHTML = '<i class="fa-solid fa-user"></i>';
-				picPreview.replaceWith(span);
-				{% endif %}
-			}
+			{% endif %}
 		}
+		if (picPreview) {
+			{% if user.profile_image_url %}
+			picPreview.src = "{{ user.profile_image_url }}";
+			{% else %}
+			const span = document.createElement('span');
+			span.id = 'editProfilePicPreview';
+			span.className = 'flex items-center justify-center w-full h-full text-blue-500 text-5xl';
+			span.innerHTML = '<i class="fa-solid fa-user"></i>';
+			picPreview.replaceWith(span);
+			{% endif %}
+		}
+	}
+	
+	let editingprofile = false;
+	form.addEventListener('submit', async e => {
+		e.preventDefault();
+		if (editingprofile) {
+			return
+		}
+		editingprofile = true;
+
+		const displayName = document.getElementById('editDisplayName').value.trim();
+		const bio = document.getElementById('editBio').value.trim();
 		
-		form.addEventListener('submit', async e => {
-			e.preventDefault();
-			const displayName = document.getElementById('editDisplayName').value.trim();
-			const bio = document.getElementById('editBio').value.trim();
-			
-			const formData = new FormData();
-			formData.append('display_name', displayName);
-			formData.append('bio', bio);
-			// Use SEMPRE o arquivo croppado, se existir
-			if (typeof bannerFile !== 'undefined' && bannerFile) {
-				formData.append('banner', bannerFile);
-			}
-			if (removeBanner) formData.append('remove_banner', '1');
-			if (typeof picFile !== 'undefined' && picFile) {
-				formData.append('profile_image', picFile);
-			}
-			// Se quiser implementar remoção de foto futuramente:
-			// if (removePic) formData.append('remove_profile_image', '1');
-			
-			try {
-				const response = await fetch(`/usuario/{{ user.id }}/editar`, {
-					method: 'POST',
-					headers: {
-						'X-CSRFToken': getCsrfToken()
-					},
-					body: formData
-				});
-				const result = await response.json();
-				if (result.success) {
-					location.reload();
-				} else {
-					alert(result.message || 'Erro ao atualizar perfil.');
-				}
-			} catch (err) {
-				alert('Erro de comunicação com o servidor.');
-			}
-		});
+		const formData = new FormData();
+		formData.append('display_name', displayName);
+		formData.append('bio', bio);	
+		if (typeof bannerFile !== 'undefined' && bannerFile) {
+			formData.append('banner', bannerFile);
+		}
+		if (removeBanner) formData.append('remove_banner', '1');
+		if (typeof picFile !== 'undefined' && picFile) {
+			formData.append('profile_image', picFile);
+		}
+		// if (removePic) formData.append('remove_profile_image', '1');
+		
+		const result = await sendFormAsAjax(`/usuario/{{ user.id }}/editar`, formData);
+		if (result.success) {
+			location.reload();
+		} else {
+			alert(result.message || 'Erro ao atualizar perfil.');
+		}
+		editingprofile = false;
 	});
 </script>
 {% endblock %}

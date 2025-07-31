@@ -26,7 +26,7 @@ def get_user_posts(id):
             'likes': post_reactions["likes"],
             'dislikes': post_reactions["dislikes"],
             'comments': post_reactions["comments"],
-            'user_reaction': ""
+            'user_reaction': post_reactions["user_reaction"]
         })
     return posts
 
@@ -77,7 +77,7 @@ def view_profile(id):
             'creation_date': user_details.user.creation_date,
             'profile_image_url': user_details.icon_url,
             'banner_url': user_details.banner_url,
-            'badges': [{'name': "Verificado", 'icon_url': 'https://images.rbxcdn.com/8d77254fc1e6d904fd3ded29dfca28cb.png'}, {'name': "Dedicado", 'icon_url': 'https://images.rbxcdn.com/b66bc601e2256546c5dd6188fce7a8d1.png'}],
+            'badges': [],
             'posts': user_posts
         },
         can_edit_profile=session.get('id') == id

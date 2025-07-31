@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}Registro{% endblock %}
 {% block content %}
 <body class="bg-blue-100">
 	<div class="max-w-md mx-auto p-6 mt-10 bg-white rounded-lg shadow-md">
@@ -12,40 +13,47 @@
 				{% endfor %}
 			{% endif %}
 		{% endwith %}
-		<form method="POST" action="{{ url_for('authentication.register') }}">
-			{{ form.hidden_tag() }}
+		<form id="registerForm">
 			<div class="mb-4">
-				{% if form.username.errors %}
-					<ul class="error-message">
-						{% for error in form.username.errors %}
-							<li class="text-red-500">{{ error }}</li>
-						{% endfor %}
-					</ul>
-				{% endif %}
+				<ul class="error-message"></ul>
 				<label class="block text-gray-700">Usuário</label>
-				<input type="text" name="username" class="border p-2 w-full rounded" required>
+				<input id="usernameInput" minlength="3" maxlength="15" type="text" name="username" class="border p-2 w-full rounded" required>
+				<div class="flex w-100 justify-between">
+					<p class="text-gray-500 text-xs mt-1">Apenas letras minúsculas, números e _. Sem acentos.</p>
+					<p id="usernameInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 15</p>
+				</div>
 			</div>
 			<div class="mb-4">
-				{% if form.email.errors %}
-					<ul class="error-message">
-						{% for error in form.email.errors %}
-							<li class="text-red-500">{{ error }}</li>
-						{% endfor %}
-					</ul>
-				{% endif %}
+				<ul class="error-message"></ul>
 				<label class="block text-gray-700">E-mail</label>
-				<input type="email" name="email" class="border p-2 w-full rounded" required>
+				<input id="emailInput" type="email" name="email" class="border p-2 w-full rounded" required>
+				<p id="emailError" class="text-red-500 text-sm mt-1 hidden"></p>
 			</div>
 			<div class="mb-4">
-				{% if form.password.errors %}
-					<ul class="error-message">
-						{% for error in form.password.errors %}
-							<li class="text-red-500">{{ error }}</li>
-						{% endfor %}
-					</ul>
-				{% endif %}
+				<ul class="error-message"></ul>
 				<label class="block text-gray-700">Senha</label>
-				<input type="password" name="password" class="border p-2 w-full rounded" required>
+				<div class="relative">
+					<input id="passwordInput" minlength="8" maxlength="30" type="password" name="password" class="border p-2 w-full rounded" required>
+					<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+						<i class="fas fa-eye text-gray-500" id="__eyeIcon"></i>
+					</span>
+				</div>
+				<div class="flex w-100 justify-end">
+					<p id="passwordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
+				</div>
+			</div>
+			<div class="mb-4">
+				<ul class="error-message"></ul>
+				<label class="block text-gray-700">Confirmar Senha</label>
+				<div class="relative">
+					<input id="confirmPasswordInput" minlength="8" maxlength="30" type="password" name="confirm_password" class="border p-2 w-full rounded" required>
+					<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+						<i class="fas fa-eye text-gray-500" id="__eyeIcon"></i>
+					</span>
+				</div>
+				<div class="flex w-100 justify-end">
+					<p id="confirmPasswordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
+				</div>
 			</div>
 			<button id="submitbtn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button>
 		</form>
@@ -55,9 +63,128 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const loadingBtn = document.getElementById('submitbtn');
-loadingBtn.addEventListener('click', function(event) {
-	toggleLoading(loadingBtn);
+const form = document.getElementById('registerForm');
+const usernameInput = document.getElementById('usernameInput');
+const emailInput = document.getElementById('emailInput');
+const emailError = document.getElementById('emailError');
+let deb = false;
+
+usernameInput.addEventListener('input', () => {
+	const originalValue = usernameInput.value;
+	const sanitizedValue = originalValue.toLowerCase().replace(/[^a-z0-9_]/g, '');
+	if (originalValue !== sanitizedValue) {
+		usernameInput.value = sanitizedValue;
+	}
+});
+
+emailInput.addEventListener('blur', () => {
+	const emailRegex = /^[\w\.-]+@[\w\.-]+\.\w+$/;
+	if (emailInput.value && !emailRegex.test(emailInput.value)) {
+		emailError.textContent = 'Por favor, insira um e-mail válido.';
+		emailError.classList.remove('hidden');
+	} else {
+		emailError.classList.add('hidden');
+	}
+});
+
+form.addEventListener('submit', async e => {
+	e.preventDefault();
+	if (deb) return;
+
+	// Limpa mensagens de erro antigas
+	document.querySelectorAll('.error-message').forEach(ul => ul.innerHTML = '');
+	emailInput.dispatchEvent(new Event('blur'));
+	if (!emailError.classList.contains('hidden')) {
+		return;
+	}
+
+	const password = document.getElementById('passwordInput').value;
+	const confirmPassword = document.getElementById('confirmPasswordInput').value;
+	if (password !== confirmPassword) {
+		const ul = document.querySelector('input[name="confirm_password"]').parentElement.parentElement.querySelector('.error-message');
+		ul.innerHTML = '';
+		const li = document.createElement('li');
+		li.className = 'text-red-500';
+		li.textContent = 'As senhas não coincidem.';
+		ul.appendChild(li);
+		return;
+	}
+
+	deb = true;
+	emailError.classList.add('hidden');
+
+	const submitBtn = document.getElementById('submitbtn');
+	toggleLoading(submitBtn);
+
+	const username = document.getElementById('usernameInput').value;
+	const email = document.getElementById('emailInput').value;
+
+	const formData = new FormData();
+	formData.append('username', username);
+	formData.append('email', email);
+	formData.append('password', password);
+	formData.append('confirm_password', confirmPassword);
+
+	const result = await sendFormAsAjax("{{ url_for('authentication.register_ajax') }}", formData);
+	if (result.success) {
+		window.location.href = result.redirect_url;
+	} else {
+		// Exibe erros de validação do backend
+		if (result.errors) {
+			if (result.errors.username) {
+				const ul = document.querySelector('input[name="username"]').parentElement.parentElement.querySelector('.error-message');
+				ul.innerHTML = '';
+				result.errors.username.forEach(msg => {
+					const li = document.createElement('li');
+					li.className = 'text-red-500';
+					li.textContent = msg;
+					ul.appendChild(li);
+				});
+			}
+			if (result.errors.email) {
+				const ul = document.querySelector('input[name="email"]').parentElement.parentElement.querySelector('.error-message');
+				ul.innerHTML = '';
+				result.errors.email.forEach(msg => {
+					const li = document.createElement('li');
+					li.className = 'text-red-500';
+					li.textContent = msg;
+					ul.appendChild(li);
+				});
+			}
+			if (result.errors.password) {
+				const ul = document.querySelector('input[name="password"]').parentElement.parentElement.querySelector('.error-message');
+				ul.innerHTML = '';
+				result.errors.password.forEach(msg => {
+					const li = document.createElement('li');
+					li.className = 'text-red-500';
+					li.textContent = msg;
+					ul.appendChild(li);
+				});
+			}
+			if (result.errors.confirm_password) {
+				const ul = document.querySelector('input[name="confirm_password"]').parentElement.parentElement.querySelector('.error-message');
+				ul.innerHTML = '';
+				result.errors.confirm_password.forEach(msg => {
+					const li = document.createElement('li');
+					li.className = 'text-red-500';
+					li.textContent = msg;
+					ul.appendChild(li);
+				});
+			}
+		}
+		// Mensagem geral
+		let errormsg = document.getElementById('errormsg');
+		if (!errormsg) {
+			errormsg = document.createElement('div');
+			errormsg.classList.add('p-2', 'mb-4', 'text-white', 'bg-red-500', 'rounded');
+			errormsg.id = 'errormsg';
+			document.getElementById('registerForm').insertAdjacentElement('beforebegin', errormsg);
+		}
+		errormsg.textContent = result.message || 'Corrija os erros do formulário.';
+
+		toggleLoading(submitBtn);
+		deb = false;
+	}
 });
 </script>
 {% endblock %}

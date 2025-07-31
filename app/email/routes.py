@@ -2,9 +2,8 @@ from flask import redirect, url_for, flash
 from app.extensions import db_manager, email_service
 from app.email import bp
 
-@bp.route('/confirm/<token>')
+@bp.route('/confirmar/<token>')
 def confirm_email(token):
-    success, result = email_service.verify_token(token)
     success, email_or_error = email_service.verify_token(token)
     if success:
         user = db_manager.activate_user(email_or_error)

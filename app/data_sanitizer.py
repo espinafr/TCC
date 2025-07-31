@@ -71,8 +71,8 @@ def validate_username(form, field):
         raise ValidationError('O nome de usuário é obrigatório.')
     if len(field.data) < 3 or len(field.data) > 15:
         raise ValidationError('O nome de usuário precisa ter de 3 a 15 caracteres.')
-    if not field.data.isalnum() and '_' not in field.data:
-        raise ValidationError('O nome de usuário só pode conter letras, números e underline.')
+    if not re.match(r'^[a-z0-9_]+$', field.data):
+        raise ValidationError('O nome de usuário só pode conter letras minúsculas, números e underline (_), sem acentos.')
 
 def validate_login(form, field):
     if not field.data:
@@ -83,8 +83,8 @@ def validate_login(form, field):
     else:
         if len(field.data) < 3 or len(field.data) > 15:
             raise ValidationError('O nome de usuário precisa ter de 3 a 15 caracteres.')
-        if not field.data.isalnum() and '_' not in field.data:
-            raise ValidationError('O nome de usuário só pode conter letras, números e underline.')
+        if not re.match(r'^[a-z0-9_]+$', field.data):
+            raise ValidationError('O nome de usuário só pode conter letras minúsculas, números e underline (_), sem acentos.')
 
 class RegistrationForm(FlaskForm):
     email = StringField('E-mail', validators=[
@@ -107,7 +107,7 @@ class LoginForm(FlaskForm):
     ])
     password = PasswordField('Senha', validators=[
         InputRequired(message='A senha é obrigatória.'),
-        Length(min=8, max=20, message='A senha deve ter entre 8 e 20 caracteres.')
+        Length(min=8, max=30, message='A senha deve ter entre 8 e 30 caracteres.')
     ])
 
 class PostForm(FlaskForm):

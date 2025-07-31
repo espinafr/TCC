@@ -32,6 +32,22 @@ async function sendApiRequest(url, method, data) {
     }
 }
 
+async function sendFormAsAjax(url, formData) {
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: formData
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Erro no envio do formulário:', error);
+        return { success: false, message: 'Erro de comunicação com o servidor.' };
+    }
+}
+
 // Tamanho dinânimo de textarea
 function adjustTextareaHeight(textarea) {
     textarea.style.height = 'auto';
@@ -108,9 +124,6 @@ function toggleLoading(object) {
 function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = undefined) {
     const loginModal = document.getElementById('__loginModal');
     const closeModalBtn = document.getElementById('__closeModal');
-    const togglePassword = document.getElementById('__togglePassword');
-    const passwordInput = document.getElementById('__password');
-    const eyeIcon = document.getElementById('__eyeIcon');
     const loginForm = document.getElementById('__loginForm');
     const registerLink = document.getElementById('__registerLink');
 
@@ -132,13 +145,6 @@ function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = u
         if (e.target === loginModal) {
             closeModal();
         }
-    });
-
-    togglePassword.addEventListener('click', () => {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        eyeIcon.classList.toggle('fa-eye');
-        eyeIcon.classList.toggle('fa-eye-slash');
     });
 
     loginForm.addEventListener('submit', async (e) => {
@@ -193,6 +199,18 @@ function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = u
     // Abre o modal logo após ser renderizado
     openModal();
 }
+
+document.querySelectorAll('.view-password-button').forEach((viewPasswordButton) => {
+    const passwordInput = viewPasswordButton.previousElementSibling;
+    const eyeIcon = viewPasswordButton.querySelector('i');
+
+    viewPasswordButton.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        eyeIcon.classList.toggle('fa-eye');
+        eyeIcon.classList.toggle('fa-eye-slash');
+    });
+});
 
 // Inicializa a funcionalidade do popup de login para botões que exigem autenticação.
 function initializeAuthButtons(_button, isAuthenticatedCheck, popupSuccessCallback, extraArgs = null) {
@@ -434,79 +452,82 @@ function hideReportPopup() {
 }
 
 // Event Listeners Globais para o Popup de Denúncia
-closeReportModalBtn.addEventListener('click', hideReportPopup);
-reportModal.addEventListener('click', (e) => {
-	if (e.target === reportModal) {
-		hideReportPopup();
-	}
-});
-
-nextReportStepBtn.addEventListener('click', () => {
-    let selectedCategory = null;
-    reportCategoryRadios.forEach(radio => {
-        if (radio.checked) {
-            selectedCategory = radio.value;
+if (reportModal) {
+    closeReportModalBtn.addEventListener('click', hideReportPopup);
+    reportModal.addEventListener('click', (e) => {
+        if (e.target === reportModal) {
+            hideReportPopup();
         }
     });
 
-    if (selectedCategory) {
-        reportStep1.classList.add('hidden');
-        reportStep2.classList.remove('hidden');
-        reportModalTitle.textContent = "Detalhes da Denúncia"; // Atualiza o título
-    } else {
-        alert('Por favor, selecione uma categoria para a denúncia.');
-    }
-});
+    nextReportStepBtn.addEventListener('click', () => {
+        let selectedCategory = null;
+        reportCategoryRadios.forEach(radio => {
+            if (radio.checked) {
+                selectedCategory = radio.value;
+            }
+        });
 
-backToReportStep1Btn.addEventListener('click', () => {
-    reportStep2.classList.add('hidden');
-    reportStep1.classList.remove('hidden');
-    reportModalTitle.textContent = "Denunciar"; // Volta o título
-});
-
-reportDescriptionInput.addEventListener('input', () => {
-    charCountSpan.textContent = reportDescriptionInput.value.length;
-});
-
-reportForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    let selectedCategory = null;
-    reportCategoryRadios.forEach(radio => {
-        if (radio.checked) {
-            selectedCategory = radio.value;
-        }
-    });
-
-    const description = reportDescriptionInput.value;
-
-    // Constrói os dados da denúncia
-    const reportData = {
-        category: selectedCategory,
-        description: description,
-		type: currentReportTargetData['type'],
-		target_id: currentReportTargetData['target_id'],
-		perpetrator_id: currentReportTargetData['perpetrator_id']
-    };
-
-    try {
-        const response = await sendApiRequest('/api/report', 'POST', reportData);
-
-        if (response.success) {
-            reportStep2.classList.add('hidden');
-            reportSuccess.classList.remove('hidden');
-            reportModalTitle.textContent = "Sucesso!";
+        if (selectedCategory) {
+            reportStep1.classList.add('hidden');
+            reportStep2.classList.remove('hidden');
+            reportModalTitle.textContent = "Detalhes da Denúncia"; // Atualiza o título
         } else {
-            alert('Falha ao enviar denúncia: ' + (response.message || 'Erro desconhecido.'));
-            console.error('Erro ao enviar denúncia:', response.errors || response.message);
+            alert('Por favor, selecione uma categoria para a denúncia.');
         }
-    } catch (error) {
-        console.error('Erro na requisição da denúncia:', error);
-        alert('Erro de comunicação com o servidor ao enviar denúncia.');
-    }
-});
-closeReportSuccessBtn.addEventListener('click', hideReportPopup);
+    });
 
+    backToReportStep1Btn.addEventListener('click', () => {
+        reportStep2.classList.add('hidden');
+        reportStep1.classList.remove('hidden');
+        reportModalTitle.textContent = "Denunciar"; // Volta o título
+    });
+
+    reportDescriptionInput.addEventListener('input', () => {
+        charCountSpan.textContent = reportDescriptionInput.value.length;
+    });
+
+    reportForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        let selectedCategory = null;
+        reportCategoryRadios.forEach(radio => {
+            if (radio.checked) {
+                selectedCategory = radio.value;
+            }
+        });
+
+        const description = reportDescriptionInput.value;
+
+        // Constrói os dados da denúncia
+        const reportData = {
+            category: selectedCategory,
+            description: description,
+            type: currentReportTargetData['type'],
+            target_id: currentReportTargetData['target_id'],
+            perpetrator_id: currentReportTargetData['perpetrator_id']
+        };
+
+        try {
+            const response = await sendApiRequest('/api/report', 'POST', reportData);
+
+            if (response.success) {
+                reportStep2.classList.add('hidden');
+                reportSuccess.classList.remove('hidden');
+                reportModalTitle.textContent = "Sucesso!";
+            } else {
+                alert('Falha ao enviar denúncia: ' + (response.message || 'Erro desconhecido.'));
+                console.error('Erro ao enviar denúncia:', response.errors || response.message);
+            }
+        } catch (error) {
+            console.error('Erro na requisição da denúncia:', error);
+            alert('Erro de comunicação com o servidor ao enviar denúncia.');
+        }
+    });
+    closeReportSuccessBtn.addEventListener('click', hideReportPopup);
+} else {
+    console.info("Página sem modelo de denúncias, funções desabilitadas.")
+}
 // Counter
 function startCounterListener(input) {
     const counter = document.getElementById(input.id+"Counter");

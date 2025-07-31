@@ -33,15 +33,15 @@ function openRepliesModal(parentCommentId, customId = "") {
 }
 
 // Compartilhamento
-function copyPostUrl(postId) {
-    const postUrl = window.location.origin + '/post/' + postId;
-    const dummy = document.createElement('textarea');
-    document.body.appendChild(dummy);
-    dummy.value = postUrl;
-    dummy.select();
-    document.execCommand('copy');
-    document.body.removeChild(dummy);
-    alert('URL do post copiada para a área de transferência!');
+async function copyPostUrl(postId) {
+    try {
+        const postUrl = window.location.origin + '/post/' + postId;
+        navigator.clipboard.writeText(postUrl);
+        alert('URL do post copiada para a área de transferência!');
+    } catch (err) {
+        alert('Erro ao copiar URL do post: ', err);
+        console.error('Erro ao copiar URL do post: ', err);
+    }
 }
 
 // --- Funções de Comentário ---
@@ -97,29 +97,6 @@ async function handleCommentReaction(commentId, reactionType) {
 
     if (!result.success) {
         alert('Erro: ' + result.message);
-    }
-}
-
-// Função para atualizar contagens e estado dos botões de post
-async function updatePostCounts(postId) {
-    const response = await fetch(`/api/posts/${postId}/counts`);
-    const data = await response.json();
-    if (data.success) {
-        document.getElementById('likeCount').textContent = data.likes;
-        document.getElementById('dislikeCount').textContent = data.dislikes;
-
-        const likeButton = document.getElementById('likeButton');
-        const dislikeButton = document.getElementById('dislikeButton');
-
-        // Remove as classes ativas antes de adicionar, para garantir o estado correto
-        likeButton.classList.remove('active');
-        dislikeButton.classList.remove('active');
-
-        if (data.user_reaction === 'like_post') {
-            likeButton.classList.add('active');
-        } else if (data.user_reaction === 'dislike_post') {
-            dislikeButton.classList.add('active');
-        }
     }
 }
 
@@ -310,7 +287,7 @@ function renderPost(post_package) {
             ${imagesHtml}
         </div>
         <div class="my-2 text-gray-600 text-sm">
-            Postado por: <a href="/usuario/{{ post.author_user.user_id }}" class="font-semibold text-blue-500 hover:underline">${post_package.post.username || post_package.post.userat}</a>
+            Postado por: <a href="/usuario/${post_package.post.id}" class="font-semibold text-blue-500 hover:underline">${post_package.post.username || post_package.post.userat}</a>
         </div>
         <div class="flex items-center gap-4 border-t border-gray-200 pt-4 mb-8">
             <button class="interaction-button cursor-pointer ${post_package.user_post_reaction === 'like_post' ? 'active' : ''}" id="likeButton">
@@ -433,6 +410,8 @@ function attachCommentEventListeners() {
 	);
 }
 
+let commenting = false;
+let loadingposts = false;
 function attachPostEventListeners(postId, total_comments, rendered_comments) {
     // Evento de clique para os botões de resposta dos comentários
 	initializeAuthButtons(
@@ -475,6 +454,10 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 		checkAuthenticationStatus,
 		async () => {
 			if (commentButton.classList.contains('active')) {
+                if (commenting) {
+                    return
+                }
+                commenting = true;
 				const commentText = document.getElementById('commentTextarea').value.trim();
 
 				resetTextarea(document.getElementById('commentTextarea'));
@@ -489,6 +472,7 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 				} else {
 					alert('Erro: ' + result.message);
 				}
+                commenting = false;
 				toggleLoading(commentButton);
 			}
         }
@@ -501,6 +485,10 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 		checkAuthenticationStatus,
 		async () => {
 			if (replyButton.classList.contains('active')) {
+                if (commenting) {
+                    return
+                }
+                commenting = true;
 				const replyText = document.getElementById('replyTextarea').value.trim();
 				const parentCommentId = document.getElementById('replyModal').dataset.parentCommentId;
 				const parentCommentIdSufix = document.getElementById('replyModal').dataset.parentCommentIdSufix;
@@ -524,6 +512,7 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 				} else {
 					alert('Erro: ' + result.message);
 				}
+                commenting = false;
 				toggleNotification(notifId);
 			}
 		}
@@ -577,6 +566,10 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 			dislikeButton,
 			checkAuthenticationStatus,
 			async function() {
+                if (loadingposts) {
+                    return
+                }
+                loadingposts = true;
 				let notifId = Date.now();
 				toggleNotification(notifId);
 
@@ -601,13 +594,19 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 				} catch (error) {
 					commentModalContent.innerHTML = 'Erro de conexão.';
 				}
+                loading = false;
 				toggleNotification(notifId);
 			}
 		);
 	}
 }
 
+let loadingcomments = false;
 async function openCommentModal(commentId, postId) {
+    if (loadingcomments) {
+        return;
+    }
+    loadingcomments = true;
     const commentModalContent = document.getElementById('commentModalContent');
     commentModalContent.innerHTML = 'Carregando...'; // Mensagem de carregamento
 
@@ -643,6 +642,7 @@ async function openCommentModal(commentId, postId) {
         console.log(error);
         commentModalContent.innerHTML = 'Erro de conexão.';
     }
+    loadingcomments = false;
 }
 
 // Fecha modais ao pressionar a tecla ESC
@@ -710,8 +710,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.dislike-button').forEach(attachDislikeEvent);
 
     // Abrir um post
+    let openingpost = false;
     document.querySelectorAll('.timeline-post').forEach(function(post) {
         post.addEventListener('click', async function(event) {
+            if (openingpost) {
+                return;
+            }
+            openingpost = true;
+
             if (event.target.closest('.interactions-container, .interaction-button, .share-context-menu, .image-container, .options-button, .author-link')) {
                 return; 
             }
@@ -734,6 +740,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch(error) {
                 console.error('Erro ao carregar o post:', error);
             }
+            openingpost = false;
             toggleNotification(notifId);
         });
     });

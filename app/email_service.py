@@ -9,12 +9,14 @@ class EmailService:
             self.init_app(app)
 
     def init_app(self, app):
-        self.mail = app.extensions['mail'] = Mail(app)
+        self.mail = app.extensions.get('mail')
+        if not self.mail:
+            raise RuntimeError("A extensão Flask-Mail não foi inicializada corretamente.")
         self.serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
         self.app = app
 
     def send_confirmation_email(self, email, nome, confirm_url):
-        msg = Message('Confirme seu E-mail - Conexão em Família', 
+        msg = Message('Confirme seu E-mail - Timby', 
                       sender=self.app.config['MAIL_USERNAME'], 
                       recipients=[email])
         msg.body = f'Olá {nome}! Clique no link para confirmar seu e-mail: {confirm_url}\nO link expira em 1 hora. Se não confirmar dentro desse tempo, sua conta será desativada.\n\nSe você não solicitou registro, ignore esse e-mail.'

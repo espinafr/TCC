@@ -286,15 +286,13 @@ class DatabaseManager:
                 new_profile = UserDetails(user_id=user_id)
                 db.add(new_profile)
                 db.commit()
-                return True
+                return True, "Perfil criado com sucesso!"
             except IntegrityError as e:
                 db.rollback()
-                print(f"Erro ao criar perfil de usuário: {e}")
-                return False
+                return False, "O perfil do usuário já existe"
             except Exception as e:
                 db.rollback()
-                print(f"Erro inesperado ao criar perfil de usuário: {e}")
-                return False
+                return False, f"Erro inesperado ao criar perfil de usuário: {e}"
 
     def logto_user(self, login, password, _type):
         """Verifica as credenciais do usuário para login."""

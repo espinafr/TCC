@@ -15,8 +15,12 @@ def _process_login_attempt_and_session(form_obj):
     else:
         return False, 'E-mail não confirmado ou credenciais inválidas.'
 
-@bp.route('/registrar', methods=['GET', 'POST'])
+@bp.route('/registrar', methods=['GET'])
 def register():
+    return render_template('register.html')
+
+@bp.route('/register_ajax', methods=['POST'])
+def register_ajax():
     form = sanitizer.RegistrationForm()
     if form.validate_on_submit():
         username = form.username.data
@@ -25,31 +29,27 @@ def register():
         
         is_email_available, email_msg = db_manager.check_user_activation('email', email)
         if not is_email_available:
-            flash(email_msg, 'error')
-            return redirect(url_for('authentication.register'))
+            return jsonify({"success": False, 'message': email_msg}), 409
 
         is_username_available, username_msg = db_manager.check_user_activation('username', username)
         if not is_username_available:
-            flash(username_msg, 'error')
-            return redirect(url_for('authentication.register'))
+            return jsonify({"success": False, 'message': username_msg}), 409
 
         success, error_message = db_manager.save_user(username, email, password)
         
         if not success:
-            flash(error_message, 'error')
-            return redirect(url_for('authentication.register'))
+            return jsonify({"success": False, 'message': error_message}), 500
 
         token = email_service.generate_token(email)
         confirm_url = url_for('email.confirm_email', token=token, _external=True)
         success, error = email_service.send_confirmation_email(email, username, confirm_url)
         if success:
-            flash('Um e-mail de confirmação foi enviado!', 'success')
+            flash(f'Um e-mail de confirmação foi enviado para {email}!\nResponda em até 1 (uma) hora.', 'success')
+            return jsonify({"success": True, 'redirect_url': url_for('authentication.login')}), 200
         else:
-            flash(f'Erro ao enviar e-mail: {error}', 'error')
-
-        return redirect(url_for('authentication.register'))
-    
-    return render_template('register.html', form=form)
+            return jsonify({"success": False, 'message': f"Erro interno ao enviar email: {error}"}), 500
+    else:
+        return jsonify({'success': False, 'errors': form.errors, 'message': 'Erro de validação.'})
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -68,20 +68,12 @@ def login_ajax():
     form = sanitizer.LoginForm()
 
     if request.is_json:
-        # Se a requisição for JSON, os dados NÃO virão em request.form
-        # Precisamos populá-los manualmente do request.get_json()
         json_data = request.get_json()
         if json_data:
             form.login.data = json_data.get('login')
             form.password.data = json_data.get('password')
         else:
-            # Caso o JSON esteja vazio ou malformado
             return jsonify({'success': False, 'message': 'Corpo da requisição JSON inválido ou vazio.'}), 400
-    else:
-        # Se a requisição não for JSON (e.g., FormData ou application/x-www-form-urlencoded),
-        # o Flask-WTF já preenche o formulário automaticamente a partir de request.form
-        # Isso significa que form = LoginForm() já faria a mágica se fosse um form submit :D.
-        pass
 
     if form.validate():
         success, result = _process_login_attempt_and_session(form)
@@ -93,7 +85,7 @@ def login_ajax():
         return jsonify({'success': False, 'errors': form.errors, 'message': 'Erro de validação.'}), 400
     
 
-@bp.route('/logout')
+@bp.route('/sair')
 @login_required
 def logout():
     session.pop('id', None)
