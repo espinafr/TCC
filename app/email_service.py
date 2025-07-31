@@ -1,3 +1,4 @@
+from flask import render_template
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, exc
 
@@ -19,7 +20,7 @@ class EmailService:
         msg = Message('Confirme seu E-mail - Timby', 
                       sender=self.app.config['MAIL_USERNAME'], 
                       recipients=[email])
-        msg.body = f'Olá {nome}! Clique no link para confirmar seu e-mail: {confirm_url}\nO link expira em 1 hora. Se não confirmar dentro desse tempo, sua conta será desativada.\n\nSe você não solicitou registro, ignore esse e-mail.'
+        msg.body = render_template('/emails/confirmation_email.html', conconfirmation_link=confirm_url)
         try:
             self.mail.send(msg)
             return True, None
