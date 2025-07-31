@@ -2,8 +2,8 @@
 {% block title %}@{{ user.username }}{% endblock %}
 {% block description %}{{ user.bio or 'Sem biografia ainda.' }}{% endblock %}
 {% block additional_styles %}
-<meta property="og:image" content="{{ user.banner_url || 'https://placehold.co/600x400' }}" />
-<meta property="twitter:image" content="{{ user.banner_url || 'https://placehold.co/600x400' }}" />
+<meta property="og:image" content="{{ user.banner_url or 'https://placehold.co/600x400' }}" />
+<meta property="twitter:image" content="{{ user.banner_url or 'https://placehold.co/600x400' }}" />
 <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
 <style>
 	.profile-banner {
