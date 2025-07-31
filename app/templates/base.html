@@ -12,7 +12,17 @@
 	<link rel="manifest" href="{{ url_for('static', filename='favicon/site.webmanifest') }}">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<meta name="validated" content="{{ logged_in }}">
-	<title>{% block title %}{% endblock %} - Timby</title>
+    	{% set page_title = self.title() | default('🐧') %}
+	<title>{{ page_title }} - Timby</title>
+	<meta name="title" content="{{ page_title }} - Timby" />
+	<meta property="og:title" content="{{ page_title }} - Timby" />
+	<meta property="twitter:title" content="{{ page_title }} - Timby" />
+    	{% set page_description = self.description() | default('Timby é um projeto que busca promover uma maior atenção de pais e mestres para seus filhos através de um ambiente de cooperação e de compartilhamento de experiências.') %}
+	<meta name="description" content="{{ page_description }}" />
+	<meta property="og:description" content="{{ page_description }}" />
+	<meta property="twitter:description" content="{{ page_description }}" />
+	<meta property="og:url" content="{{ request.url }}">
+	<meta property="twitter:url" content="{{ request.url }}">
 	{% block additional_styles %}{% endblock %}
 </head>
 {% block content %}{% endblock %}
