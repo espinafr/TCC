@@ -20,7 +20,7 @@ class EmailService:
         msg = Message('Confirme seu E-mail - Timby', 
                       sender=self.app.config['MAIL_USERNAME'], 
                       recipients=[email])
-        msg.body = render_template('/emails/confirmation_email.html', conconfirmation_link=confirm_url)
+        msg.html = render_template('/emails/confirmation_email.html', conconfirmation_link=confirm_url)
         try:
             self.mail.send(msg)
             return True, None
