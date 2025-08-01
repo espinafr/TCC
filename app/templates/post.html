@@ -16,7 +16,6 @@
 		{% endwith %}
 		<form method="POST" action="{{ url_for('posts.create_post') }}" enctype="multipart/form-data" class="max-w-2xl mx-auto p-6 bg-gray-50 rounded-lg shadow-inner mt-6">
 			{{ form.csrf_token }}
-			<h2 class="text-xl font-semibold mb-4 text-gray-800">Criar um novo post</h2>
 			<div class="mb-4">
 				{% if form.titulo.errors %}
 					<ul class="error-message">
