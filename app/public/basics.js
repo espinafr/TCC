@@ -215,6 +215,9 @@ document.querySelectorAll('.view-password-button').forEach((viewPasswordButton) 
 // Inicializa a funcionalidade do popup de login para botões que exigem autenticação.
 function initializeAuthButtons(_button, isAuthenticatedCheck, popupSuccessCallback, extraArgs = null) {
     _button.addEventListener('click', (event) => {
+        const target = event.target.closest("button");
+		if (!target) return;
+
 		event.preventDefault(); // Previne a ação padrão do botão, se houver
 
 		if (!isAuthenticatedCheck()) {
@@ -258,7 +261,9 @@ function showReusableDropdown(buttonElement, options, dataAttributes = {}) {
 
 	// Ajustar para garantir que o dropdown não saia da tela à direita
 	const dropdownWidth = reusableDropdown.offsetWidth;
-	if (rect.left + dropdownWidth > window.innerWidth) {
+    console.log(rect.left + dropdownWidth);
+    console.log(window.innerWidth);
+	if (rect.x + dropdownWidth > window.innerWidth) {
 		reusableDropdown.style.left = `${rect.right + window.scrollX - dropdownWidth}px`;
 	}
 	reusableDropdown.classList.remove('hidden');

@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
 {% endblock %}
 {% block content %}
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body class="bg-[#F0F8FE] flex items-center justify-center min-h-screen p-4">
 	<div class="post-container bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl" data-postid="{{ post.id }}" data-post-userid="{{ post.userid }}">
 		{% with messages = get_flashed_messages(with_categories=true) %}
 			{% if messages %}
@@ -112,7 +112,7 @@
 				<div class="flex-grow">
 					<div id="interaction{{ comment_content.comment.id }}box">
 						<div class="flex justify-between">
-							<a class="font-semibold text-gray-800 mb-1 hover:underline" target="_blank" href="/usuario/{{ comment_content.comment.id }}">{{ comment_content.comment.username }}</a>
+							<a class="font-semibold text-gray-800 mb-1 hover:underline" target="_blank" href="/usuario/{{ comment_content.comment.userid }}">{{ comment_content.comment.username }}</a>
 							<button class="options-button self-start text-gray-500 pl-5 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-gl"></i></button>
 						</div>
 						<p class="text-gray-700 mb-2">{{ comment_content.comment.value }}</p>
@@ -133,7 +133,7 @@
 					</div>
 					
 					{% if comment_content.most_liked_reply %}
-						<div class="comment-item flex gap-4 mt-4" data-comment-id="{{ comment_content.most_liked_reply.reply.id }}" data-comment-userid="{{ comment_content.comment.userid }}">
+						<div class="comment-item flex gap-4 mt-4" data-comment-id="{{ comment_content.most_liked_reply.reply.id }}" data-comment-userid="{{ comment_content.most_liked_reply.reply.userid }}">
 							<div class="comment-profile-pic">
 								{% if comment_content.most_liked_reply.reply.usericon %}
 								<img src={{comment_content.most_liked_reply.reply.usericon}} alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
