@@ -36,6 +36,14 @@ class CollaborativeFilteringStrategy(RecommendationStrategy):
             scores = defaultdict(int) # Dicionário para armazenar pontuação dos posts
             for p in recommended_posts:
                 scores[p.post_id] += 1 # Soma 1 para cada vez que o post é recomendado
+
+            # Inclui posts sem nenhuma interação e que o usuário ainda não curtiu
+            all_post_ids = set([pid for (pid,) in db.query(Post.id).all()])
+            already_seen = set(liked_post_ids) | set(scores.keys())
+            # Busca posts que o usuário não curtiu e que não estão nas recomendações
+            for post_id in all_post_ids:
+                if post_id not in already_seen:
+                    scores[post_id] += 0.5  # Score menor para posts "frios"
             return scores # Retorna {post_id: score}
 
 class ContentBasedStrategy(RecommendationStrategy):
