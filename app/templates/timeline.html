@@ -5,6 +5,7 @@
 {% endblock %}
 {% block content %}
 <body class="bg-[#F0F8FE] flex items-center justify-center min-h-screen p-4">
+	{% include 'navbar.html' %}
 	<div class="bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-3xl">
 		<h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8">Timeline</h1>
 		{% with messages = get_flashed_messages(with_categories=true) %}

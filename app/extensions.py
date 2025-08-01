@@ -1,3 +1,5 @@
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask import session, abort, g
 from functools import wraps
 from datetime import datetime
@@ -10,6 +12,10 @@ import boto3
 mail = Mail()
 email_service = EmailService()
 db_manager  = DatabaseManager()
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["300 per day", "50 per hour"]
+)
 
 class s3Handler:
     def __init__(self, app=None):

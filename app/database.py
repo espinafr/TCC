@@ -237,6 +237,11 @@ class DatabaseManager:
         Assume que as validações de existência e ativação já foram feitas externamente
         pelo chamador (ex: na rota de registro).
         """
+        if self._get_user_by_field('email', email):
+            return False, "O email já está registrado."
+        if self._get_user_by_field('username', username):
+            return False, "O nome de usuário já está em uso."
+
         with self.get_db() as db:
             try:
                 hashed_password = self.ph.hash(password)

@@ -44,7 +44,8 @@
 </style>
 {% endblock %}
 {% block content %}
-<div class="flex flex-col items-center w-full min-h-screen bg-[#F0F8FE] py-0 sm:py-2 md:py-8 ">
+{% include 'navbar.html' %}
+<div class="flex flex-col items-center w-full min-h-screen py-0 sm:py-2 md:py-8 ">
 	<div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl relative">
 		<div class="profile-banner">
 			{% if user.banner_url %}
@@ -231,35 +232,35 @@
 	<img class="image-modal-content" id="fullImage">
 </div>
 <div id="replyModal" class="modal hidden">
+	<div class="reply-modal-content">
+		<span class="close-button-modal cursor-pointer" onclick="closeModal('replyModal')">&times;</span>
+		<h3 class="text-xl font-bold text-gray-800 mb-4">Responder Comentário</h3>
+		<div class="comment-input-container">
+			<div class="comment-profile-pic">
+				{% if user.profile_image_url %}
+					<img src="{{ user.profile_image_url }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
+				{% else %}
+					<i class="fa-solid fa-user"></i>
+				{% endif %}
+			</div>
+			<textarea id="replyTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva sua resposta!" oninput="adjustTextareaHeight(this); toggleReplyButton();"></textarea>
+			<button id="replyButton" class="comment-button">Responder</button>
+		</div>
+	</div>
+</div>
+<div id="commentModal" class="modal hidden">
 		<div class="reply-modal-content">
-			<span class="close-button-modal cursor-pointer" onclick="closeModal('replyModal')">&times;</span>
-			<h3 class="text-xl font-bold text-gray-800 mb-4">Responder Comentário</h3>
-			<div class="comment-input-container">
-				<div class="comment-profile-pic">
-					{% if user.profile_image_url %}
-						<img src="{{ user.profile_image_url }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
-					{% else %}
-						<i class="fa-solid fa-user"></i>
-					{% endif %}
-				</div>
-				<textarea id="replyTextarea" class="comment-textarea border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escreva sua resposta!" oninput="adjustTextareaHeight(this); toggleReplyButton();"></textarea>
-				<button id="replyButton" class="comment-button">Responder</button>
+			<span class="close-button-modal cursor-pointer" onclick="closeModal('commentModal')">&times;</span>
+			<div id="commentModalContent">
+				<!-- Conteúdo do comentário e suas respostas será carregado aqui -->
 			</div>
 		</div>
 	</div>
-	<div id="commentModal" class="modal hidden">
-			<div class="reply-modal-content">
-				<span class="close-button-modal cursor-pointer" onclick="closeModal('commentModal')">&times;</span>
-				<div id="commentModalContent">
-					<!-- Conteúdo do comentário e suas respostas será carregado aqui -->
-				</div>
-			</div>
-		</div>
-	<div id="postModal" class="modal hidden">
-		<span class="post-close-button cursor-pointer" onclick="closeModal('postModal')">&times;</span>
-		<div class="post-modal-content relative">
-		</div>
+<div id="postModal" class="modal hidden">
+	<span class="post-close-button cursor-pointer" onclick="closeModal('postModal')">&times;</span>
+	<div class="post-modal-content relative">
 	</div>
+</div>
 {% endblock %}
 {% block scripts %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css"/>

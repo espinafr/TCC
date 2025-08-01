@@ -31,7 +31,7 @@ def resolve_report(report_id: int, moderator_id: int):
 @bp.route('/', methods=['GET'])
 @power_required(required_power=1)
 def index():
-    return render_template('admin.html', username=session.get('username'))
+    return render_template('admin.html', username=session.get('username'), power=session.get('power'))
 
 @bp.route('/reports', methods=['GET'])
 @power_required(required_power=1)
@@ -182,6 +182,37 @@ def feeltheweightofthehammer():
                 return jsonify({'success': False, 'message': f'Erro ao salvar no banco de dados: {str(e)}'}), 500
     else:
         return jsonify({'success': False, 'message': form.errors}), 400
+
+@bp.route('/changepower', methods=['POST'])
+@power_required(required_power=2)
+def powersurge():
+    json_data = request.get_json()
+    if not json_data:
+        return jsonify({'success': False, 'message': 'Corpo da requisição JSON inválido ou vazio.'}), 400
+    
+    user_id = json_data['user_id']
+    power = int(json_data['power'])
+
+    if power > 3:
+        return jsonify({'success': False, 'message': f'O poder não pode exceder 3'}), 500
+    elif power < 0:
+        return jsonify({'success': False, 'message': f'O poder não pode ser negativo'}), 500
+
+    with db_manager.get_db() as db:
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                if user.power >= session.get('power'):
+                    return jsonify({'success': False, 'message': f'Você não pode alterar o poder de um superior'}), 500
+                else:
+                    user.power = power
+                    db.commit()
+            else:
+                return jsonify({'success': False, 'message': f'O usuário não existe'}), 500
+        except Exception as e:
+            db.rollback()
+            return jsonify({'success': False, 'message': f'Erro ao alterar o poder do usuário: {str(e)}'}), 500
+        return jsonify({'success': True, 'message': f'Poder alterado para {power} com sucesso'}), 200
 
 @bp.route('/analytics', methods=['GET'])
 @power_required(required_power=1)

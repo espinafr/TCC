@@ -2,6 +2,7 @@
 {% block title %}Escrevendo post{% endblock %}
 {% block content %}
 <body class="bg-gray-100">
+	{% include 'navbar.html' %}
 	<div class="max-w-2xl mx-auto p-6 mt-10 bg-[#F0F8FE] rounded-lg shadow-md">
 		<h1 class="text-2xl font-bold mb-4">Criar Novo Post</h1>
 		{% with messages = get_flashed_messages(with_categories=true) %}

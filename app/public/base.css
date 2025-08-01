@@ -1,3 +1,50 @@
+/* --- Navbar --- */
+#bottomNavbar {
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+    border-radius: 1.5rem;
+    background: #3B82F6;
+    padding: 0.5rem 1.5rem;
+    min-width: 320px;
+    max-width: 420px;
+    z-index: 40;
+}
+.nav-btn {
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 0.5rem 0.7rem;
+    border-radius: 9999px;
+    transition: background 0.2s, transform 0.2s;
+    position: relative;
+}
+.nav-btn:active {
+    background: #2563eb33;
+}
+.nav-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.nav-btn i {
+    transition: transform 0.2s, color 0.2s;
+}
+.nav-btn:hover i, .nav-btn:focus i {
+    transform: scale(1.35);
+    color: #fff;
+    filter: drop-shadow(0 2px 8px #2563eb88);
+}
+.nav-tooltip {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    transform: translateY(8px);
+    z-index: 50;
+}
+.nav-btn:hover .nav-tooltip, .nav-btn:focus .nav-tooltip {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
 body {
     font-family: 'Inter', sans-serif;
     box-sizing: border-box;
@@ -19,11 +66,11 @@ body {
 }
 
 .modal-overlay {
-	animation: fadeIn 0.3s ease-out forwards;
+    animation: fadeIn 0.3s ease-out forwards;
 }
 
 .modal-content {
-	animation: zoomIn 0.3s ease-out forwards;
+    animation: zoomIn 0.3s ease-out forwards;
 }
 
 @keyframes fadeIn {

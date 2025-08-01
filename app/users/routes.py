@@ -5,7 +5,28 @@ from botocore.exceptions import ClientError
 from app.main.routes import get_interactions
 from app.users import bp
 from PIL import Image
+from urllib.parse import unquote
 import os, uuid, io, json
+
+def delete_from_s3(url):
+    if not url:
+        return
+    try:
+        object_key = url.split(f"{current_app.config['S3_BUCKET_NAME']}.s3.{current_app.config['AWS_REGION']}.amazonaws.com/")[-1]
+        
+        # Decodifica a chave do objeto para lidar com caracteres especiais no nome do arquivo
+        decoded_key = unquote(object_key)
+
+        s3.client.delete_object(
+            Bucket=current_app.config['S3_BUCKET_NAME'],
+            Key=decoded_key
+        )
+        print(f"Objeto {decoded_key} deletado do S3 com sucesso.")
+    except ClientError as e:
+        # Loga o erro se a exclusão falhar, mas não impede a atualização do perfil
+        print(f"Erro ao deletar objeto do S3: {e}")
+    except Exception as e:
+        print(f"Ocorreu um erro inesperado ao tentar deletar o objeto do S3: {e}")
 
 def get_user_posts(id):
     posts = []
@@ -91,7 +112,7 @@ def edit_profile(id):
         return jsonify({'success': False, 'message': 'Você não tem permissão para editar este perfil.'}), 403
 
     # Atualiza o usuário no banco 
-    user = db_manager.get_user('id', id)
+    user = db_manager.get_user_details(id)
     if not user:
         return jsonify({'success': False, 'message': 'Usuário não encontrado.'}), 404
     
@@ -106,9 +127,13 @@ def edit_profile(id):
     banner_url = None
 
     if profile_image and profile_image.filename:
+        if user.icon_url:
+            delete_from_s3(user.icon_url)
         profile_image_url = upload_to_s3(profile_image, 'profile')
     
     if banner_image and banner_image.filename:
+        if user.banner_url:
+            delete_from_s3(user.banner_url)
         banner_url = upload_to_s3(banner_image, 'banner')
 
     with db_manager.get_db() as db:
