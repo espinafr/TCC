@@ -18,9 +18,6 @@ def create_app(config_class=Config):
 
     with app.app_context():
         db_manager.init_all_dbs()
-        print(db_manager.save_user("admin", "admin@admin.com", "123345678", "3"))
-        print(db_manager.activate_user("admin@admin.com"))
-        print(db_manager.create_user_profile(1))
 
     @app.context_processor
     def inject_global_variables():

