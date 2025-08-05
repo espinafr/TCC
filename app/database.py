@@ -282,25 +282,16 @@ class DatabaseManager:
         with self.get_db() as db:
             user = db.query(User).filter(User.email == email, User.active == False).first()
             if user:
-                user.active = True
-                db.commit()
-                return user.id
-            return False # Retorna o ID se o usuário foi encontrado e atualizado
-
-    def create_user_profile(self, user_id):
-        """Cria o perfil do usuário."""
-        with self.get_db() as db:
-            try:
-                new_profile = UserDetails(user_id=user_id)
-                db.add(new_profile)
-                db.commit()
-                return True, "Perfil criado com sucesso!"
-            except IntegrityError as e:
-                db.rollback()
-                return False, "O perfil do usuário já existe"
-            except Exception as e:
-                db.rollback()
-                return False, f"Erro inesperado ao criar perfil de usuário: {e}"
+                try:
+                    user.active = True
+                    new_profile = UserDetails(user.id)
+                    db.add(new_profile)
+                    db.commit()
+                    return True # Verdadeiro se o usuário foi devidamente ativado
+                except Exception as e:
+                    db.rollback()
+                    return False
+            return False
 
     def logto_user(self, login, password, _type):
         """Verifica as credenciais do usuário para login."""
