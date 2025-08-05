@@ -289,6 +289,7 @@ class DatabaseManager:
                     db.commit()
                     return True # Verdadeiro se o usuário foi devidamente ativado
                 except Exception as e:
+                    print(f"Erro na ativação do usuário: {e}")
                     db.rollback()
                     return False
             return False
