@@ -1,6 +1,6 @@
 from flask import Flask, session, render_template, flash, redirect, url_for
 from flask_wtf import CSRFProtect
-from app.extensions import db_manager, email_service, mail, s3, limiter
+from app.extensions import db_manager, email_service, mail, s3#, limiter
 from config import Config
 
 def create_app(config_class=Config):
@@ -11,7 +11,7 @@ def create_app(config_class=Config):
     mail.init_app(app)
     email_service.init_app(app)
     s3.init_app(app)
-    limiter.init_app(app)
+    #limiter.init_app(app)
 
     # Habilitando proteção CSRF
     csrf = CSRFProtect(app)

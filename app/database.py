@@ -280,11 +280,12 @@ class DatabaseManager:
     def activate_user(self, email):
         """Ativa a conta de um usuário."""
         with self.get_db() as db:
-            user = db.query(User).filter(User.email == email).first()
+            user = db.query(User).filter(User.email == email, User.active == False).first()
             if user:
                 user.active = True
                 db.commit()
-            return user.id if user else False # Retorna o ID se o usuário foi encontrado e atualizado
+                return user.id
+            return False # Retorna o ID se o usuário foi encontrado e atualizado
 
     def create_user_profile(self, user_id):
         """Cria o perfil do usuário."""

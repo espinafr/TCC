@@ -12,10 +12,10 @@ import boto3
 mail = Mail()
 email_service = EmailService()
 db_manager  = DatabaseManager()
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["300 per day", "50 per hour"]
-)
+#limiter = Limiter(
+#    key_func=get_remote_address,
+#    default_limits=["300 per day", "50 per hour"]
+#)
 
 class s3Handler:
     def __init__(self, app=None):
