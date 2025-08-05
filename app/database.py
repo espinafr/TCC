@@ -284,7 +284,7 @@ class DatabaseManager:
             if user:
                 try:
                     user.active = True
-                    new_profile = UserDetails(user.id)
+                    new_profile = UserDetails(user_id=user.id)
                     db.add(new_profile)
                     db.commit()
                     return True # Verdadeiro se o usuário foi devidamente ativado
