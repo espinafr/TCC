@@ -559,8 +559,8 @@ function startCounterListener(input) {
 		counter.classList.add("hidden");
 	});
 	input.addEventListener("keyup", (event) => {
-	    const normalizedValue = input.value.replace('\n', /\r\n/g);
-	    counter.textContent = normalizedValue.length + " / " + input.maxLength;
+  const matches = str.match(/\n/g); 
+	 counter.textContent = (input.value.length + matches) + " / " + input.maxLength; // Faz contar as quebras de linhas duas vezes ao invés de uma
 	});
 }
 
