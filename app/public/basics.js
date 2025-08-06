@@ -221,7 +221,7 @@ document.querySelectorAll('.view-password-button').forEach((viewPasswordButton) 
 // Inicializa a funcionalidade do popup de login para botões que exigem autenticação.
 function initializeAuthButtons(_button, isAuthenticatedCheck, popupSuccessCallback, extraArgs = null) {
 	_button.addEventListener('click', (event) => {
-		const target = event.target.closest("button");
+		const target = event.target.closest("button, #reusableDropdown");
 		if (!target) return;
 		
 		event.preventDefault(); // Previne a ação padrão do botão, se houver

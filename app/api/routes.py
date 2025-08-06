@@ -305,7 +305,7 @@ def get_comment_interactions_api(comment_id):
 def delete_post(post_id):
     post = db_manager.get_post_by_id(post_id)
     if post:
-        if post.author_user.id == session.get('id'):
+        if post.author_user.user_id == session.get('id'):
             db_manager.delete_post_by_id(post_id)
             return jsonify({"success": True, "message": "Post excluído com sucesso!"}), 200
         else:
