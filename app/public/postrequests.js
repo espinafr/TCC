@@ -71,7 +71,7 @@ function visualReactionUpdate(selfType, oppositeType) {
 	const oppositeCount = document.getElementById(oppositeType + "Count");
 	const selfCount = document.getElementById(selfType + "Count");
 
-	const selfButton = document.getElementById(oppositeType + "Button");
+	const selfButton = document.getElementById(selfType + "Button");
 	if (selfButton.classList.contains('active')) {
 		const oppositeButton = document.getElementById(oppositeType + "Button");
 		if (oppositeButton.classList.contains('active')) { // Se a reação oposta estiver ativa....
