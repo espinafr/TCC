@@ -82,7 +82,7 @@ def create_post():
                 db.rollback()
                 return jsonify({'success': False, 'message': 'Erro ao criar post. Tente novamente.'}), 400
     else:
-        print(form.erros)
+        print(form.errors)
         return jsonify({'success': False, 'errors': form.errors, 'message': 'Erro de validação.'}), 400
 
 @bp.route('/post/<int:post_id>', methods=['GET'])
