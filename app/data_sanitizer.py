@@ -113,7 +113,7 @@ class LoginForm(FlaskForm):
 
 class PostForm(FlaskForm):
     tituloInput = StringField(name='tituloInput', validators=[InputRequired(message='O título é obrigatório.'), Length(min=5, max=100, message="O título precisa conter entre %(min)d e %(max)d caracteres")])
-    contentTextarea = TextAreaField(name='contentTextarea', validators=[InputRequired(message='O conteúdo é obrigatório.'), Length(min=30, max=1000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
+    contentTextarea = TextAreaField(name='contentTextarea', validators=[InputRequired(message='O conteúdo é obrigatório.'), Length(min=30, max=2000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
     tags = SelectField(name='tags', choices=[
         ("Desenho Infantil", "Desenho Infantil"), ("Educação", "Educação"), ("Saúde", "Saúde"), ("Disciplina", "Disciplina"), ("Nutrição", "Nutrição"), ("Comportamento", "Comportamento"), ("Lazer", "Lazer"), ("Tecnologia", "Tecnologia"), ("Família", "Família"), ("Desafios", "Desafios")
     ], validators=[InputRequired(message='Selecione uma categoria.'), validate_not_empty_choice], render_kw={'data-placeholder': 'true'})
