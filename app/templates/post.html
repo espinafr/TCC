@@ -153,24 +153,24 @@
 		if (result.success) {
 			window.location.pathname = `/post/${result.message}`
 		} else {
-            if (result.errors) {
-                for (const fieldName in result.errors) {
-                    const messages = result.errors[fieldName];
-                    const inputElement = document.getElementsByName(fieldName)[0];
-                    if (inputElement) {
-                        inputElement.classList.add('border-red-500');
-                        const parent = inputElement.closest('div');
-                        messages.forEach(msg => {
-                            const errorMessage = document.createElement('p');
-                            errorMessage.className = 'text-red-500 text-xs mt-1 error-message';
-                            errorMessage.textContent = msg;
-                            parent.appendChild(errorMessage);
-                        });
-                    }
-                }
-            } else if (result.message) {
-                alert(result.message);
-            }
+			if (result.errors) {
+				for (const fieldName in result.errors) {
+					const messages = result.errors[fieldName];
+					const inputElement = document.getElementsByName(fieldName)[0];
+					if (inputElement) {
+						inputElement.classList.add('border-red-500');
+						const parent = inputElement.closest('div');
+						messages.forEach(msg => {
+							const errorMessage = document.createElement('p');
+							errorMessage.className = 'text-red-500 text-xs mt-1 error-message';
+							errorMessage.textContent = msg;
+							parent.appendChild(errorMessage);
+						});
+					}
+				}
+			} else if (result.message) {
+				alert(result.message);
+			}
 		}
 		toggleLoading(submitBtn);
 	});
