@@ -559,7 +559,8 @@ function startCounterListener(input) {
 		counter.classList.add("hidden");
 	});
 	input.addEventListener("keyup", (event) => {
-		counter.textContent = input.value.length + " / " + input.maxLength;
+	    const normalizedValue = input.value.replace(/\r\n/g, '\n');
+	    counter.textContent = normalizedValue.length + " / " + input.maxLength;
 	});
 }
 
