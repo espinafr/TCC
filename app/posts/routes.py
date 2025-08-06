@@ -19,6 +19,7 @@ def postedeluz():
 @login_required
 def create_post():
     print(f"Tamanho da string a ser validada: {len(request.form['contentTextarea'])}")
+    print(request.form['contentTextarea']))
     form = PostForm()
     if form.validate_on_submit():
         uploaded_files_info = []
