@@ -31,7 +31,7 @@
 								{% endif %}
 							</span>
 							<a href="/usuario/{{ post.userid }}" target="_blank" class="flex flex-col author-link">
-								<span class="font-semibold text-gray-800">{{ post.author }}</span>
+								<span class="font-semibold text-gray-800">{{ post.author or post.authorat }}</span>
 								<span class="text-gray-400 text-xs">@{{ post.authorat }}</span>
 							</a>
 						</div>
@@ -91,9 +91,6 @@
 				<button class="options-button self-start cursor-pointer text-gray-500 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-lg"></i></button>
 			</div>
 			{% endfor %}
-		</div>
-		<div class="mt-8 text-center">
-			<a href="{{ url_for('main.index') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">Voltar para a página inicial</a>
 		</div>
 	</div>
 	{% include 'popups.html' %}

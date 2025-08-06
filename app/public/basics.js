@@ -111,7 +111,9 @@ function toggleLoading(object) {
 	const hasSpinner = object.querySelector('.loading-spinner');
 	if (hasSpinner) {
 		hasSpinner.remove();
+		object.disabled = false;
 	} else {
+		object.disabled = true;
 		const spinner = document.createElement('span');
 		spinner.className = 'loading-spinner';
 		spinner.innerHTML = ' <i class="fa-solid fa-spinner fa-spin"></i>';
@@ -120,12 +122,13 @@ function toggleLoading(object) {
 }
 
 // Popup de login
-// Cria e exibe um popup de login no documento.
+// Cria e exibe um popup de login no documento
 function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = undefined) {
 	const loginModal = document.getElementById('__loginModal');
 	const closeModalBtn = document.getElementById('__closeModal');
 	const loginForm = document.getElementById('__loginForm');
 	const registerLink = document.getElementById('__registerLink');
+	const loginSubmit = document.getElementById('__loginSubmit');
 	
 	// Funções auxiliares para abrir e fechar
 	const openModal = () => {
@@ -149,6 +152,8 @@ function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = u
 	
 	loginForm.addEventListener('submit', async (e) => {
 		e.preventDefault(); // Previne o envio padrão do formulário
+		toggleLoading(loginSubmit);
+
 		const login = document.getElementById('__login').value;
 		const password = document.getElementById('__password').value;
 		
@@ -188,6 +193,7 @@ function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = u
 				loginForm.appendChild(errorMessageDiv);
 			}
 		}
+		toggleLoading(loginSubmit);
 	});
 	
 	registerLink.addEventListener('click', (e) => {
@@ -261,8 +267,6 @@ function showReusableDropdown(buttonElement, options, dataAttributes = {}) {
 	
 	// Ajustar para garantir que o dropdown não saia da tela à direita
 	const dropdownWidth = reusableDropdown.offsetWidth;
-	console.log(rect.left + dropdownWidth);
-	console.log(window.innerWidth);
 	if (rect.x + dropdownWidth > window.innerWidth) {
 		reusableDropdown.style.left = `${rect.right + window.scrollX - dropdownWidth}px`;
 	}
@@ -323,6 +327,10 @@ async function deleteInteraction(_, data) {
 	}
 }
 
+function leaveACcount() {
+	window.location.pathname = "/sair";
+}
+
 function reportItem(_, data) {
 	showReportPopup(data);
 }
@@ -373,12 +381,19 @@ function optionButton(event) {
 		
 		data = { target_id: userId, type: 'usuario', perpetrator_id: userId };
 		
-		options = [
-			{ text: 'Denunciar', action: reportItem }//,
-			//{ text: 'Seguir', action: followUser },
-			//{ text: 'Bloquear', action: blockUser },
-			//{ text: 'Enviar Mensagem', action: sendMessage }
-		];
+		if (getUserId() === ownerId) {
+			options = [
+				{ text: 'Sair', action: leaveAccount }
+			];
+		} else {
+			options = [
+				{ text: 'Denunciar', action: reportItem }//,
+				//{ text: 'Seguir', action: followUser },
+				//{ text: 'Bloquear', action: blockUser },
+				//{ text: 'Enviar Mensagem', action: sendMessage }
+			];
+		}
+		
 	} else if (parentElement.classList.contains('comment-item')) { // Para comentários e respostas (interações)
 		const interactionId = parentElement.dataset.commentId;
 		const ownerId = parentElement.dataset.commentUserid;
@@ -553,7 +568,7 @@ const navbar = document.getElementById('bottomNavbar');
 if (navbar) {
 	const navBtns = navbar.querySelectorAll('.nav-btn');
 	navBtns.forEach(btn => {
-		if (btn.hasAttribute('disabled')) return;
+		if (btn.hasAttribute('disabled') ) return;
 		
 		const link = btn.getAttribute('data-link');
 		let finalLink = link;
@@ -562,15 +577,21 @@ if (navbar) {
 			if (userid) finalLink = `/usuario/${userid}`;
 		}
 		
-		initializeAuthButtons(
-			btn, 
-			checkAuthenticationStatus, 
-			() => {
-				if (finalLink && finalLink !== '#') {
-					window.location.href = finalLink;
+		if (!btn.hasAttribute('data-loginfree')) {
+			initializeAuthButtons(
+				btn, 
+				checkAuthenticationStatus, 
+				() => {
+					if (finalLink && finalLink !== '#') {
+						window.location.href = finalLink;
+					}
 				}
-			}
-		);
+			);
+		} else {
+			btn.addEventListener('click', () => {
+				window.location.href = finalLink;
+			});
+		}
 	});
 }
 

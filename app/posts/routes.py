@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, session, current_app
+from flask import render_template, redirect, url_for, flash, session, current_app, jsonify
 from app.extensions import login_required, db_manager, s3
 from app.api.routes import get_post_with_details, get_user_icon
 from botocore.exceptions import ClientError
@@ -6,17 +6,24 @@ from app.data_sanitizer import PostForm, ALLOWED_CATEGORIES
 from app.database import Post
 from app.posts import bp
 from PIL import Image
+from werkzeug.datastructures import FileStorage
 import json, uuid, os, io
 
 @bp.route('/escrever', methods=['GET', 'POST'])
+@login_required
+def postedeluz():
+    form = PostForm()
+    return render_template('post.html', form=form, allowed_categories=ALLOWED_CATEGORIES)
+
+@bp.route('/mandarpost', methods=['GET', 'POST'])
 @login_required
 def create_post():
     form = PostForm()
     if form.validate_on_submit():
         uploaded_files_info = []
         
-        for file in form.images.data:
-            if file and file.filename: # Verificar se um arquivo foi realmente enviado para este campo
+        for file in form.inputFiles.data:
+            if isinstance(file, FileStorage) and file.filename: # Verificar se um arquivo foi realmente enviado para este campo
                 try:
                     file_extension = os.path.splitext(file.filename)[1]
                     unique_filename = str(uuid.uuid4()) + file_extension
@@ -60,22 +67,22 @@ def create_post():
             try:
                 new_post = Post(
                     user_id=session['id'],
-                    title=form.titulo.data.strip(),
-                    content=form.conteudo.data.strip(),
+                    title=form.tituloInput.data.strip(),
+                    content=form.contentTextarea.data.strip(),
                     tag=form.tags.data,
-                    optional_tags=form.optionaltags.data,
+                    optional_tags=form.hiddenOptionalTags.data,
                     image_urls=image_urls_json
                 )
                 db.add(new_post)
                 db.commit()
                 db.refresh(new_post) # Recarrega o objeto para ter o ID gerado pelo DB
                 flash('Post criado com sucesso!', 'success')
-                return redirect(url_for('posts.view_post', post_id=new_post.id))
+                return jsonify({'success': True, 'message': new_post.id}), 400
             except Exception as e:
                 db.rollback()
-                flash('Erro ao criar post. Tente novamente.', 'danger')
-    
-    return render_template('post.html', form=form, allowed_categories=ALLOWED_CATEGORIES)
+                return jsonify({'success': False, 'message': 'Erro ao criar post. Tente novamente.'}), 400
+    else:
+        return jsonify({'success': False, 'errors': form.errors, 'message': 'Erro de validação.'}), 400
 
 @bp.route('/post/<int:post_id>', methods=['GET'])
 @login_required
@@ -94,3 +101,4 @@ def view_post(post_id):
                            next_offset=post['next_offset'],
                            total_comments=post['total_comments'],
                            user_icon=get_user_icon(session.get('id')))
+

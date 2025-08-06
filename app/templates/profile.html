@@ -45,6 +45,7 @@
 {% endblock %}
 {% block content %}
 {% include 'navbar.html' %}
+{% include 'popups.html' %}
 <div class="flex flex-col items-center w-full min-h-screen py-0 sm:py-2 md:py-8 ">
 	<div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl relative">
 		<div class="profile-banner">
@@ -54,7 +55,7 @@
 				<div class="profile-banner-gradient"></div>
 			{% endif %}
 		</div>
-		<div class="profile-card flex items-end justify-between absolute px-6 top-[120px] w-full" data-user-id="{{ user.user_id }}" >
+		<div class="profile-card flex items-end justify-between absolute px-6 top-[120px] w-full" data-user-id="{{ user.id }}" >
 			<div class="shadow-lg w-[120px] h-[120px] bg-gray-200 border-[5px] border-white rounded-[25%] flex items-center justify-center overflow-hidden">
 				{% if user.profile_image_url %}
 					<img src="{{ user.profile_image_url }}" alt="Foto de perfil" class="object-cover w-full h-full rounded">
@@ -114,7 +115,7 @@
 									{% endif %}
 								</span>
 								<a href="/usuario/{{ post.userid }}" class="flex flex-col author-link">
-									<span class="font-semibold text-gray-800">{{ post.author }}</span>
+									<span class="font-semibold text-gray-800">{{ post.author or post.authorat }}</span>
 									<span class="text-gray-400 text-xs">@{{ post.authorat }}</span>
 								</a>
 								<span class="text-xs text-gray-500">• {{ post.created_at.strftime('%d/%m/%Y') }}</span>
@@ -161,7 +162,6 @@
 		</div>
 	</div>
 </div>
-{% include 'popups.html' %}
 <div id="cropModal" class="fixed inset-0 z-[999] flex items-center justify-center bg-blue-500/60 hidden">
 	<div class="bg-white rounded-xl shadow-xl p-6 max-w-lg w-full flex flex-col items-center">
 		<div class="w-full aspect-video bg-gray-100 flex items-center justify-center overflow-hidden mb-4" style="max-height:400px;">
@@ -205,6 +205,7 @@
 			</div>
 			<!-- Form -->
 			<div class="pt-6 pb-8 px-8 flex flex-col gap-4">
+				<div id="errors"></div>
 				<label class="relative flex items-end w-full h-13 px-4 py-2 rounded-lg cursor-text border border-gray-300 focus-within:ring-2 focus-within:ring-blue-500 bg-white">
 					<div class="font-semibold text-gray-500 w-full flex justify-between absolute text-xs top-1 left-2 select-none">
 						<span>Nome</span>
@@ -221,7 +222,7 @@
 				</label>
 				<div class="flex justify-end gap-2 mt-4">
 					<span id="closeEditProfileModal" class="bg-white cursor-pointer border border-red-600 text-red-600 hover:bg-red-700 hover:text-white font-bold py-2 px-6 rounded-full transition">Cancelar</span>
-					<button type="submit" class="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white font-bold py-2 px-6 rounded-full transition">Salvar</button>
+					<button id="submitEditProfileForm" type="submit" class="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white font-bold py-2 px-6 rounded-full transition">Salvar</button>
 				</div>
 			</div>
 		</form>
@@ -343,6 +344,7 @@
 	const editBtn = document.getElementById('editProfileBtn');
 	const modal = document.getElementById('editProfileModal');
 	const form = document.getElementById('editProfileForm');
+	const submitBtn = document.getElementById('submitEditProfileForm');
 	const closeBtn = document.getElementById('closeEditProfileModal');
 	
 	// Banner
@@ -438,36 +440,52 @@
 		}
 	}
 	
-	let editingprofile = false;
 	form.addEventListener('submit', async e => {
 		e.preventDefault();
-		if (editingprofile) {
-			return
-		}
-		editingprofile = true;
+		toggleLoading(submitBtn);
 
 		const displayName = document.getElementById('editDisplayName').value.trim();
 		const bio = document.getElementById('editBio').value.trim();
 		
 		const formData = new FormData();
-		formData.append('display_name', displayName);
-		formData.append('bio', bio);	
+		formData.append('editDisplayName', displayName);
+		formData.append('editBio', bio);
 		if (typeof bannerFile !== 'undefined' && bannerFile) {
-			formData.append('banner', bannerFile);
+			formData.append('editBannerInput', bannerFile, 'banner.jpg');
 		}
 		if (removeBanner) formData.append('remove_banner', '1');
 		if (typeof picFile !== 'undefined' && picFile) {
-			formData.append('profile_image', picFile);
+			formData.append('editProfilePicInput', picFile, 'profile.jpg');
 		}
 		// if (removePic) formData.append('remove_profile_image', '1');
 		
+		const oldErrorMessages = form.querySelectorAll('.error-message');
+		oldErrorMessages.forEach(msg => msg.remove());
+		form.querySelectorAll('input').forEach(input => input.classList.remove('border-red-500'));
+
 		const result = await sendFormAsAjax(`/usuario/{{ user.id }}/editar`, formData);
 		if (result.success) {
 			location.reload();
 		} else {
-			alert(result.message || 'Erro ao atualizar perfil.');
+			const errorsContainer = document.getElementById("errors");
+			for (const fieldName in result.errors) {
+					const messages = result.errors[fieldName];
+					
+					const inputElement = document.getElementById(fieldName);
+					if (inputElement) {
+						inputElement.classList.add('border-red-500');
+					}
+
+					messages.forEach(msg => {
+						const errorMessage = document.createElement('p');
+						errorMessage.className = 'text-red-500 text-xs mt-1 error-message';
+						errorMessage.textContent = msg;
+						errorsContainer.appendChild(errorMessage);
+					});
+				}
 		}
-		editingprofile = false;
+		toggleLoading(submitBtn);
 	});
 </script>
 {% endblock %}
+

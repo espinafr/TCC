@@ -637,7 +637,7 @@ class DatabaseManager:
 
     def get_user_posts(self, user_id):
         with self.get_db() as db:
-            posts = db.query(Post).filter(Post.user_id == user_id).options(joinedload(Post.author_user).joinedload(UserDetails.user)).order_by(Post.created_at.desc()).all()
+            posts = db.query(Post).filter(Post.user_id == user_id, Post.is_deleted == False).options(joinedload(Post.author_user).joinedload(UserDetails.user)).order_by(Post.created_at.desc()).all()
             return posts
 
     def get_user_comments_n_replies(self, user_id):

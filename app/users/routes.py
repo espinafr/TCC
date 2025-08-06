@@ -1,6 +1,7 @@
 from flask import render_template, abort, session, request, jsonify, current_app
 from app.extensions import login_required, db_manager, s3
 from app.database import UserDetails
+from app.data_sanitizer import ProfileEditForm
 from botocore.exceptions import ClientError
 from app.main.routes import get_interactions
 from app.users import bp
@@ -116,48 +117,52 @@ def edit_profile(id):
     if not user:
         return jsonify({'success': False, 'message': 'Usuário não encontrado.'}), 404
     
-    display_name = request.form.get('display_name', '').strip()
-    bio = request.form.get('bio', '').strip()
-    remove_banner = request.form.get('remove_banner') == '1'
-    profile_image = request.files.get('profile_image')
-    banner_image = request.files.get('banner')
+    form = ProfileEditForm()
+    if form.validate_on_submit():
+        display_name = form.editDisplayName.data.strip()
+        bio = form.editBio.data.strip()
+        remove_banner = form.remove_banner.data
+        profile_image = form.editProfilePicInput.data
+        banner_image = form.editBannerInput.data
 
-    # URLs para salvar no banco
-    profile_image_url = None
-    banner_url = None
-
-    if profile_image and profile_image.filename:
-        if user.icon_url:
-            delete_from_s3(user.icon_url)
-        profile_image_url = upload_to_s3(profile_image, 'profile')
+        # URLs para salvar no banco
+        profile_image_url = None
+        banner_url = None
+        
+        if profile_image and profile_image.filename:
+            if user.icon_url:
+                delete_from_s3(user.icon_url)
+            profile_image_url = upload_to_s3(profile_image, 'profile')
     
-    if banner_image and banner_image.filename:
-        if user.banner_url:
-            delete_from_s3(user.banner_url)
-        banner_url = upload_to_s3(banner_image, 'banner')
+        if banner_image and banner_image.filename:
+            if user.banner_url:
+                delete_from_s3(user.banner_url)
+            banner_url = upload_to_s3(banner_image, 'banner')
 
-    with db_manager.get_db() as db:
-        user = db.query(UserDetails).filter(UserDetails.user_id == id).first()
+        with db_manager.get_db() as db:
+            user = db.query(UserDetails).filter(UserDetails.user_id == id).first()
 
-        # Atualize os campos conforme seu modelo
-        if display_name:
-            user.display_name = display_name
-        if bio:
-            user.bio = bio
-        if profile_image_url:
-            user.icon_url = profile_image_url
-        if banner_url:
-            user.banner_url = banner_url
-        if remove_banner:
-            user.banner_url = None
+            # Atualize os campos conforme seu modelo
+            if display_name:
+                user.display_name = display_name
+            if bio:
+                user.bio = bio
+            if profile_image_url:
+                user.icon_url = profile_image_url
+            if banner_url:
+                user.banner_url = banner_url
+            if remove_banner:
+                user.banner_url = None
 
-        try:
-            db.commit()
-        except Exception as e:
-            db.rollback()
-            return jsonify({'success': False, 'message': f'Erro ao salvar no banco: {e}'}), 500
+            try:
+                db.commit()
+            except Exception as e:
+                db.rollback()
+                return jsonify({'success': False, 'message': f'Erro ao salvar no banco: {e}'}), 500
 
-        return jsonify({
-            'success': True,
-            'message': 'Perfil atualizado com sucesso!',
-        })
+            return jsonify({
+                'success': True,
+                'message': 'Perfil atualizado com sucesso!',
+            })
+    else:
+        return jsonify({'success': False, 'errors': form.errors, 'message': 'Erro de validação.'}), 400

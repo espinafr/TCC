@@ -14,31 +14,17 @@
 				{% endfor %}
 			{% endif %}
 		{% endwith %}
-		<form method="POST" action="{{ url_for('posts.create_post') }}" enctype="multipart/form-data" class="max-w-2xl mx-auto p-6 bg-gray-50 rounded-lg shadow-inner mt-6">
-			{{ form.csrf_token }}
+		<form method="POST" id="postForm" enctype="multipart/form-data" class="max-w-2xl mx-auto p-6 bg-gray-50 rounded-lg shadow-inner mt-6">
+			{{ form.hidden_tag() }}
 			<div class="mb-4">
-				{% if form.titulo.errors %}
-					<ul class="error-message">
-						{% for error in form.titulo.errors %}
-							<li class="text-red-500">{{ error }}</li>
-						{% endfor %}
-					</ul>
-				{% endif %}
-				<input type="text" id="tituloInput" name="titulo" minlength="3" maxlength="100" placeholder="Digite seu título aqui" class="w-full p-2 border text-gray-700 rounded" required>
+				<input type="text" id="tituloInput" name="tituloInput" minlength="3" maxlength="100" placeholder="Digite seu título aqui" class="w-full p-2 border text-gray-700 rounded" required>
 				<div class="flex justify-end">
 					<p id="tituloInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 100</p>
 				</div>
 			</div>
 			<div class="mb-4 flex space-x-4">
 				<div class="w-1/2">
-					{% if form.tags.errors %}
-						<ul class="error-message">
-							{% for error in form.tags.errors %}
-								<li class="text-red-500">{{ error }}</li>
-							{% endfor %}
-						</ul>
-					{% endif %}
-					<select class="w-full p-2 border text-gray-700 rounded" name="tags" required>
+					<select class="w-full p-2 border text-gray-700 rounded" name="tags" id="tags" required>
 						<option value="" selected disabled>Selecione uma categoria...</option>
 						{% for value in form.tags.iter_choices() %}
 							<option value="{{ value[0] }}">{{ value[1] }}</option>
@@ -46,48 +32,27 @@
 					</select>
 				</div>
 				<div class="w-1/2 relative">
-					{% if form.optionaltags.errors %}
-						<ul class="error-message">
-							{% for error in form.optionaltags.errors %}
-								<li class="text-red-500">{{ error }}</li>
-							{% endfor %}
-						</ul>
-					{% endif %}
 					<select class="w-full p-2 border text-gray-700 rounded appearance-none" id="optionalTags" size="1" onchange="toggleSelectedTag(this)">
 						<option value="" disabled selected>Tags opcionais...</option>
 						{% for value in allowed_categories %}
 							<option value="{{ value }}">{{ value }}</option>
 						{% endfor %}
 					</select>
-					<input type="hidden" name="optionaltags" id="hiddenOptionalTags">
+					<input type="hidden" name="hiddenOptionalTags" id="hiddenOptionalTags">
 					<div id="selectedTags" class="mt-2 flex flex-wrap gap-2"></div>
 				</div>
 			</div>
 			<div class="mb-4">
-				{% if form.conteudo.errors %}
-					<ul class="error-message">
-						{% for error in form.conteudo.errors %}
-							<li class="text-red-500">{{ error }}</li>
-						{% endfor %}
-					</ul>
-				{% endif %}
-				<textarea id="contentTextarea" name="conteudo" minlength="30" maxlength="1000" placeholder="Selecione uma categoria antes de escrever." class="w-full h-40 p-2 border text-gray-700 rounded" required></textarea>
+				<textarea id="contentTextarea" name="contentTextarea" minlength="30" maxlength="1000" placeholder="Selecione uma categoria antes de escrever." class="w-full h-40 p-2 border text-gray-700 rounded" required></textarea>
 				<div class="flex justify-end">
 					<p id="contentTextareaCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 1000</p>
 				</div>
 			</div>
 			<div class="mb-4">
-				{% if form.images.errors %}
-					<ul class="error-message">
-						{% for error in form.images.errors %}
-							<li class="text-red-500">{{ error }}</li>
-						{% endfor %}
-					</ul>
-				{% endif %}
-				<input type="file" name="images" accept="image/*" multiple onchange="previewImages(event)" class="mb-2 border rounded p-2 hover:bg-gray-200 transition">
+				<input type="file" id="inputFiles" name="inputFiles" accept="image/*" multiple onchange="previewImages(event)" class="mb-2 border rounded p-2 hover:bg-gray-200 transition">
 				<div id="imagePreview" class="flex space-x-2"></div>
 			</div>
-			<button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer">Publicar</button>
+			<button id="submitPostBtn" type="submit" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer">Publicar</button>
 		</form>
 	</div>
 </body>
@@ -142,8 +107,8 @@
 		const preview = document.getElementById('imagePreview');
 		preview.innerHTML = '';
 		const files = event.target.files;
-		if (files.length > 4) {
-			alert('Maximum 4 images allowed!');
+		if (files.length > 5) {
+			alert('Maximum 5 images allowed!');
 			event.target.value = '';
 			return;
 		}
@@ -158,32 +123,56 @@
 		}
 	}
 
-	// Drag and drop image handling
-	const form = document.querySelector('form');
-	form.addEventListener('dragover', (e) => e.preventDefault());
-	form.addEventListener('drop', (e) => {
+	// Arrasta e solta de arquivos
+	const postForm = document.getElementById('postForm');
+	const inputFiles = document.getElementById('inputFiles');
+	postForm.addEventListener('dragover', (e) => e.preventDefault());
+	postForm.addEventListener('drop', (e) => {
 		e.preventDefault();
 		const files = e.dataTransfer.files;
-		const input = document.querySelector('input[type="file"]');
 		const dataTransfer = new DataTransfer();
-		for (let i = 0; i < files.length && i < 4; i++) {
+		for (let i = 0; i < files.length && i < 5; i++) {
 			dataTransfer.items.add(files[i]);
 		}
-		input.files = dataTransfer.files;
-		previewImages({ target: input });
+		inputFiles.files = dataTransfer.files;
+		previewImages({ target: inputFiles });
 	});
 
-	const textarea = document.querySelector('textarea');
-	textarea.addEventListener('input', (e) => {
-		if (e.data === '@') {
-			const popup = document.createElement('div');
-			popup.className = 'absolute bg-gray-800 border border-gray-700 p-2 rounded';
-			popup.innerHTML = '<div>@pearson</div><div>@john</div>';
-			popup.style.top = textarea.getBoundingClientRect().bottom + 'px';
-			popup.style.left = textarea.getBoundingClientRect().left + 'px';
-			document.body.appendChild(popup);
-			setTimeout(() => popup.remove(), 2000);
+	const submitBtn = document.getElementById('submitPostBtn');
+	postForm.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		toggleLoading(submitBtn);
+
+		const oldErrorMessages = postForm.querySelectorAll('.error-message');
+		oldErrorMessages.forEach(msg => msg.remove());
+		postForm.querySelectorAll('input, textarea, select').forEach(el => el.classList.remove('border-red-500'));
+
+		const formData = new FormData(postForm);
+	
+		const result = await sendFormAsAjax("{{ url_for('posts.create_post') }}", formData)
+		if (result.success) {
+			window.location.pathname = `/post/${result.message}`
+		} else {
+            if (result.errors) {
+                for (const fieldName in result.errors) {
+                    const messages = result.errors[fieldName];
+                    const inputElement = document.getElementsByName(fieldName)[0];
+                    if (inputElement) {
+                        inputElement.classList.add('border-red-500');
+                        const parent = inputElement.closest('div');
+                        messages.forEach(msg => {
+                            const errorMessage = document.createElement('p');
+                            errorMessage.className = 'text-red-500 text-xs mt-1 error-message';
+                            errorMessage.textContent = msg;
+                            parent.appendChild(errorMessage);
+                        });
+                    }
+                }
+            } else if (result.message) {
+                alert(result.message);
+            }
 		}
+		toggleLoading(submitBtn);
 	});
 </script>
 {% endblock %}

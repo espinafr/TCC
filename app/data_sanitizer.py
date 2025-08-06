@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, RadioField, TextAreaField, FileField, SelectField, MultipleFileField, DateField, BooleanField
 from wtforms.validators import InputRequired, DataRequired, Email, Length, ValidationError, Optional
 from flask_wtf.file import FileAllowed, FileSize
+from werkzeug.datastructures import FileStorage
 import re
 
 ALLOWED_CATEGORIES = [
@@ -39,7 +40,7 @@ ALLOWED_CATEGORIES = [
 
 def validate_fotos(form, field):
     # Filtra arquivos que realmente foram selecionados (não são vazios)
-    selected_files = [f for f in field.data if f and f.filename]
+    selected_files = [f for f in field.data if isinstance(f, FileStorage) and f.filename]
 
     if len(selected_files) > 5:
         raise ValidationError('Você pode enviar no máximo 5 fotos.')
@@ -97,7 +98,7 @@ class RegistrationForm(FlaskForm):
     ])
     password = PasswordField('Senha', validators=[
         InputRequired(message='A senha é obrigatória.'),
-        Length(min=8, max=20, message='A senha deve ter entre 8 e 20 caracteres.')
+        Length(min=8, max=30, message='A senha deve ter entre 8 e 30 caracteres.')
     ])
 
 class LoginForm(FlaskForm):
@@ -111,13 +112,13 @@ class LoginForm(FlaskForm):
     ])
 
 class PostForm(FlaskForm):
-    titulo = StringField(name='titulo', validators=[InputRequired(message='O título é obrigatório.'), Length(min=5, max=100, message="O título precisa conter entre %(min)d e %(max)d caracteres")])
-    conteudo = TextAreaField(name='conteudo', validators=[InputRequired(message='O conteúdo é obrigatório.'), Length(min=30, max=1000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
+    tituloInput = StringField(name='tituloInput', validators=[InputRequired(message='O título é obrigatório.'), Length(min=5, max=100, message="O título precisa conter entre %(min)d e %(max)d caracteres")])
+    contentTextarea = TextAreaField(name='contentTextarea', validators=[InputRequired(message='O conteúdo é obrigatório.'), Length(min=30, max=1000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
     tags = SelectField(name='tags', choices=[
         ("Desenho Infantil", "Desenho Infantil"), ("Educação", "Educação"), ("Saúde", "Saúde"), ("Disciplina", "Disciplina"), ("Nutrição", "Nutrição"), ("Comportamento", "Comportamento"), ("Lazer", "Lazer"), ("Tecnologia", "Tecnologia"), ("Família", "Família"), ("Desafios", "Desafios")
     ], validators=[InputRequired(message='Selecione uma categoria.'), validate_not_empty_choice], render_kw={'data-placeholder': 'true'})
-    optionaltags = StringField(validators=[Optional(), validate_opcional])
-    images = MultipleFileField(
+    hiddenOptionalTags = StringField(validators=[Optional(), validate_opcional])
+    inputFiles = MultipleFileField(
         'Enviar Fotos (até 5, max. 10MB cada)', #label
         validators=[
             Optional(), # O campo é opcional
@@ -163,3 +164,23 @@ class ModerationForm(FlaskForm):
                                    ('deletar', 'Deletar post'),
                                    ('desativar', 'Desativar post'),
                                    ('shadowban', 'Shadow-ban')])
+class ProfileEditForm(FlaskForm):
+    editDisplayName = StringField('Nome de Exibição', validators=[
+        Optional(),
+        Length(min=3, max=32, message='O nome de exibição deve ter entre 3 e 32 caracteres.')
+    ])
+    editBio = TextAreaField('Biografia', validators=[
+        Optional(),
+        Length(max=250, message='A biografia não pode exceder 250 caracteres.')
+    ])
+    editProfilePicInput = FileField('Foto de Perfil', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'png', 'jpeg', 'webp'], 'Apenas imagens JPG, PNG, JPEG e WEBP são permitidas!'),
+        FileSize(max_size=5 * 1024 * 1024, message='O tamanho da foto de perfil não pode exceder 5MB!')
+    ])
+    editBannerInput = FileField('Banner', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'png', 'jpeg', 'webp'], 'Apenas imagens JPG, PNG, JPEG e WEBP são permitidas!'),
+        FileSize(max_size=5 * 1024 * 1024, message='O tamanho do banner não pode exceder 5MB!')
+    ])
+    remove_banner = BooleanField('Remover Banner')
