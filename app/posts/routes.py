@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, session, current_app, jsonify
+from flask import render_template, redirect, url_for, flash, session, current_app, jsonify, request
 from app.extensions import login_required, db_manager, s3
 from app.api.routes import get_post_with_details, get_user_icon
 from botocore.exceptions import ClientError
@@ -18,6 +18,7 @@ def postedeluz():
 @bp.route('/mandarpost', methods=['GET', 'POST'])
 @login_required
 def create_post():
+    print(f"Tamanho da string a ser validada: {len(request.form['contentTextarea'])}")
     form = PostForm()
     if form.validate_on_submit():
         uploaded_files_info = []
