@@ -597,6 +597,35 @@ if (navbar) {
 	});
 }
 
+// Animação tilt
+const tiltBox = document.querySelectorAll('.tilt-box');
+tiltBox.forEach(box => {
+	box.addEventListener('mousemove', (e) => {
+		// Get the bounding box of the element to calculate relative mouse position
+		const boxRect = box.getBoundingClientRect();
+
+		// Calculate the center of the div
+		const centerX = boxRect.left + boxRect.width / 2;
+		const centerY = boxRect.top + boxRect.height / 2;
+
+		// Calculate the mouse position relative to the center of the div
+		const mouseX = e.clientX - centerX;
+		const mouseY = e.clientY - centerY;
+
+		// Determine the rotation angles (adjust sensitivity as needed)
+		const rotateY = mouseX * 0.01; // Tilt along Y-axis based on horizontal mouse movement
+		const rotateX = -mouseY * 0.05; // Tilt along X-axis based on vertical mouse movement (negative for intuitive movement)
+
+		// Apply the 3D transform
+		box.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+	});
+
+	// Reset the tilt when the mouse leaves the div
+	box.addEventListener('mouseleave', () => {
+		box.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
+	});
+});
+
 document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll('.options-button').forEach(button => {
 		attachOptionBtnListener(button);
