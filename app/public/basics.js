@@ -601,20 +601,16 @@ if (navbar) {
 const tiltBox = document.querySelectorAll('.tilt-box');
 tiltBox.forEach(box => {
 	box.addEventListener('mousemove', (e) => {
-		// Get the bounding box of the element to calculate relative mouse position
 		const boxRect = box.getBoundingClientRect();
 
-		// Calculate the center of the div
 		const centerX = boxRect.left + boxRect.width / 2;
 		const centerY = boxRect.top + boxRect.height / 2;
 
-		// Calculate the mouse position relative to the center of the div
 		const mouseX = e.clientX - centerX;
 		const mouseY = e.clientY - centerY;
 
-		// Determine the rotation angles (adjust sensitivity as needed)
-		const rotateY = mouseX * 0.0025; // Tilt along Y-axis based on horizontal mouse movement
-		const rotateX = -mouseY * 0.025; // Tilt along X-axis based on vertical mouse movement (negative for intuitive movement)
+		const rotateY = mouseX * 0.0025;
+		const rotateX = -mouseY * 0.0025;
 
 		// Apply the 3D transform
 		box.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
