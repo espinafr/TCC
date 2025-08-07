@@ -57,7 +57,7 @@
 					<p id="confirmPasswordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
 				</div>
 			</div>
-			<button id="submitbtn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Registrar</button>
+			<button id="submitbtn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-[#E0E7FF] disabled:cursor-not-allowed disabled:text-[#6366F1]">Registrar</button>
 		</form>
 		<p class="mt-4">Já tem uma conta? <a href="{{ url_for('authentication.login') }}" class="text-blue-600 hover:underline">Entre.</a></p>
 	</div>

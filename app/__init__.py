@@ -57,6 +57,11 @@ def create_app(config_class=Config):
     def forbidden_error(error):
         flash('Você não tem permissão para acessar esta página.', 'error')
         return redirect(url_for('main.index'))
+    
+    @app.errorhandler(404)
+    def forbidden_error(error):
+        flash('Página não encontrada!', 'error')
+        return redirect(url_for('main.index'))
 
     @app.route("/oiiii")
     def test_page():

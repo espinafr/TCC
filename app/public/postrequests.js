@@ -724,6 +724,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 			openingpost = true;
 
 			if (event.target.closest('.interactions-container, .interaction-button, .share-context-menu, .image-container, .options-button, .author-link')) {
+				openingpost = false;
 				return; 
 			}
 			const postId = post.dataset.postid;

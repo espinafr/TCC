@@ -19,6 +19,11 @@
     overflow-wrap: anywhere;
 }
 
+.post-container {
+    position: relative;
+    z-index: 1;
+}
+
 .close-button {
     position: fixed;
     top: 15px;
@@ -259,7 +264,8 @@
 
 .tilt-box {
     transform-style: preserve-3d;
-    transition: all 0.3s ease;
+    transition: box-shadow 0.3s ease;
+    transition: transform 0.01s ease;
 }
 
 .tilt-box:hover {
