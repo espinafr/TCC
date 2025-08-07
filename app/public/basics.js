@@ -609,7 +609,7 @@ tiltBox.forEach(box => {
 		const mouseX = e.clientX - centerX;
 		const mouseY = e.clientY - centerY;
 
-		const rotateY = mouseX * 0.0025;
+		const rotateY = mouseX * 0.005;
 		const rotateX = -mouseY * 0.0025;
 
 		// Apply the 3D transform
