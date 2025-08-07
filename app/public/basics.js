@@ -613,8 +613,8 @@ tiltBox.forEach(box => {
 		const mouseY = e.clientY - centerY;
 
 		// Determine the rotation angles (adjust sensitivity as needed)
-		const rotateY = mouseX * 0.005; // Tilt along Y-axis based on horizontal mouse movement
-		const rotateX = -mouseY * 0.05; // Tilt along X-axis based on vertical mouse movement (negative for intuitive movement)
+		const rotateY = mouseX * 0.0025; // Tilt along Y-axis based on horizontal mouse movement
+		const rotateX = -mouseY * 0.025; // Tilt along X-axis based on vertical mouse movement (negative for intuitive movement)
 
 		// Apply the 3D transform
 		box.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
