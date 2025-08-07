@@ -561,7 +561,7 @@ function startCounterListener(input) {
 	input.addEventListener("keyup", (event) => {
 		const matches = input.value.match(/\n/g);
 		const check = matches ? matches : []
-		counter.textContent = (input.value.length + matches.length) + " / " + input.maxLength; // Faz contar as quebras de linhas duas vezes ao invés de uma
+		counter.textContent = (input.value.length + check.length) + " / " + input.maxLength; // Faz contar as quebras de linhas duas vezes ao invés de uma
 	});
 }
 
@@ -612,11 +612,11 @@ tiltBox.forEach(box => {
 		const rotateY = mouseX * 0.005;
 		const rotateX = -mouseY * 0.0025;
 
-		// Apply the 3D transform
+		// Aplica a transformaçãp 3D
 		box.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 	});
 
-	// Reset the tilt when the mouse leaves the div
+	// Reseta a orientação quando tira o mouse
 	box.addEventListener('mouseleave', () => {
 		box.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
 	});
