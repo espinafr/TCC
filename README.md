@@ -93,4 +93,5 @@ Você pode executar o projeto usando Docker (recomendado) ou localmente com um a
 ## 🤝 Contribuições
 
 Este projeto foi desenvolvido como um Trabalho de Conclusão de Curso (TCC). No momento, contribuições diretas via pull request não estão sendo aceitas.
+
 No entanto, sinta-se à vontade para explorar o código, testar a aplicação e relatar quaisquer bugs ou sugestões abrindo uma **Issue** aqui no GitHub. Todo feedback é bem-vindo!
