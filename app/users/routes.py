@@ -29,29 +29,6 @@ def delete_from_s3(url):
     except Exception as e:
         print(f"Ocorreu um erro inesperado ao tentar deletar o objeto do S3: {e}")
 
-def get_user_posts(id):
-    posts = []
-    for post in db_manager.get_user_posts(id):
-        post_reactions = get_interactions(post.id)
-        posts.append({  
-            'id': post.id,
-            'title': post.title,
-            'content': post.content,
-            'tag': post.tag,
-            'optional_tags': post.optional_tags,
-            'created_at': post.created_at,
-            'author': post.author_user.display_name,
-            'authorat': post.author_user.user.username,
-            'authoricon': post.author_user.icon_url,
-            'userid': post.author_user.user_id,
-            'image_urls': json.loads(post.image_urls) if post.image_urls else [], 
-            'likes': post_reactions["likes"],
-            'dislikes': post_reactions["dislikes"],
-            'comments': post_reactions["comments"],
-            'user_reaction': post_reactions["user_reaction"]
-        })
-    return posts
-
 def upload_to_s3(file, folder):
     try:
         file_extension = os.path.splitext(file.filename)[1].lower()
@@ -80,6 +57,29 @@ def upload_to_s3(file, folder):
     except Exception as e:
         print(f'Erro ao processar imagem: {e}')
     return None
+
+def get_user_posts(id):
+    posts = []
+    for post in db_manager.get_user_posts(id):
+        post_reactions = get_interactions(post.id)
+        posts.append({  
+            'id': post.id,
+            'title': post.title,
+            'content': post.content,
+            'tag': post.tag,
+            'optional_tags': post.optional_tags,
+            'created_at': post.created_at,
+            'author': post.author_user.display_name,
+            'authorat': post.author_user.user.username,
+            'authoricon': post.author_user.icon_url,
+            'userid': post.author_user.user_id,
+            'image_urls': json.loads(post.image_urls) if post.image_urls else [], 
+            'likes': post_reactions["likes"],
+            'dislikes': post_reactions["dislikes"],
+            'comments': post_reactions["comments"],
+            'user_reaction': post_reactions["user_reaction"]
+        })
+    return posts
 
 @bp.route('/<int:id>')
 def view_profile(id):
