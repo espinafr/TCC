@@ -79,6 +79,10 @@ body {
   transition: transform 0.1s ease-out;
 }
 
+.post-content {
+    text-justify: inter-word;
+}
+
 @keyframes fadeIn {
     from {opacity: 0;}
     to {opacity: 1;}

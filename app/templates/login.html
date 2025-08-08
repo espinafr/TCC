@@ -18,20 +18,23 @@
 		<form method="POST" action="{{ url_for('authentication.login') }}">
 			{{ form.hidden_tag() }}
 			<div class="mb-4">
-				{% if form.password.errors %}
+				{% if form.login.errors %}
 					<ul class="error-message">
-						{% for error in form.password.errors %}
+						{% for error in form.login.errors %}
 							<li class="text-red-500">{{ error }}</li>
 						{% endfor %}
 					</ul>
 				{% endif %}
 				<label for="login" class="block text-gray-700">E-mail ou usuário</label>
-				<input type="text" name="login" class="border p-2 w-full rounded" required>
+				<input type="text" id="nameinput" maxlength="15" name="login" class="border p-2 w-full rounded" required>
+				<div class="flex justify-end">
+					<p id="nameinputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 15</p>
+				</div>
 			</div>
 			<div class="mb-4">
-				{% if form.login.errors %}
+				{% if form.password.errors %}
 					<ul class="error-message">
-						{% for error in form.login.errors %}
+						{% for error in form.password.errors %}
 							<li class="text-red-500">{{ error }}</li>
 						{% endfor %}
 					</ul>
@@ -42,6 +45,9 @@
 					<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
 						<i class="fas fa-eye text-gray-500" id="__eyeIcon"></i>
 					</span>
+				</div>
+				<div class="flex justify-end">
+					<p id="passwordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
 				</div>
 			</div>
 			<button title="Botão para entrar na conta" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Entrar</button>
