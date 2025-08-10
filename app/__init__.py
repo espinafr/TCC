@@ -1,4 +1,4 @@
-from flask import Flask, session, render_template, flash, redirect, url_for
+from flask import Flask, session, send_from_directory, flash, redirect, url_for
 from flask_wtf import CSRFProtect
 from app.extensions import db_manager, email_service, mail, s3#, limiter
 from config import Config
@@ -63,7 +63,11 @@ def create_app(config_class=Config):
         flash('Página não encontrada!', 'error')
         return redirect(url_for('main.index'))
 
-    @app.route("/oiiii")
+    @app.route("/robots.txt")
+    def robots():
+        return send_from_directory(app.static_folder, "robots.txt")
+
+    @app.route("/")
     def test_page():
         return "<h1>oiiiii uwu</h1>"
     

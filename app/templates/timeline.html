@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
 {% endblock %}
 {% block content %}
-<body class="bg-[#F2FAFE] flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-4">
 	{% include 'navbar.html' %}
 	<div class="bg-white rounded-lg shadow-2xl p-6 md:p-8 w-full max-w-3xl">
 		<h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8">Timeline</h1>
@@ -31,7 +31,7 @@
 										<i class="fa-solid fa-user"></i>
 									{% endif %}
 								</span>
-								<a href="/usuario/{{ post.userid }}" target="_blank" class="flex flex-col author-link">
+								<a href="/usuario/{{ post.userid }}" target="_blank" rel="author" class="flex flex-col author-link">
 									<span class="font-semibold text-gray-800">{{ post.author or post.authorat }}</span>
 									<span class="text-gray-400 text-xs">@{{ post.authorat }}</span>
 								</a>
@@ -62,7 +62,7 @@
 								{% endif %}
 							</div>
 							{% endif %}
-							<p class="post-content text-gray-700 leading-relaxed md:text-lg">{% if post.content|length > 550 %}{{ post.content[:550] }}... <a target="_blank" href="{{ url_for('posts.view_post', post_id=post.id) }}" class="text-blue-500 hover:underline">Ler Mais</a>{% else %}{{ post.content }}{% endif %}</p>
+							<p class="post-content text-gray-700 leading-relaxed md:text-lg">{% if post.content|length > 550 %}{{ post.content[:550] }}... <a target="_blank" rel="next" href="{{ url_for('posts.view_post', post_id=post.id) }}" class="text-blue-500 hover:underline">Ler Mais</a>{% else %}{{ post.content }}{% endif %}</p>
 						</div>
 					</div>
 					<div class="flex items-center gap-4 interactions-container">

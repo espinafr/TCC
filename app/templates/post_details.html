@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
 {% endblock %}
 {% block content %}
-<body class="bg-[#F2FAFE] flex items-center justify-center min-h-screen p-4">	
+<body class="flex items-center justify-center min-h-screen p-4">	
 	{% include 'navbar.html' %}
 	<div class="post-container bg-white rounded-lg shadow-2xl p-6 md:p-8 w-full max-w-3xl" data-postid="{{ post.id }}" data-post-userid="{{ post.userid }}">
 		{% with messages = get_flashed_messages(with_categories=true) %}

@@ -1,0 +1,13 @@
+# Permitir todos os mecanismos de busca
+User-agent: *
+
+# Permitir todo o conteúdo por padrão
+Allow: /
+
+# Desautorizar rotas que não são úteis para indexação pública
+Disallow: /adm/
+Disallow: /email/
+Disallow: /api/
+Disallow: /login/
+Disallow: /logout/
+Disallow: /register/

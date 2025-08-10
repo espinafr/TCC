@@ -86,7 +86,6 @@ def create_post():
         return jsonify({'success': False, 'errors': form.errors, 'message': 'Erro de validação.'}), 400
 
 @bp.route('/post/<int:post_id>', methods=['GET'])
-@login_required
 def view_post(post_id):
     post = get_post_with_details(post_id)
     if not post:
