@@ -22,7 +22,7 @@ Além de ser um espaço informativo, o Timby se diferencia por seu sistema de mi
 
 *   **Back-end:** Flask (Python)
 *   **Front-end:** Tailwind CSS, JavaScript
-*   **Banco de Dados:** SQLAlchemy (com SQLite para desenvolvimento local)
+*   **Banco de Dados:** PostgreSQL com SQLAlchemy
 *   **Deployment:** Docker, Railway
 
 ## Começando
