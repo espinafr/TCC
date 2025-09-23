@@ -4,97 +4,147 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
 {% endblock %}
 {% block content %}
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="min-h-screen bg-gray-50">
 	{% include 'navbar.html' %}
-	<div class="bg-white rounded-lg shadow-2xl p-6 md:p-8 w-full max-w-3xl">
-		<h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8">Timeline</h1>
-		{% with messages = get_flashed_messages(with_categories=true) %}
-			{% if messages %}
-				{% for category, message in messages %}
-					<div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
-						{{ message }}
-					</div>
-				{% endfor %}
-			{% endif %}
-		{% endwith %}
-		<div id="timelinePosts">
-			{% for post in posts %}
-			<div class="timeline-post post-container tilt-box flex flex-col md:flex-row gap-6 mb-10 p-6 rounded-lg bg-gray-100 border border-gray-200 hover:border-blue-200 cursor-pointer transition group" data-postid="{{ post.id }}" data-post-userid="{{ post.userid }}">
-				<div class="flex-1 flex flex-col justify-between gap-4 min-w-0">
-					<div>
-						<div class="flex justify-between items-center mb-2">
-							<div class="flex gap-2">
-								<span class="profile-pic">
-									{% if post.authoricon %}
-										<img src="{{ post.authoricon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
-									{% else %}
-										<i class="fa-solid fa-user"></i>
-									{% endif %}
-								</span>
-								<a href="/usuario/{{ post.userid }}" target="_blank" rel="author" class="flex flex-col author-link">
-									<span class="font-semibold text-gray-800">{{ post.author or post.authorat }}</span>
-									<span class="text-gray-400 text-xs">@{{ post.authorat }}</span>
-								</a>
-							</div>
-							<div class="flex items-center">
-								<p class="text-sm text-gray-500">{{ post.created_at.strftime('%d/%m/%Y') }}</p>
-								<button class="options-button pr-1 pl-5 cursor-pointer text-gray-500 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-lg"></i></button>
-							</div>
-						</div>
-						<h2 class="text-xl font-bold text-gray-900 mb-2 break-words line-clamp-3">{{ post.title }}</h2>
-						<div class="flex flex-wrap gap-2 mb-2">
-							<span class="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">{{ post.tag.upper() }}</span>
-							{% if post.optional_tags %}
-								{% for tag in post.optional_tags.split(',') %}
-									{% if tag.strip() %}
-										<span class="bg-gray-300 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full">{{ tag.strip().upper() }}</span>
-									{% endif %}
-								{% endfor %}
-							{% endif %}
-						</div>
-						<div class="my-4">{% if post.image_urls %}
-							<div class="image-container relative float-right w-full md:w-48 h-48 ml-5 flex items-center justify-center bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onclick="openModal('imageModal', '{{ post.image_urls[0] }}')">
-								<img src="{{ post.image_urls[0] }}" alt="Imagem do Post" class="object-cover w-full h-full">
-								{% if post.image_urls|length > 1 %}
-								<div class="absolute inset-0 flex items-center justify-center">
-									<span class="bg-black/60 text-white text-lg font-bold px-4 py-2 rounded-full">+{{ post.image_urls|length - 1 }}</span>
-								</div>
-								{% endif %}
-							</div>
-							{% endif %}
-							<p class="post-content text-gray-700 leading-relaxed md:text-lg">{% if post.content|length > 550 %}{{ post.content[:550] }}... <a target="_blank" rel="next" href="{{ url_for('posts.view_post', post_id=post.id) }}" class="text-blue-500 hover:underline">Ler Mais</a>{% else %}{{ post.content }}{% endif %}</p>
-						</div>
-					</div>
-					<div class="flex items-center gap-4 interactions-container">
-						<button class="interaction-button like-button cursor-pointer {% if post.user_reaction == 'like_post' %}active{% endif %}" id="like{{ post.id }}Button">
-							<i class="fa-solid fa-thumbs-up"></i>
-							<span id="like{{ post.id }}Count">{{ post.likes }}</span>
-						</button>
-						<button class="interaction-button dislike-button cursor-pointer {% if post.user_reaction == 'dislike_post' %}active{% endif %}" id="dislike{{ post.id }}Button">
-							<i class="fa-solid fa-thumbs-down"></i>
-							<span id="dislike{{ post.id }}Count">{{ post.dislikes }}</span>
-						</button>
-						<div class="relative shareContainer">
-							<button class="interaction-button cursor-pointer shareButton">
-								<i class="fa-solid fa-share-alt"></i>
-								<span>Compartilhar</span>
-							</button>
-							<div id="shareContextMenu{{ post.id }}" class="share-context-menu hidden">
-								<button onclick="copyPostUrl('{{ post.id }}')" class="cursor-pointer">
-									<i class="fa-solid fa-copy"></i>
-									Copiar URL do Post
-								</button>
-							</div>
-						</div>
-						<button class="interaction-button cursor-pointer" id="saveButton{{ post.id }}">
-							<i class="fa-solid fa-bookmark"></i>
-							<span>Salvar</span>
-						</button>
-					</div>
+	<div class="flex flex-col md:flex-row md:items-start md:justify-center gap-4 w-full max-w-7xl mx-auto p-2 md:p-6">
+		<!-- Barra lateral esquerda -->
+		<aside id="sidebarLeft" class="hidden sticky md:flex flex-col gap-6 w-64 min-w-[200px] max-w-xs bg-white rounded-xl shadow-lg p-5 h-fit top-6">
+			<nav class="flex flex-col gap-4">
+				<a href="/" class="flex items-center gap-2 text-blue-600 font-semibold hover:underline"><i class="fa-solid fa-house"></i> Início</a>
+				<a href="/recursos" class="flex items-center gap-2 text-gray-700 hover:text-blue-600"><i class="fa-solid fa-book"></i> Recursos</a>
+				<a href="/dicas" class="flex items-center gap-2 text-gray-700 hover:text-blue-600"><i class="fa-solid fa-lightbulb"></i> Dicas</a>
+				<a href="/missoes" class="flex items-center gap-2 text-gray-700 hover:text-blue-600"><i class="fa-solid fa-star"></i> Missões</a>
+				<a href="/perfil" class="flex items-center gap-2 text-gray-700 hover:text-blue-600"><i class="fa-solid fa-user"></i> Perfil</a>
+			</nav>
+			<div class="mt-8">
+				<h3 class="font-bold text-gray-800 mb-2 text-lg">Seguindo</h3>
+				<div class="flex flex-wrap gap-2">
+					<!-- Exemplo de avatar -->
+					<a href="#" class="block"><img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full border-2 border-blue-400" title="@joao" /></a>
+					<a href="#" class="block"><img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-10 h-10 rounded-full border-2 border-pink-400" title="@maria" /></a>
+					<a href="#" class="block"><img src="https://randomuser.me/api/portraits/men/45.jpg" class="w-10 h-10 rounded-full border-2 border-green-400" title="@carlos" /></a>
+					<!-- ... -->
 				</div>
 			</div>
-			{% endfor %}
-		</div>
+		</aside>
+
+		<!-- Feed central -->
+		<main class="flex-1 max-w-3xl w-full">
+			<h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6">{% if user_name %}Olá, {{ user_name }}!{% else %}Timeline{% endif %}</h1>
+			{% with messages = get_flashed_messages(with_categories=true) %}
+				{% if messages %}
+					{% for category, message in messages %}
+						<div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
+							{{ message }}
+						</div>
+					{% endfor %}
+				{% endif %}
+			{% endwith %}
+			<div id="timelinePosts">
+				{% for post in posts %}
+				<div class="timeline-post post-container tilt-box flex flex-col md:flex-row gap-6 mb-10 p-6 rounded-lg bg-gray-100 border border-gray-200 hover:border-blue-200 cursor-pointer transition group" data-postid="{{ post.id }}" data-post-userid="{{ post.userid }}">
+					<div class="flex-1 flex flex-col justify-between gap-4 min-w-0">
+						<div>
+							<div class="flex justify-between items-center mb-2">
+								<div class="flex gap-2">
+									<span class="profile-pic">
+										{% if post.authoricon %}
+											<img src="{{ post.authoricon }}" alt="Foto de perfil>" class="object-cover w-9 h-9 rounded-full">
+										{% else %}
+											<i class="fa-solid fa-user"></i>
+										{% endif %}
+									</span>
+									<a href="/usuario/{{ post.userid }}" target="_blank" rel="author" class="flex flex-col author-link">
+										<span class="font-semibold text-gray-800">{{ post.author or post.authorat }}</span>
+										<span class="text-gray-400 text-xs">@{{ post.authorat }}</span>
+									</a>
+								</div>
+								<div class="flex items-center">
+									<p class="text-sm text-gray-500">{{ post.created_at.strftime('%d/%m/%Y') }}</p>
+									<button class="options-button pr-1 pl-5 cursor-pointer text-gray-500 hover:text-blue-700 focus:outline-none"><i class="fas fa-ellipsis-v text-lg"></i></button>
+								</div>
+							</div>
+							<h2 class="text-xl font-bold text-gray-900 mb-2 break-words line-clamp-3">{{ post.title }}</h2>
+							<div class="flex flex-wrap gap-2 mb-2">
+								<span class="bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full">{{ post.tag.upper() }}</span>
+								{% if post.optional_tags %}
+									{% for tag in post.optional_tags.split(',') %}
+										{% if tag.strip() %}
+											<span class="bg-gray-300 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full">{{ tag.strip().upper() }}</span>
+										{% endif %}
+									{% endfor %}
+								{% endif %}
+							</div>
+							<div class="my-4">{% if post.image_urls %}
+								<div class="image-container relative float-right w-full md:w-48 h-48 ml-5 flex items-center justify-center bg-gray-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onclick="openModal('imageModal', '{{ post.image_urls[0] }}')">
+									<img src="{{ post.image_urls[0] }}" alt="Imagem do Post" class="object-cover w-full h-full">
+									{% if post.image_urls|length > 1 %}
+									<div class="absolute inset-0 flex items-center justify-center">
+										<span class="bg-black/60 text-white text-lg font-bold px-4 py-2 rounded-full">+{{ post.image_urls|length - 1 }}</span>
+									</div>
+									{% endif %}
+								</div>
+								{% endif %}
+								<p class="post-content text-gray-700 leading-relaxed md:text-lg">{% if post.content|length > 550 %}{{ post.content[:550] }}... <a target="_blank" rel="next" href="{{ url_for('posts.view_post', post_id=post.id) }}" class="text-blue-500 hover:underline">Ler Mais</a>{% else %}{{ post.content }}{% endif %}</p>
+							</div>
+						</div>
+						<div class="flex items-center gap-4 interactions-container">
+							<button class="interaction-button like-button cursor-pointer {% if post.user_reaction == 'like_post' %}active{% endif %}" id="like{{ post.id }}Button">
+								<i class="fa-solid fa-thumbs-up"></i>
+								<span id="like{{ post.id }}Count">{{ post.likes }}</span>
+							</button>
+							<button class="interaction-button dislike-button cursor-pointer {% if post.user_reaction == 'dislike_post' %}active{% endif %}" id="dislike{{ post.id }}Button">
+								<i class="fa-solid fa-thumbs-down"></i>
+								<span id="dislike{{ post.id }}Count">{{ post.dislikes }}</span>
+							</button>
+							<div class="relative shareContainer">
+								<button class="interaction-button cursor-pointer shareButton">
+									<i class="fa-solid fa-share-alt"></i>
+									<span>Compartilhar</span>
+								</button>
+								<div id="shareContextMenu{{ post.id }}" class="share-context-menu hidden">
+									<button onclick="copyPostUrl('{{ post.id }}')" class="cursor-pointer">
+										<i class="fa-solid fa-copy"></i>
+										Copiar URL do Post
+									</button>
+								</div>
+							</div>
+							<button class="interaction-button cursor-pointer" id="saveButton{{ post.id }}">
+								<i class="fa-solid fa-bookmark"></i>
+								<span>Salvar</span>
+							</button>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+		</main>
+
+		<!-- Barra lateral direita -->
+		<aside id="sidebarRight" class="hidden sticky md:flex flex-col gap-6 w-72 min-w-[220px] max-w-xs bg-white rounded-xl shadow-lg p-5 h-fit top-6">
+			<div>
+				<h3 class="font-bold text-gray-800 mb-2 text-lg">Dica do Dia</h3>
+				<div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-gray-700 text-sm">
+					"Reserve um tempo para brincar com seu filho hoje. O vínculo criado nessas horas é fundamental!"<br>
+					<span class="text-xs text-gray-400">— Psicóloga Dra. Ana</span>
+				</div>
+			</div>
+			<div>
+				<h3 class="font-bold text-gray-800 mb-2 text-lg">Missão da Semana</h3>
+				<div class="bg-green-50 border-l-4 border-green-400 p-3 rounded text-gray-700 text-sm">
+					<span class="font-semibold">Missão:</span> Fazer um piquenique em família.<br>
+					<button class="mt-2 px-3 py-1 bg-green-400 text-white rounded hover:bg-green-500 transition">Marcar como concluída</button>
+				</div>
+			</div>
+			<div>
+				<h3 class="font-bold text-gray-800 mb-2 text-lg">Recursos em Destaque</h3>
+				<ul class="list-disc list-inside text-sm text-gray-700">
+					<li><a href="#" class="text-blue-600 hover:underline">Livro: Crianças Felizes</a></li>
+					<li><a href="#" class="text-blue-600 hover:underline">Vídeo: Como lidar com birras</a></li>
+					<li><a href="#" class="text-blue-600 hover:underline">PDF: Guia de Rotina</a></li>
+				</ul>
+			</div>
+		</aside>
 	</div>
 	{% include 'popups.html' %}
 	<div id="imageModal" class="modal hidden">

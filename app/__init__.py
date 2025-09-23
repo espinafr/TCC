@@ -67,6 +67,26 @@ def create_app(config_class=Config):
     def robots():
         return send_from_directory(app.static_folder, "robots.txt")
 
+    @app.route("/recursos")
+    def recursos():
+        flash('Página em desenvolvimento!', 'error')
+        return redirect(url_for('main.index'))
+    
+    @app.route("/dicas")
+    def dicas():
+        flash('Página em desenvolvimento!', 'error')
+        return redirect(url_for('main.index'))
+    
+    @app.route("/missoes")
+    def missiooon():
+        flash('Página em desenvolvimento!', 'error')
+        return redirect(url_for('main.index'))
+    
+    @app.route("/perfil")
+    def perff():
+        flash('Página em desenvolvimento!', 'error')
+        return redirect(url_for('main.index'))
+
     @app.route("/")
     def test_page():
         return "<h1>oiiiii uwu</h1>"

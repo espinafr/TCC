@@ -1,66 +1,138 @@
 {% extends "base.html" %}
 {% block title %}Registro{% endblock %}
 {% block content %}
-<body>
-	{% include 'navbar.html' %}
-	{% include 'popups.html' %}
-	<div class="max-w-md mx-auto p-6 mt-10 bg-white rounded-lg shadow-2xl">
-		<h1 class="text-2xl font-bold mb-4">Registre-se</h1>
-		{% with messages = get_flashed_messages(with_categories=true) %}
-			{% if messages %}
-				{% for category, message in messages %}
-					<div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
-						{{ message }}
+<body class="min-h-screen w-full flex items-center justify-center" style="position:relative; overflow:hidden;">
+	<canvas id="rain-canvas" style="position:fixed; top:0; left:0; z-index:1;"></canvas>
+	<div class="absolute inset-0 w-full h-full bg-gradient-to-b from-blue-300 to-blue-400 z-0"></div>
+	<div class="flex items-center justify-center min-h-screen w-full z-10 relative">
+		<div class="w-full max-w-lg bg-white/40 backdrop-blur-md rounded-3xl shadow-2xl p-10 flex flex-col items-center" style="box-shadow:0 8px 32px 0 rgba(31,38,135,0.37);">
+			<h1 class="text-2xl w-100 font-bold mb-4">Registre-se</h1>
+			{% with messages = get_flashed_messages(with_categories=true) %}
+				{% if messages %}
+					{% for category, message in messages %}
+						<div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
+							{{ message }}
+						</div>
+					{% endfor %}
+				{% endif %}
+			{% endwith %}
+			<form id="registerForm" class="w-full flex flex-col gap-4">
+				<div>
+					<ul class="error-message"></ul>
+					<label class="block text-gray-700">Usuário</label>
+					<input id="usernameInput" minlength="3" maxlength="15" type="text" name="username" class="border-none bg-white shadow-md w-full rounded-xl px-6 py-4 text-lg placeholder-gray-400 focus:ring-2 focus:ring-blue-400" required>
+					<div class="flex w-100 justify-between">
+						<p class="text-gray-500 text-xs mt-1">Apenas letras minúsculas, números e _. Sem acentos.</p>
+						<p id="usernameInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 15</p>
 					</div>
-				{% endfor %}
-			{% endif %}
-		{% endwith %}
-		<form id="registerForm">
-			<div class="mb-4">
-				<ul class="error-message"></ul>
-				<label class="block text-gray-700">Usuário</label>
-				<input id="usernameInput" minlength="3" maxlength="15" type="text" name="username" class="border p-2 w-full rounded" required>
-				<div class="flex w-100 justify-between">
-					<p class="text-gray-500 text-xs mt-1">Apenas letras minúsculas, números e _. Sem acentos.</p>
-					<p id="usernameInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 15</p>
 				</div>
-			</div>
-			<div class="mb-4">
-				<ul class="error-message"></ul>
-				<label class="block text-gray-700">E-mail</label>
-				<input id="emailInput" type="email" name="email" class="border p-2 w-full rounded" required>
-				<p id="emailError" class="text-red-500 text-sm mt-1 hidden"></p>
-			</div>
-			<div class="mb-4">
-				<ul class="error-message"></ul>
-				<label class="block text-gray-700">Senha</label>
-				<div class="relative">
-					<input id="passwordInput" minlength="8" maxlength="30" type="password" name="password" class="border p-2 w-full rounded" required>
-					<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
-						<i class="fas fa-eye text-gray-500" id="__eyeIcon"></i>
-					</span>
+				<div>
+					<ul class="error-message"></ul>
+					<label class="block text-gray-700">E-mail</label>
+					<input id="emailInput" type="email" name="email" class="border-none bg-white shadow-md w-full rounded-xl px-6 py-4 text-lg placeholder-gray-400 focus:ring-2 focus:ring-blue-400" required>
+					<p id="emailError" class="text-red-500 text-sm mt-1 hidden"></p>
 				</div>
-				<div class="flex justify-end">
-					<p id="passwordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
+				<div>
+					<ul class="error-message"></ul>
+					<label class="block text-gray-700">Senha</label>
+					<div class="relative">
+						<input id="passwordInput" minlength="8" maxlength="30" type="password" name="password" class="border-none bg-white shadow-md w-full rounded-xl px-6 py-4 text-lg placeholder-gray-400 focus:ring-2 focus:ring-blue-400" required>
+						<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+							<i class="fas fa-eye text-gray-500" id="__eyeIcon"></i>
+						</span>
+					</div>
+					<div class="flex justify-end">
+						<p id="passwordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
+					</div>
 				</div>
-			</div>
-			<div class="mb-4">
-				<ul class="error-message"></ul>
-				<label class="block text-gray-700">Confirmar Senha</label>
-				<div class="relative">
-					<input id="confirmPasswordInput" minlength="8" maxlength="30" type="password" name="confirm_password" class="border p-2 w-full rounded" required>
-					<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
-						<i class="fas fa-eye text-gray-500" id="__eyeIcon"></i>
-					</span>
+				<div>
+					<ul class="error-message"></ul>
+					<label class="block text-gray-700">Confirmar Senha</label>
+					<div class="relative">
+						<input id="confirmPasswordInput" minlength="8" maxlength="30" type="password" name="confirm_password" class="border-none bg-white shadow-md w-full rounded-xl px-6 py-4 text-lg placeholder-gray-400 focus:ring-2 focus:ring-blue-400" required>
+						<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+							<i class="fas fa-eye text-gray-500" id="__eyeIcon"></i>
+						</span>
+					</div>
+					<div class="flex justify-end">
+						<p id="confirmPasswordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
+					</div>
 				</div>
-				<div class="flex justify-end">
-					<p id="confirmPasswordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
-				</div>
-			</div>
-			<button id="submitbtn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-[#E0E7FF] disabled:cursor-not-allowed disabled:text-[#6366F1]">Registrar</button>
-		</form>
-		<p class="mt-4">Já tem uma conta? <a href="{{ url_for('authentication.login') }}" class="text-blue-600 hover:underline">Entre.</a></p>
+				<button id="submitbtn" type="submit" class="w-full bg-gradient-to-r from-blue-400 to-blue-500 text-white text-xl font-semibold py-3 rounded-full shadow-md hover:from-blue-500 hover:to-blue-600 transition disabled:bg-[#E0E7FF] disabled:cursor-not-allowed disabled:text-[#6366F1]">Registrar</button>
+			</form>
+			<p class="mt-6 text-gray-800">Já tem uma conta? <a href="{{ url_for('authentication.login') }}" class="text-blue-600 hover:underline">Entre.</a></p>
+		</div>
 	</div>
+	{% include 'popups.html' %}
+	{% include 'navbar.html' %}
+	<script>
+	// Animação de chuva (igual ao login)
+	const canvas = document.getElementById('rain-canvas');
+	const ctx = canvas.getContext('2d');
+	let width = window.innerWidth;
+	let height = window.innerHeight;
+	canvas.width = width;
+	canvas.height = height;
+
+	function resizeCanvas() {
+		width = window.innerWidth;
+		height = window.innerHeight;
+		canvas.width = width;
+		canvas.height = height;
+	}
+	window.addEventListener('resize', resizeCanvas);
+
+	const raindropCount = 120;
+	const raindrops = [];
+	const wind = 2.5;
+	for (let i = 0; i < raindropCount; i++) {
+		raindrops.push({
+			x: Math.random() * width,
+			y: Math.random() * height,
+			length: 14 + Math.random() * 18,
+			speed: 4 + Math.random() * 4,
+			opacity: 0.55 + Math.random() * 0.35
+		});
+	}
+
+	function drawRain() {
+		ctx.clearRect(0, 0, width, height);
+		ctx.save();
+		ctx.strokeStyle = 'rgb(230, 230, 255)';
+		ctx.lineWidth = 1.5;
+		ctx.lineCap = 'round';
+		for (let drop of raindrops) {
+			ctx.globalAlpha = drop.opacity;
+			ctx.beginPath();
+			ctx.moveTo(drop.x, drop.y);
+			ctx.lineTo(drop.x + wind * drop.length * 0.35, drop.y + drop.length);
+			ctx.stroke();
+		}
+		ctx.restore();
+	}
+
+	function updateRain() {
+		for (let drop of raindrops) {
+			drop.x += wind * 0.7;
+			drop.y += drop.speed;
+			if (drop.y > height || drop.x > width + 50) {
+				drop.x = Math.random() * width - 50;
+				drop.y = -drop.length;
+				drop.length = 14 + Math.random() * 18;
+				drop.speed = 4 + Math.random() * 4;
+				drop.opacity = 0.55 + Math.random() * 0.35;
+			}
+		}
+	}
+
+	function animateRain() {
+		drawRain();
+		updateRain();
+		requestAnimationFrame(animateRain);
+	}
+
+	animateRain();
+	</script>
 </body>
 {% endblock %}
 {% block scripts %}

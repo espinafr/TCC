@@ -199,9 +199,8 @@ class DatabaseManager:
     
     def get_user(self, _type: str, value):
         """Retorna um usuário pelo tipo (email, username, id) e valor."""
-        with self.get_db() as db:
-            user = self._get_user_by_field(_type, value)
-            return user if user else False
+        user = self._get_user_by_field(_type, value)
+        return user if user else False
 
     def get_user_details(self, user_id: int):
         """Retorna os detalhes do perfil de um usuário a partir do ID"""

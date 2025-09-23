@@ -85,7 +85,7 @@ def get_top_rated():
 def index():
     if session.get('id'):
         recommendations = get_recommendations()
-        return render_template('timeline.html', posts=recommendations, user_icon=get_user_icon(session.get('id')))
+        return render_template('timeline.html', posts=recommendations, user_name=db_manager.get_user_details(session.get('id')).display_name, user_icon=get_user_icon(session.get('id')))
     else:
         top_rated = get_top_rated()
         return render_template('timeline.html', posts=top_rated)

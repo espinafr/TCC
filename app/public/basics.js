@@ -123,85 +123,73 @@ function toggleLoading(object) {
 
 // Popup de login
 // Cria e exibe um popup de login no documento
+let loginListenersAdded = false;
 function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = undefined) {
 	const loginModal = document.getElementById('__loginModal');
 	const closeModalBtn = document.getElementById('__closeModal');
 	const loginForm = document.getElementById('__loginForm');
 	const registerLink = document.getElementById('__registerLink');
 	const loginSubmit = document.getElementById('__loginSubmit');
-	
+
 	// Funções auxiliares para abrir e fechar
 	const openModal = () => {
 		loginModal.classList.remove('hidden');
 		document.body.style.overflow = 'hidden';
 	};
-	
 	const closeModal = () => {
 		loginModal.classList.add('hidden');
 		document.body.style.overflow = 'auto';
 	};
-	
-	// Event Listeners
-	closeModalBtn.addEventListener('click', closeModal);
-	
-	loginModal.addEventListener('click', (e) => {
-		if (e.target === loginModal) {
-			closeModal();
-		}
-	});
-	
-	loginForm.addEventListener('submit', async (e) => {
-		e.preventDefault(); // Previne o envio padrão do formulário
-		toggleLoading(loginSubmit);
 
-		const login = document.getElementById('__login').value;
-		const password = document.getElementById('__password').value;
-		
-		// Limpar mensagens de erro anteriores, se houver
-		const oldErrorMessages = loginForm.querySelectorAll('.error-message');
-		oldErrorMessages.forEach(msg => msg.remove());
-		loginForm.querySelectorAll('input').forEach(input => input.classList.remove('border-red-500'));
-		
-		const result = await sendApiRequest('/login_ajax', 'POST', {login: login, password: password});
-		if (result.success) {
-			closeModal();
-			if (extraArgs) {
-				onLoginSuccess(extraArgs);
-			} else {
-				onLoginSuccess(originalClickEvent);
+	// Adiciona listeners apenas uma vez
+	if (!loginListenersAdded) {
+		closeModalBtn.addEventListener('click', closeModal);
+		loginModal.addEventListener('click', (e) => {
+			if (e.target === loginModal) {
+				closeModal();
 			}
-		} else {
-			if (result.errors) {
-				for (const fieldName in result.errors) {
-					const messages = result.errors[fieldName];
-					const inputElement = document.getElementById(`__${fieldName}`);
-					if (inputElement) {
-						inputElement.classList.add('border-red-500');
-						messages.forEach(msg => {
-							const errorMessage = document.createElement('p');
-							errorMessage.className = 'text-red-500 text-xs mt-1 error-message';
-							errorMessage.textContent = msg;
-							inputElement.parentNode.appendChild(errorMessage);
-						});
-					}
+		});
+		loginForm.addEventListener('submit', async (e) => {
+			e.preventDefault(); // Previne o envio padrão do formulário
+			toggleLoading(loginSubmit);
+
+			const login = document.getElementById('__login').value;
+			const password = document.getElementById('__password').value;
+
+			// Limpar mensagens de erro anteriores, se houver
+			const oldErrorMessages = loginForm.querySelectorAll('.error-message');
+			oldErrorMessages.forEach(msg => msg.remove());
+			loginForm.querySelectorAll('input').forEach(input => input.classList.remove('border-red-500'));
+
+			const result = await sendApiRequest('/login_ajax', 'POST', {login: login, password: password});
+			if (result.success) {
+				closeModal();
+				if (extraArgs) {
+					onLoginSuccess(extraArgs);
+				} else {
+					onLoginSuccess(originalClickEvent);
 				}
 			} else {
-				console.log('Erro: ' + result.message);
-				const errorMessageDiv = document.createElement('div');
-				errorMessageDiv.className = 'text-red-500 text-sm mt-3 text-center error-message';
-				errorMessageDiv.textContent = result.message || 'Erro desconhecido.';
-				loginForm.appendChild(errorMessageDiv);
+				if (result.errors) {
+					for (const fieldName in result.errors) {/* Lines 176-187 omitted */}
+				} else {
+					console.log('Erro: ' + result.message);
+					const errorMessageDiv = document.createElement('div');
+					errorMessageDiv.className = 'text-red-500 text-sm mt-3 text-center error-message';
+					errorMessageDiv.textContent = result.message || 'Erro desconhecido.';
+					loginForm.appendChild(errorMessageDiv);
+				}
 			}
-		}
-		toggleLoading(loginSubmit);
-	});
-	
-	registerLink.addEventListener('click', (e) => {
-		e.preventDefault();
-		closeModal();
-		window.location.href = '/registrar';
-	});
-	
+			toggleLoading(loginSubmit);
+		});
+		registerLink.addEventListener('click', (e) => {
+			e.preventDefault();
+			closeModal();
+			window.location.href = '/registrar';
+		});
+		loginListenersAdded = true;
+	}
+
 	// Abre o modal logo após ser renderizado
 	openModal();
 }

@@ -292,7 +292,7 @@ function renderPost(post_package) {
 			${imagesHtml}
 		</div>
 		<div class="my-2 text-gray-600 text-sm">
-			Postado por: <a href="/usuario/${post_package.post.id}" class="font-semibold text-blue-500 hover:underline">${post_package.post.username || post_package.post.userat}</a>
+			Postado por: <a href="/usuario/${post_package.post.userid}" class="font-semibold text-blue-500 hover:underline">${post_package.post.username || post_package.post.userat}</a>
 		</div>
 		<div class="flex items-center gap-4 border-t border-gray-200 pt-4 mb-8">
 			<button class="interaction-button cursor-pointer ${post_package.user_post_reaction === 'like_post' ? 'active' : ''}" id="likeButton">
