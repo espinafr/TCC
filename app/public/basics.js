@@ -369,7 +369,7 @@ function optionButton(event) {
 		
 		data = { target_id: userId, type: 'usuario', perpetrator_id: userId };
 		
-		if (getUserId() === ownerId) {
+		if (getUserId() === userId) {
 			options = [
 				{ text: 'Sair', action: leaveAccount }
 			];
