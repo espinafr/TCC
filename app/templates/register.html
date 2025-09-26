@@ -6,7 +6,6 @@
 	<div class="absolute inset-0 w-full h-full bg-gradient-to-b from-blue-300 to-blue-400 z-0"></div>
 	<div class="flex items-center justify-center min-h-screen w-full z-10 relative">
 		<div class="w-full max-w-lg bg-white/40 backdrop-blur-md rounded-3xl shadow-2xl p-10 flex flex-col items-center" style="box-shadow:0 8px 32px 0 rgba(31,38,135,0.37);">
-			<h1 class="text-2xl w-100 font-bold mb-4">Registre-se</h1>
 			{% with messages = get_flashed_messages(with_categories=true) %}
 				{% if messages %}
 					{% for category, message in messages %}
@@ -16,6 +15,7 @@
 					{% endfor %}
 				{% endif %}
 			{% endwith %}
+			<h1 class="text-2xl w-100 font-bold mb-4">Registre-se</h1>
 			<form id="registerForm" class="w-full flex flex-col gap-4">
 				<div>
 					<ul class="error-message"></ul>

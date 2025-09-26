@@ -315,7 +315,7 @@ async function deleteInteraction(_, data) {
 	}
 }
 
-function leaveACcount() {
+function leaveAccount() {
 	window.location.pathname = "/sair";
 }
 
@@ -555,35 +555,38 @@ function startCounterListener(input) {
 
 // Navbar
 const navbar = document.getElementById('bottomNavbar');
-if (navbar) {
-	const navBtns = navbar.querySelectorAll('.nav-btn');
-	navBtns.forEach(btn => {
-		if (btn.hasAttribute('disabled') ) return;
-		
-		const link = btn.getAttribute('data-link');
-		let finalLink = link;
-		if (link === '/usuario') {
-			const userid = getUserId();
-			if (userid) finalLink = `/usuario/${userid}`;
-		}
-		
-		if (!btn.hasAttribute('data-loginfree')) {
-			initializeAuthButtons(
-				btn, 
-				checkAuthenticationStatus, 
-				() => {
-					if (finalLink && finalLink !== '#') {
-						window.location.href = finalLink;
-					}
+const lateralE = document.getElementById('lateralEsquerda');
+let navBtns
+if (navbar) { navBtns = navbar.querySelectorAll('.nav-btn'); }
+if (lateralE) { latBtns = lateralE.querySelectorAll('.linkbtn'); }
+const mergedArray = [...navBtns, ...latBtns];
+
+mergedArray.forEach(btn => {
+	if (btn.hasAttribute('disabled') ) return;
+	
+	const link = btn.getAttribute('data-link');
+	let finalLink = link;
+	if (link === '/usuario') {
+		const userid = getUserId();
+		if (userid) finalLink = `/usuario/${userid}`;
+	}
+	
+	if (!btn.hasAttribute('data-loginfree')) {
+		initializeAuthButtons(
+			btn, 
+			checkAuthenticationStatus, 
+			() => {
+				if (finalLink && finalLink !== '#') {
+					window.location.href = finalLink;
 				}
-			);
-		} else {
-			btn.addEventListener('click', () => {
-				window.location.href = finalLink;
-			});
-		}
-	});
-}
+			}
+		);
+	} else {
+		btn.addEventListener('click', () => {
+			window.location.href = finalLink;
+		});
+	}
+});
 
 // Animação tilt
 const tiltBox = document.querySelectorAll('.tilt-box');

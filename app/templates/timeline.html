@@ -7,26 +7,7 @@
 <body class="min-h-screen bg-gray-50">
 	{% include 'navbar.html' %}
 	<div class="flex flex-col md:flex-row md:items-start md:justify-center gap-4 w-full max-w-7xl mx-auto p-2 md:p-6">
-		<!-- Barra lateral esquerda -->
-		<aside id="sidebarLeft" class="hidden sticky md:flex flex-col gap-6 w-64 min-w-[200px] max-w-xs bg-white rounded-xl shadow-lg p-5 h-fit top-6">
-			<nav class="flex flex-col gap-4">
-				<a href="/" class="flex items-center gap-2 text-blue-600 font-semibold hover:underline"><i class="fa-solid fa-house"></i> Início</a>
-				<a href="/recursos" class="flex items-center gap-2 text-gray-700 hover:text-blue-600"><i class="fa-solid fa-book"></i> Recursos</a>
-				<a href="/dicas" class="flex items-center gap-2 text-gray-700 hover:text-blue-600"><i class="fa-solid fa-lightbulb"></i> Dicas</a>
-				<a href="/missoes" class="flex items-center gap-2 text-gray-700 hover:text-blue-600"><i class="fa-solid fa-star"></i> Missões</a>
-				<a href="/perfil" class="flex items-center gap-2 text-gray-700 hover:text-blue-600"><i class="fa-solid fa-user"></i> Perfil</a>
-			</nav>
-			<div class="mt-8">
-				<h3 class="font-bold text-gray-800 mb-2 text-lg">Seguindo</h3>
-				<div class="flex flex-wrap gap-2">
-					<!-- Exemplo de avatar -->
-					<a href="#" class="block"><img src="https://randomuser.me/api/portraits/men/32.jpg" class="w-10 h-10 rounded-full border-2 border-blue-400" title="@joao" /></a>
-					<a href="#" class="block"><img src="https://randomuser.me/api/portraits/women/44.jpg" class="w-10 h-10 rounded-full border-2 border-pink-400" title="@maria" /></a>
-					<a href="#" class="block"><img src="https://randomuser.me/api/portraits/men/45.jpg" class="w-10 h-10 rounded-full border-2 border-green-400" title="@carlos" /></a>
-					<!-- ... -->
-				</div>
-			</div>
-		</aside>
+		{% include 'lateralesquerda.html' %}
 		<!-- Feed central -->
 		<main class="flex-1 max-w-3xl w-full">
 			<h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6">{% if user_name %}Olá, {{ user_name }}!{% else %}Timeline{% endif %}</h1>
@@ -118,31 +99,7 @@
 				{% endfor %}
 			</div>
 		</main>
-		<!-- Barra lateral direita -->
-		<aside id="sidebarRight" class="hidden sticky md:flex flex-col gap-6 w-72 min-w-[220px] max-w-xs bg-white rounded-xl shadow-lg p-5 h-fit top-6">
-			<div>
-				<h3 class="font-bold text-gray-800 mb-2 text-lg">Dica do Dia</h3>
-				<div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-gray-700 text-sm">
-					"Reserve um tempo para brincar com seu filho hoje. O vínculo criado nessas horas é fundamental!"<br>
-					<span class="text-xs text-gray-400">— Psicóloga Dra. Ana</span>
-				</div>
-			</div>
-			<div>
-				<h3 class="font-bold text-gray-800 mb-2 text-lg">Missão da Semana</h3>
-				<div class="bg-green-50 border-l-4 border-green-400 p-3 rounded text-gray-700 text-sm">
-					<span class="font-semibold">Missão:</span> Fazer um piquenique em família.<br>
-					<button class="mt-2 px-3 py-1 bg-green-400 text-white rounded hover:bg-green-500 transition">Marcar como concluída</button>
-				</div>
-			</div>
-			<div>
-				<h3 class="font-bold text-gray-800 mb-2 text-lg">Recursos em Destaque</h3>
-				<ul class="list-disc list-inside text-sm text-gray-700">
-					<li><a href="#" class="text-blue-600 hover:underline">Livro: Crianças Felizes</a></li>
-					<li><a href="#" class="text-blue-600 hover:underline">Vídeo: Como lidar com birras</a></li>
-					<li><a href="#" class="text-blue-600 hover:underline">PDF: Guia de Rotina</a></li>
-				</ul>
-			</div>
-		</aside>
+		{% include 'lateraldireita.html' %}
 	</div>
 	{% include 'popups.html' %}
 	<div id="imageModal" class="modal hidden">
