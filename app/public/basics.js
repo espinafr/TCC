@@ -556,10 +556,11 @@ function startCounterListener(input) {
 // Navbar
 const navbar = document.getElementById('bottomNavbar');
 const lateralE = document.getElementById('lateralEsquerda');
+let latBtns
 let navBtns
 if (navbar) { navBtns = navbar.querySelectorAll('.nav-btn'); }
 if (lateralE) { latBtns = lateralE.querySelectorAll('.linkbtn'); }
-const mergedArray = [...navBtns, ...latBtns];
+const mergedArray = [...(navBtns || []), ...(latBtns || [])];
 
 mergedArray.forEach(btn => {
 	if (btn.hasAttribute('disabled') ) return;

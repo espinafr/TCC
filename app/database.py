@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime, timedelta
 from argon2 import PasswordHasher, exceptions
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, SmallInteger, desc, func, case
@@ -190,12 +191,12 @@ class DatabaseManager:
         """Cria todas as tabelas definidas nos modelos no banco de dados."""
         try:
             Base.metadata.create_all(bind=engine)
-            print("Tabelas criadas ou já existentes no PostgreSQL.")
+            logging.getLogger(__name__).info("Tabelas criadas ou já existentes no PostgreSQL.")
         except OperationalError as e:
-            print(f"Erro ao conectar ou criar tabelas: {e}")
-            print("Verifique a DATABASE_URL e as credenciais do PostgreSQL.")
+            logging.getLogger(__name__).error(f"Erro ao conectar ou criar tabelas: {e}")
+            logging.getLogger(__name__).error("Verifique a DATABASE_URL e as credenciais do PostgreSQL.")
         except Exception as e:
-            print(f"Um erro inesperado ocorreu durante a inicialização do DB: {e}")
+            logging.getLogger(__name__).error(f"Um erro inesperado ocorreu durante a inicialização do DB: {e}")
     
     def get_user(self, _type: str, value):
         """Retorna um usuário pelo tipo (email, username, id) e valor."""
@@ -276,6 +277,65 @@ class DatabaseManager:
             db.commit()
             return result # Retorna o número de linhas afetadas (0 ou 1)
 
+    def change_user_password(self, user_id: int, current_password: str, new_password: str):
+        """Altera a senha do usuário após verificar a senha atual.
+        Retorna uma tupla (success: bool, message: Optional[str]).
+        """
+        with self.get_db() as db:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user:
+                return False, 'Usuário não encontrado.'
+            try:
+                # Verifica a senha atual
+                self.ph.verify(user.password, current_password)
+            except exceptions.VerifyMismatchError:
+                return False, 'Senha atual incorreta.'
+            except Exception:
+                # Em caso de outro erro, não expor detalhes
+                return False, 'Erro interno ao verificar senha.'
+
+            try:
+                user.password = self.ph.hash(new_password)
+                db.commit()
+                return True, None
+            except Exception:
+                db.rollback()
+                return False, 'Erro interno ao salvar nova senha.'
+
+    def deactivate_user(self, user_id: int):
+        """Desativa (marca como não ativo) a conta do usuário. Retorna (success, message)."""
+        with self.get_db() as db:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user:
+                return False, 'Usuário não encontrado.'
+
+            try:
+                if not user.active:
+                    return False, 'Conta já está desativada.'
+
+                user.active = False
+                db.commit()
+                try:
+                    moderation = ModerationHistory(
+                        action_type='deactivation',
+                        reason='Usuário desativou a própria conta',
+                        is_active=False,
+                        end_date=None,
+                        moderator_id=user.id,
+                        user_id=user.id,
+                        target_id=user.id,
+                        target_type='user'
+                    )
+                    db.add(moderation)
+                    db.commit()
+                except Exception:
+                    db.rollback() # Silencia falha de logging para não impedir a desativação
+
+                return True, None
+            except Exception:
+                db.rollback()
+                return False, 'Erro interno ao desativar conta.'
+
     def activate_user(self, email):
         """Ativa a conta de um usuário."""
         with self.get_db() as db:
@@ -288,7 +348,7 @@ class DatabaseManager:
                     db.commit()
                     return True # Verdadeiro se o usuário foi devidamente ativado
                 except Exception as e:
-                    print(f"Erro na ativação do usuário: {e}")
+                    logging.getLogger(__name__).error(f"Erro na ativação do usuário: {e}")
                     db.rollback()
                     return False
             return False

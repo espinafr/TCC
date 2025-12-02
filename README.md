@@ -11,14 +11,14 @@ O Timby é uma plataforma social com foco em parentalidade, criada para conectar
 
 Além de ser um espaço informativo, o Timby se diferencia por seu sistema de missões, que sugere atividades e momentos de conexão entre pais e filhos. O objetivo é fortalecer os laços familiares e oferecer suporte prático, adaptado a diferentes rotinas e necessidades.
 
-## 📚 Features
+## Planejado
 
 *   **Rede de Apoio:** Conecte-se com outros pais e responsáveis.
 *   **Biblioteca de Recursos:** Acesse uma vasta gama de artigos, dicas e recursos sobre parentalidade.
 *   **Sistema de Missões:** Participe de atividades e desafios criados para fortalecer os laços familiares.
 *   **Ambiente Seguro:** Construído com um forte foco em segurança, incluindo sanitização de dados, proteção contra CSRF e hashing de senhas com Argon2.
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 *   **Back-end:** Flask (Python)
 *   **Front-end:** Tailwind CSS, JavaScript
@@ -90,8 +90,29 @@ Você pode executar o projeto usando Docker (recomendado) ou localmente com um a
 
     Abra seu navegador e acesse `http://localhost:5000`.
 
-## 🤝 Contribuições
+## Contribuições
 
 Este projeto foi desenvolvido como um Trabalho de Conclusão de Curso (TCC). No momento, contribuições diretas via pull request não estão sendo aceitas.
 
 No entanto, sinta-se à vontade para explorar o código, testar a aplicação e relatar quaisquer bugs ou sugestões abrindo uma **Issue** aqui no GitHub. Todo feedback é bem-vindo!
+
+## Compilando o CSS (Tailwind)
+
+Para compilar ou atualizar o CSS do Tailwind localmente (útil em desenvolvimento):
+
+```bash
+npm ci
+npm run build:css
+```
+
+Ou durante o desenvolvimento para assistir a mudanças:
+
+```bash
+npm run watch:css
+```
+
+Se você usa Docker com o `Dockerfile` atualizado, o passo de build do Tailwind é executado automaticamente durante a construção da imagem.
+
+## Rate Limiter
+
+Este projeto pode usar `Flask-Limiter` para proteção contra abuso e força bruta. Se decidir usar, configure um backend de armazenamento (Redis) e inicialize o limiter no arquivo de extensões (`app/extensions.py`) antes da inicialização do aplicativo.

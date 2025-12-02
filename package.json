@@ -1,0 +1,26 @@
+{
+  "name": "tccsite",
+  "version": "1.0.0",
+  "description": "![Status](https://img.shields.io/badge/status-active-success.svg)\r ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)\r ![Flask](https://img.shields.io/badge/flask-2.x-blue.svg)\r ![Tailwind CSS](https://img.shields.io/badge/tailwind%20css-3.x-blue.svg)\r ![JavaScript](https://img.shields.io/badge/javascript-ES6+-yellow.svg)\r ![Docker](https://img.shields.io/badge/docker-20.x-blue.svg)",
+  "main": "index.js",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.14",
+    "tailwindcss": "^4.1.14"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./app/public/base.css -o ./app/public/tailwindoutput.css --minify",
+    "watch:css": "tailwindcss -i ./app/public/base.css -o ./app/public/tailwindoutput.css --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/espinafr/TCC.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/espinafr/TCC/issues"
+  },
+  "homepage": "https://github.com/espinafr/TCC#readme"
+}

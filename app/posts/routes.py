@@ -1,4 +1,5 @@
 from flask import render_template, redirect, url_for, flash, session, current_app, jsonify, request
+import logging
 from app.extensions import login_required, db_manager, s3
 from app.api.routes import get_post_with_details, get_user_icon
 from botocore.exceptions import ClientError
@@ -56,10 +57,10 @@ def create_post():
                     uploaded_files_info.append(file_url)
                 except ClientError as e:
                     flash(f'Erro ao fazer upload para o S3 para {file.filename}: {e}', 'danger')
-                    print(f"Erro S3: {e}")
+                    logging.getLogger(__name__).error(f"Erro S3: {e}")
                 except Exception as e:
                     flash(f'Erro inesperado ao processar {file.filename}: {e}', 'danger')
-                    print(f"Erro geral: {e}")
+                    logging.getLogger(__name__).error(f"Erro geral: {e}")
         
         with db_manager.get_db() as db:
             image_urls_json = json.dumps(uploaded_files_info) if uploaded_files_info else None
@@ -77,12 +78,12 @@ def create_post():
                 db.commit()
                 db.refresh(new_post) # Recarrega o objeto para ter o ID gerado pelo DB
                 flash('Post criado com sucesso!', 'success')
-                return jsonify({'success': True, 'message': new_post.id}), 400
+                return jsonify({'success': True, 'message': new_post.id}), 201
             except Exception as e:
                 db.rollback()
                 return jsonify({'success': False, 'message': 'Erro ao criar post. Tente novamente.'}), 400
     else:
-        print(form.errors)
+        logging.getLogger(__name__).warning(f"Erro de validação no create_post: {form.errors}")
         return jsonify({'success': False, 'errors': form.errors, 'message': 'Erro de validação.'}), 400
 
 @bp.route('/post/<int:post_id>', methods=['GET'])

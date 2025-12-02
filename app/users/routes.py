@@ -1,4 +1,5 @@
 from flask import render_template, abort, session, request, jsonify, current_app
+import logging
 from app.extensions import login_required, db_manager, s3
 from app.database import UserDetails
 from app.data_sanitizer import ProfileEditForm
@@ -22,12 +23,12 @@ def delete_from_s3(url):
             Bucket=current_app.config['S3_BUCKET_NAME'],
             Key=decoded_key
         )
-        print(f"Objeto {decoded_key} deletado do S3 com sucesso.")
+        logging.getLogger(__name__).info(f"Objeto {decoded_key} deletado do S3 com sucesso.")
     except ClientError as e:
         # Loga o erro se a exclusão falhar, mas não impede a atualização do perfil
-        print(f"Erro ao deletar objeto do S3: {e}")
+        logging.getLogger(__name__).error(f"Erro ao deletar objeto do S3: {e}")
     except Exception as e:
-        print(f"Ocorreu um erro inesperado ao tentar deletar o objeto do S3: {e}")
+        logging.getLogger(__name__).error(f"Ocorreu um erro inesperado ao tentar deletar o objeto do S3: {e}")
 
 def upload_to_s3(file, folder):
     try:
@@ -53,9 +54,9 @@ def upload_to_s3(file, folder):
         )
         return f"https://{current_app.config['S3_BUCKET_NAME']}.s3.{current_app.config['AWS_REGION']}.amazonaws.com/public/{folder}/{unique_filename}"
     except ClientError as e:
-        print(f'Erro S3: {e}')
+        logging.getLogger(__name__).error(f'Erro S3: {e}')
     except Exception as e:
-        print(f'Erro ao processar imagem: {e}')
+        logging.getLogger(__name__).error(f'Erro ao processar imagem: {e}')
     return None
 
 def get_user_posts(id):

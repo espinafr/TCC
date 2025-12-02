@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Configurações{% endblock %}
+{% block content %}
+<body class="min-h-screen min-v-screen flex items-center justify-center text-white !bg-blue-200">
+	{% include 'navbar.html' %}
+
+	<main class="mb-30">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+			<aside class="bg-blue-500 rounded-lg p-6 shadow-lg">
+				<div class="mb-4">
+					<label class="block text-white text-lg mb-2">Configurações</label>
+				</div>
+				<nav class="space-y-2 text-sm">
+					<a href="#" class="flex items-center justify-between p-3 rounded hover:bg-blue-700 transition-colors">
+						<span>Sua conta</span>
+						<svg class="w-5 h-5 text-gray-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+					</a>
+			</aside>
+
+			<section class="md:col-span-2">
+				<div class="bg-blue-500 rounded-lg p-6 shadow-lg">
+					<header class="flex items-start justify-between mb-6">
+						<div>
+							<h1 class="text-2xl font-semibold">Sua conta</h1>
+							<p class="text-gray-100 mt-1">Veja e modifique as informações da sua conta</p>
+						</div>
+					</header>
+
+					<div class="space-y-4 maindiv">
+						<div class="flex items-center justify-between p-4 bg-blue-600 rounded hover:bg-blue-700 transition-colors cursor-pointer" data-action="account">
+							<div>
+								<h2 class="text-lg font-medium">Informações da conta.</h2>
+								<p class="text-gray-100 text-sm">Veja informações da sua conta como email, data de criação e usuário.</p>
+							</div>
+							<svg class="w-5 h-5 text-gray-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+						</div>
+
+						<div class="flex items-center justify-between p-4 bg-blue-600 rounded hover:bg-blue-700 transition-colors cursor-pointer" data-action="change_password">
+							<div>
+								<h2 class="text-lg font-medium">Mudar senha.</h2>
+								<p class="text-gray-100 text-sm">Mude sua senha a qualquer momento.</p>
+							</div>
+							<svg class="w-5 h-5 text-gray-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+						</div>
+
+						<div class="flex items-center justify-between p-4 bg-blue-600 rounded hover:bg-blue-700 transition-colors cursor-pointer" data-action="deactivate">
+							<div>
+								<h2 class="text-lg font-medium">Desativar sua conta.</h2>
+								<p class="text-gray-100 text-sm">Torna sua conta inacessível até que faça login novamente.</p>
+							</div>
+							<svg class="w-5 h-5 text-gray-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+						</div>
+
+						<!-- Logout button -->
+						<div class="pt-6 border-t border-blue-700">
+							<a href="/sair" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md shadow">Sair</a>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+	</main>
+	<!-- Overlay modal -->
+	<div id="config-overlay" class="fixed inset-0 bg-black bg-opacity-70 hidden z-50 items-center justify-center">
+		<div class="bg-white text-gray-900 rounded-lg max-w-2xl w-full mx-4 p-6 relative">
+			<button id="overlay-back" class="absolute left-4 top-4 text-gray-600 hover:text-gray-900">
+				<!-- FontAwesome left arrow (uses <i> if FA present) -->
+				<i class="fa fa-arrow-left"></i>
+			</button>
+			<div id="overlay-content">
+				<!-- dynamic content inserted here -->
+			</div>
+		</div>
+	</div>
+
+	<script>
+	(function(){
+		const overlay = document.getElementById('config-overlay');
+		const overlayContent = document.getElementById('overlay-content');
+		const backBtn = document.getElementById('overlay-back');
+
+		function showOverlay(html){
+			overlayContent.innerHTML = html;
+			overlay.classList.remove('hidden');
+			overlay.classList.add('flex');
+		}
+		function hideOverlay(){
+			overlay.classList.add('hidden');
+			overlay.classList.remove('flex');
+			overlayContent.innerHTML = '';
+		}
+
+		backBtn.addEventListener('click', hideOverlay);
+		overlay.addEventListener('click', function(e){ if(e.target===overlay) hideOverlay(); });
+
+		document.querySelectorAll('.maindiv > div[data-action]').forEach(function(el){
+			el.addEventListener('click', async function(){
+				const action = el.getAttribute('data-action');
+				if(action === 'account'){
+					// fetch account info
+					try{
+						const res = await fetch(window.location.pathname.replace(/\/$/, '') + '/account_info');
+						const data = await res.json();
+						if(data.success){
+							showOverlay(`<h2 class="text-xl font-semibold mb-2">Informações da conta</h2>
+								<p><strong>E-mail:</strong> ${data.email || '—'}</p>
+								<p><strong>Usuário:</strong> ${data.username || '—'}</p>
+								<p><strong>Criado em:</strong> ${data.created_at || '—'}</p>
+							`);
+						} else {
+							showOverlay('<p>Erro ao obter informações da conta.</p>');
+						}
+					}catch(err){ showOverlay('<p>Erro de rede ao obter informações.</p>'); }
+				}
+
+				if(action === 'change_password'){
+					showOverlay(`
+						<h2 class="text-xl font-semibold mb-4">Mudar senha</h2>
+						<form id="change-pass-form" class="space-y-3">
+							<div>
+								<label class="block text-sm">Senha atual</label>
+								<div class="relative">
+									<input id="currentPasswordInput" name="current_password" type="password" minlength="8" maxlength="30" class="w-full border rounded p-2" required />
+									<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"><i class="fas fa-eye text-gray-500"></i></span>
+								</div>
+							</div>
+							<div>
+								<label class="block text-sm">Nova senha</label>
+								<div class="relative">
+									<input id="newPasswordInput" name="new_password" type="password" minlength="8" maxlength="30" class="w-full border rounded p-2" required />
+									<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"><i class="fas fa-eye text-gray-500"></i></span>
+								</div>
+							</div>
+							<div>
+								<label class="block text-sm">Confirme nova senha</label>
+								<div class="relative">
+									<input id="newPasswordConfirmInput" name="new_password_confirm" type="password" minlength="8" maxlength="30" class="w-full border rounded p-2" required />
+									<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"><i class="fas fa-eye text-gray-500"></i></span>
+								</div>
+							</div>
+							<div class="pt-4 flex items-center gap-2">
+								<button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Salvar</button>
+								<button type="button" id="cancel-change" class="px-4 py-2 border rounded">Cancelar</button>
+							</div>
+							<div id="change-pass-msg" class="text-sm mt-2"></div>
+						</form>
+					`);
+
+					const form = document.getElementById('change-pass-form');
+					const cancel = document.getElementById('cancel-change');
+					const msg = document.getElementById('change-pass-msg');
+					cancel.addEventListener('click', hideOverlay);
+					// Attach visibility toggles for dynamically inserted password inputs
+					form.querySelectorAll('.view-password-button').forEach((viewPasswordButton) => {
+						const passwordInput = viewPasswordButton.previousElementSibling;
+						const eyeIcon = viewPasswordButton.querySelector('i');
+						viewPasswordButton.addEventListener('click', () => {
+							const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+							passwordInput.setAttribute('type', type);
+							eyeIcon.classList.toggle('fa-eye');
+							eyeIcon.classList.toggle('fa-eye-slash');
+						});
+					});
+					form.addEventListener('submit', async function(e){
+						e.preventDefault();
+						msg.textContent = '';
+						const fd = new FormData(form);
+						const obj = Object.fromEntries(fd.entries());
+						if(obj.new_password !== obj.new_password_confirm){ msg.textContent = 'As senhas não conferem.'; return; }
+						try{
+							const res = await fetch(window.location.pathname.replace(/\/$/, '') + '/change_password', {
+								method: 'POST',
+								headers: {
+									'Content-Type':'application/json',
+									'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+								},
+								body: JSON.stringify(obj)
+							});
+							const data = await res.json();
+							msg.textContent = data.message || (data.success? 'Sucesso' : 'Erro');
+							if(data.success){ setTimeout(hideOverlay, 1200); }
+						}catch(err){ msg.textContent = 'Erro de rede.'; }
+					});
+				}
+
+				if(action === 'deactivate'){
+					showOverlay(`
+						<h2 class="text-xl font-semibold mb-4">Desativar conta</h2>
+						<p>Ao desativar sua conta, tanto sua conta quanto seus posts ficarão inacessíveis. Você será deslogado. Ao efetuar login novamente a conta será reativada.</p>
+						<div class="pt-4 flex items-center gap-2">
+							<button id="confirm-deactivate" class="px-4 py-2 bg-red-600 text-white rounded">Desativar conta</button>
+							<button id="cancel-deactivate" class="px-4 py-2 border rounded">Cancelar</button>
+						</div>
+						<div id="deact-msg" class="text-sm mt-2"></div>
+					`);
+
+					document.getElementById('cancel-deactivate').addEventListener('click', hideOverlay);
+					document.getElementById('confirm-deactivate').addEventListener('click', async function(){
+						const msg = document.getElementById('deact-msg');
+						try{
+							const res = await fetch(window.location.pathname.replace(/\/$/, '') + '/deactivate', {
+								method:'POST',
+								headers: {
+									'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+								}
+							});
+							const data = await res.json();
+							msg.textContent = data.message || '';
+							if(data.success){ setTimeout(function(){ window.location = '/'; }, 1200); }
+						}catch(err){ msg.textContent = 'Erro de rede.'; }
+					});
+				}
+			});
+		});
+	})();
+	</script>
+</body>
+{% endblock %}

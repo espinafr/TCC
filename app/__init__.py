@@ -1,6 +1,8 @@
 from flask import Flask, session, send_from_directory, flash, redirect, url_for
 from flask_wtf import CSRFProtect
-from app.extensions import db_manager, email_service, mail, s3#, limiter
+from app.extensions import db_manager, email_service, mail, s3
+from flask_talisman import Talisman
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 
 def create_app(config_class=Config):
@@ -11,7 +13,22 @@ def create_app(config_class=Config):
     mail.init_app(app)
     email_service.init_app(app)
     s3.init_app(app)
-    #limiter.init_app(app)
+    # Limiter is optional and not initialized by default
+    # If you need to enable it, uncomment and configure a storage backend in app/extensions.py and initialize it here.
+    # Example:
+    # from app.extensions import limiter
+    # limiter.init_app(app)
+    # Habilitar ProxyFix se a aplicação estiver atrás de um proxy reverso na produção
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+
+    # Habilitar Talisman para cabeçalhos de segurança (HSTS, CSP)
+    talisman = Talisman()
+    talisman.init_app(app, content_security_policy={
+        'default-src': ["'self'"],
+        'img-src': ["'self'", 'data:', 'https:'],
+        'script-src': ["'self'", 'https:', "'unsafe-inline'"],
+        'style-src': ["'self'", 'https:', "'unsafe-inline'"]
+    })
 
     # Habilitando proteção CSRF
     csrf = CSRFProtect(app)
@@ -46,6 +63,9 @@ def create_app(config_class=Config):
 
     from app.users import bp as users_bp
     app.register_blueprint(users_bp, url_prefix="/usuario")
+    
+    from app.userconfig import bp as userconfig
+    app.register_blueprint(userconfig, url_prefix="/configuracoes")
 
     # Registrando error handlers para códigos HTTP
     @app.errorhandler(401)
@@ -87,9 +107,9 @@ def create_app(config_class=Config):
         flash('Página em desenvolvimento!', 'error')
         return redirect(url_for('main.index'))
 
-    @app.route("/")
+    @app.route("/segredoultrasecreto")
     def test_page():
-        return "<h1>oiiiii uwu</h1>"
+        return "<h1>oiiiii !!</h1>"
     
     return app
 

@@ -14,6 +14,7 @@ services:
       - AWS_REGION=${AWS_REGION}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - DATABASE_URL=${DATABASE_URL}
+      # RATELIMIT_STORAGE_URI can be set in production if you enable flask-limiter
     depends_on:
       - db
   db:
@@ -27,3 +28,5 @@ services:
       - pgdata:/var/lib/postgresql/data
 volumes:
   pgdata:
+    
+  
