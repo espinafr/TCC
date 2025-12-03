@@ -1,3 +1,18 @@
+// Função para anexar event listeners aos botões de opções
+function attachOptionsButtons() {
+	document.querySelectorAll('.options-button').forEach(button => {
+		// Remove listeners antigos para evitar duplicação
+		const newButton = button.cloneNode(true);
+		button.parentNode.replaceChild(newButton, button);
+		
+		newButton.addEventListener('click', (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			optionButton({ currentTarget: newButton });
+		});
+	});
+}
+
 // Funções para Modais
 function openModal(modalId, imageSrc = null) {
 	const modal = document.getElementById(modalId);
@@ -471,10 +486,11 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 				
 				const data = { comment_text: commentText };
 				const result = await sendApiRequest(`/api/posts/${postId}/comment`, 'POST', data);
-				if (result.success) {
-					const commentSection = document.getElementById("commentsSection");
-					commentSection.innerHTML = renderComment(result.comment_content, postId) + commentSection.innerHTML; // Adiciona o novo comentário no início da seção... Bem mal feito, eu sei.
-				} else {
+			if (result.success) {
+				const commentSection = document.getElementById("commentsSection");
+				commentSection.innerHTML = renderComment(result.comment_content, postId) + commentSection.innerHTML; // Adiciona o novo comentário no início da seção... Bem mal feito, eu sei.
+				attachOptionsButtons(); // Anexa os event listeners aos botões de opções
+			} else {
 					alert('Erro: ' + result.message);
 				}
 				commenting = false;
@@ -514,6 +530,7 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 					const replyHTML = renderReply(result.reply_content);
 					parentCommentBox.insertAdjacentHTML('afterend', replyHTML);
 					parentCommentBox.parentNode.querySelector(`[data-comment-id="${result.reply_content.reply.id}"]`).onclick = optionButton;
+					attachOptionsButtons(); // Anexa os event listeners aos botões de opções
 				} else {
 					alert('Erro: ' + result.message);
 				}
@@ -587,6 +604,7 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 						result.comments.forEach(comment => {
 							commentsSection.innerHTML += renderComment(comment, postId); // Adiciona cada comentário
 						});
+						attachOptionsButtons(); // Anexa os event listeners aos botões de opções
 
 						rendered_comments += 5; // Incrementa o número de comentários a serem carregados
 						// Verifica se todos os comentários foram carregados
@@ -640,6 +658,7 @@ async function openCommentModal(commentId, postId) {
 				commentModalContent.innerHTML += renderReply(reply); // Use uma função separada para renderizar respostas
 			});
 			attachCommentEventListeners(); // Anexa os event listeners
+			attachOptionsButtons(); // Anexa os event listeners aos botões de opções
 		} else {
 			commentModalContent.innerHTML = 'Erro ao carregar respostas.';
 		}
@@ -742,6 +761,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 					modalContent.innerHTML = renderPost(data);
 					openModal('postModal');
 					attachPostEventListeners(postId, data.total_comments, data.next_offset); // Passa o ID do post e o número total de comentários
+					attachOptionsButtons(); // Anexa os event listeners aos botões de opções
 				}
 			} catch(error) {
 				console.error('Erro ao carregar o post:', error);

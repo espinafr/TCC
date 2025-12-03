@@ -2,11 +2,12 @@
 {% block title %}@{{ user.username }}{% endblock %}
 {% block description %}{{ user.bio or 'Sem biografia ainda.' }}{% endblock %}
 {% block additional_styles %}
-<meta property="og:image" content="{{ user.banner_url or 'https://parentalia-cloud-bucket.s3.sa-east-1.amazonaws.com/public/static/BackgroundTimby.jpg' }}" />
-<meta property="twitter:image" content="{{ user.banner_url or 'https://parentalia-cloud-bucket.s3.sa-east-1.amazonaws.com/public/static/BackgroundTimby.jpg' }}" />
-<meta property="twitter:card" content="{{ user.banner_url or 'https://parentalia-cloud-bucket.s3.sa-east-1.amazonaws.com/public/static/BackgroundTimby.jpg' }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
-<style>
+	<meta property="og:image" content="{{ user.banner_url or 'https://parentalia-cloud-bucket.s3.sa-east-1.amazonaws.com/public/static/BackgroundTimby.jpg' }}" />
+	<meta property="twitter:image" content="{{ user.banner_url or 'https://parentalia-cloud-bucket.s3.sa-east-1.amazonaws.com/public/static/BackgroundTimby.jpg' }}" />
+	<meta property="twitter:card" content="{{ user.banner_url or 'https://parentalia-cloud-bucket.s3.sa-east-1.amazonaws.com/public/static/BackgroundTimby.jpg' }}" />
+	<link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css"/>
+	<style>
 	.profile-banner {
 		min-height: 180px;
 		border-radius: 1.5rem 1.5rem 0 0;
@@ -291,7 +292,6 @@
 </body>
 {% endblock %}
 {% block scripts %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script src="{{ url_for('static', filename='postrequests.js') }}"></script>
 <script>

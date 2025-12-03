@@ -12,7 +12,6 @@ def mainconfigpage():
 @bp.route('/account_info', methods=['GET'])
 @login_required
 def account_info():
-    # Return basic account info. db_manager.get_user_details should return a user object
     user = db_manager.get_user("id", session.get('id'))
     if not user:
         return jsonify({'success': False, 'message': 'Usuário não encontrado.'}), 404

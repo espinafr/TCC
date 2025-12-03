@@ -317,7 +317,7 @@ def delete_post(post_id):
 def delete_interaction(interaction_id):
     interaction = db_manager.get_interaction_by_id(interaction_id)
     if interaction and interaction.type in ['comment_post', 'reply_comment']:
-        if interaction.user_who_interacted.id == session.get('id'):
+        if interaction.user_who_interacted.user_id == session.get('id'):
             with db_manager.get_db() as db:
                 db.delete(interaction)
                 db.commit()

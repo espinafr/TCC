@@ -178,5 +178,19 @@
 		}
 		toggleLoading(submitBtn);
 	});
+
+	document.addEventListener('DOMContentLoaded', function() {
+		const selectedCategory = sessionStorage.getItem('selectedCategory');
+		if (selectedCategory) {
+			const tagsSelect = document.getElementById('tags');
+			for (let option of tagsSelect.options) {
+				if (option.textContent === selectedCategory) {
+					tagsSelect.value = option.value;
+					break;
+				}
+			}
+			sessionStorage.removeItem('selectedCategory');
+		}
+	});
 </script>
 {% endblock %}

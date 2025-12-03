@@ -10,7 +10,7 @@
         <h3 class="font-bold text-gray-800 mb-2 text-lg">Missão da Semana</h3>
         <div class="bg-green-50 border-l-4 border-green-400 p-3 rounded text-gray-700 text-sm">
             <span class="font-semibold">Missão:</span> Fazer um piquenique em família.<br>
-            <button class="mt-2 px-3 py-1 bg-green-400 text-white rounded hover:bg-green-500 transition">Marcar como concluída</button>
+            <button id="postMissionBtn" class="mt-2 px-3 py-1 bg-green-400 text-white rounded hover:bg-green-500 transition">Postar missão</button>
         </div>
     </div>
     <div>
@@ -22,3 +22,35 @@
         </ul>
     </div>
 </aside>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const postMissionBtn = document.getElementById('postMissionBtn');
+    const loggedIn = document.querySelector('meta[name="validated"]')?.getAttribute('content');
+    
+    postMissionBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        if (!loggedIn) {
+            // Se não está logado, mostra o popup de login
+            showLoginPopup(
+                function(event) {
+                    // Após login bem-sucedido, redireciona para /escrever com categoria pré-selecionada
+                    redirectToPostWithCategory('Desafio Semanal');
+                },
+                e,
+                'Desafio Semanal'
+            );
+        } else {
+            // Se já está logado, redireciona diretamente
+            redirectToPostWithCategory('Desafio Semanal');
+        }
+    });
+    
+    function redirectToPostWithCategory(category) {
+        // Armazena a categoria na sessionStorage para recuperar na página de escrita
+        sessionStorage.setItem('selectedCategory', category);
+        window.location.href = '/escrever';
+    }
+});
+</script>
