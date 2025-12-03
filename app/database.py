@@ -143,6 +143,19 @@ class ModerationHistory(Base):
     moderator = relationship("User", foreign_keys=[moderator_id], back_populates="moderations_made")
     offending_user = relationship("User", foreign_keys=[user_id], back_populates="moderations_received")
 
+
+class SavedPost(Base):
+    __tablename__ = 'saved_posts'
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)
+    created_at = Column(DateTime, default=datetime.now)
+
+    # Relacionamentos
+    user = relationship("User", foreign_keys=[user_id])
+    post = relationship("Post", foreign_keys=[post_id])
+
 class DatabaseManager:
     def __init__(self):
         # A conexão e sessão são gerenciadas pelo SessionLocal
@@ -698,6 +711,57 @@ class DatabaseManager:
         with self.get_db() as db:
             posts = db.query(Post).filter(Post.user_id == user_id, Post.is_deleted == False).options(joinedload(Post.author_user).joinedload(UserDetails.user)).order_by(Post.created_at.desc()).all()
             return posts
+
+    def toggle_save_post(self, user_id: int, post_id: int):
+        """Adiciona ou remove um post salvo para um usuário.
+        Retorna (True, 'saved') se salvo, (True, 'unsaved') se removido, (False, mensagem) em erro.
+        """
+        with self.get_db() as db:
+            try:
+                # verifica se o post existe e não está deletado
+                post = db.query(Post).filter(Post.id == post_id, Post.is_deleted == False).first()
+                if not post:
+                    return False, 'Post não encontrado.'
+
+                existing = db.query(SavedPost).filter(SavedPost.user_id == user_id, SavedPost.post_id == post_id).first()
+                if existing:
+                    db.delete(existing)
+                    db.commit()
+                    return True, 'unsaved'
+                else:
+                    saved = SavedPost(user_id=user_id, post_id=post_id)
+                    db.add(saved)
+                    db.commit()
+                    return True, 'saved'
+            except Exception as e:
+                db.rollback()
+                return False, f'Erro ao alternar salvamento: {e}'
+
+    def get_saved_posts(self, user_id: int):
+        """Retorna lista de posts salvos por um usuário, ordenados por data de salvamento desc."""
+        with self.get_db() as db:
+            saved_entries = db.query(SavedPost).filter(SavedPost.user_id == user_id).order_by(SavedPost.created_at.desc()).all()
+            posts = []
+            for entry in saved_entries:
+                post = db.query(Post).filter(Post.id == entry.post_id, Post.is_deleted == False).options(joinedload(Post.author_user).joinedload(UserDetails.user)).first()
+                if post:
+                    if post.image_urls:
+                        try:
+                            post.image_urls = json.loads(post.image_urls)
+                        except Exception:
+                            post.image_urls = []
+                    else:
+                        post.image_urls = []
+                    posts.append(post)
+            return posts
+
+    def is_post_saved(self, user_id: int, post_id: int):
+        """Retorna True se o post estiver salvo pelo usuário, False caso contrário."""
+        if not user_id:
+            return False
+        with self.get_db() as db:
+            existing = db.query(SavedPost).filter(SavedPost.user_id == user_id, SavedPost.post_id == post_id).first()
+            return True if existing else False
 
     def get_user_comments_n_replies(self, user_id):
         with self.get_db() as db:

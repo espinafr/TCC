@@ -330,7 +330,7 @@ function renderPost(post_package) {
 					</button>
 				</div>
 			</div>
-			<button class="interaction-button cursor-pointer" id="saveButton">
+			<button class="interaction-button cursor-pointer ${post_package.is_saved ? 'active' : ''}" id="saveButton-${post_package.post.id}">
 				<i class="fa-solid fa-bookmark"></i>
 				<span>Salvar</span>
 			</button>
@@ -357,6 +357,20 @@ function renderPost(post_package) {
 		</div>
 	</div>
 	`;
+}
+
+function ensurePostModalExists() {
+	let postModal = document.getElementById('postModal');
+	if (!postModal) {
+		const div = document.createElement('div');
+		div.id = 'postModal';
+		div.className = 'modal hidden';
+		div.innerHTML = `
+			<span class="post-close-button cursor-pointer" onclick="closeModal('postModal')">&times;</span>
+			<div class="post-modal-content relative"></div>
+		`;
+		document.body.appendChild(div);
+	}
 }
 
 let shareMenuOpen = false;
@@ -464,115 +478,134 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 		}
 	);
 
-	document.getElementById('commentTextarea').addEventListener('input', toggleCommentButton);
-	document.getElementById('replyTextarea').addEventListener('input', toggleReplyButton);
+	const commentTextarea = document.getElementById('commentTextarea');
+	if (commentTextarea) commentTextarea.addEventListener('input', toggleCommentButton);
+	const replyTextarea = document.getElementById('replyTextarea');
+	if (replyTextarea) replyTextarea.addEventListener('input', toggleReplyButton);
 
 	// Publicar um comentário no post
 	const commentButton = document.getElementById('commentButton');
-	initializeAuthButtons(
-		commentButton,
-		checkAuthenticationStatus,
-		async () => {
-			if (commentButton.classList.contains('active')) {
-				if (commenting) {
-					return
-				}
-				commenting = true;
-				const commentText = document.getElementById('commentTextarea').value.trim();
+	if (commentButton) {
+		initializeAuthButtons(
+			commentButton,
+			checkAuthenticationStatus,
+			async () => {
+				if (commentButton.classList.contains('active')) {
+					if (commenting) {
+						return
+					}
+					commenting = true;
+					const textarea = document.getElementById('commentTextarea');
+					const commentText = textarea ? textarea.value.trim() : '';
 
-				resetTextarea(document.getElementById('commentTextarea'));
-				toggleCommentButton();
-				toggleLoading(commentButton);
-				
-				const data = { comment_text: commentText };
-				const result = await sendApiRequest(`/api/posts/${postId}/comment`, 'POST', data);
-			if (result.success) {
-				const commentSection = document.getElementById("commentsSection");
-				commentSection.innerHTML = renderComment(result.comment_content, postId) + commentSection.innerHTML; // Adiciona o novo comentário no início da seção... Bem mal feito, eu sei.
-				attachOptionsButtons(); // Anexa os event listeners aos botões de opções
-			} else {
-					alert('Erro: ' + result.message);
+					if (textarea) resetTextarea(textarea);
+					toggleCommentButton();
+					toggleLoading(commentButton);
+                    
+					const data = { comment_text: commentText };
+					const result = await sendApiRequest(`/api/posts/${postId}/comment`, 'POST', data);
+					if (result.success) {
+						const commentSection = document.getElementById("commentsSection");
+						if (commentSection) {
+							commentSection.innerHTML = renderComment(result.comment_content, postId) + commentSection.innerHTML;
+						}
+						attachOptionsButtons(); // Anexa os event listeners aos botões de opções
+					} else {
+						alert('Erro: ' + result.message);
+					}
+					commenting = false;
+					toggleLoading(commentButton);
 				}
-				commenting = false;
-				toggleLoading(commentButton);
 			}
-		}
-	);
+		);
+	}
 
 	// Publicar uma resposta a um comentário
 	const replyButton = document.getElementById('replyButton');
-	initializeAuthButtons(
-		replyButton,
-		checkAuthenticationStatus,
-		async () => {
-			if (replyButton.classList.contains('active')) {
-				if (commenting) {
-					return
-				}
-				commenting = true;
-				const replyText = document.getElementById('replyTextarea').value.trim();
-				const parentCommentId = document.getElementById('replyModal').dataset.parentCommentId;
-				const parentCommentIdSufix = document.getElementById('replyModal').dataset.parentCommentIdSufix;
-				
-				if (!parentCommentId) {
-					alert("Erro: ID do comentário pai não encontrado.");
-					return;
-				}
+	if (replyButton) {
+		initializeAuthButtons(
+			replyButton,
+			checkAuthenticationStatus,
+			async () => {
+				if (replyButton.classList.contains('active')) {
+					if (commenting) {
+						return
+					}
+					commenting = true;
+					const replyTextareaEl = document.getElementById('replyTextarea');
+					const replyText = replyTextareaEl ? replyTextareaEl.value.trim() : '';
+					const replyModalEl = document.getElementById('replyModal');
+					const parentCommentId = replyModalEl ? replyModalEl.dataset.parentCommentId : null;
+					const parentCommentIdSufix = replyModalEl ? replyModalEl.dataset.parentCommentIdSufix : '';
+                    
+					if (!parentCommentId) {
+						alert("Erro: ID do comentário pai não encontrado.");
+						commenting = false;
+						return;
+					}
 
-				let notifId = Date.now();
-				toggleNotification(notifId);
-				closeModal('replyModal');
+					let notifId = Date.now();
+					toggleNotification(notifId);
+					closeModal('replyModal');
 
-				const data = { reply_text: replyText };
-				const result = await sendApiRequest(`/api/comments/${parentCommentId}/reply`, 'POST', data);
-				if (result.success) {
-					const parentCommentBox = document.getElementById(`interaction${parentCommentId}${parentCommentIdSufix}box`);
-					const replyHTML = renderReply(result.reply_content);
-					parentCommentBox.insertAdjacentHTML('afterend', replyHTML);
-					parentCommentBox.parentNode.querySelector(`[data-comment-id="${result.reply_content.reply.id}"]`).onclick = optionButton;
-					attachOptionsButtons(); // Anexa os event listeners aos botões de opções
-				} else {
-					alert('Erro: ' + result.message);
+					const data = { reply_text: replyText };
+					const result = await sendApiRequest(`/api/comments/${parentCommentId}/reply`, 'POST', data);
+					if (result.success) {
+						const parentCommentBox = document.getElementById(`interaction${parentCommentId}${parentCommentIdSufix}box`);
+						const replyHTML = renderReply(result.reply_content);
+						if (parentCommentBox) parentCommentBox.insertAdjacentHTML('afterend', replyHTML);
+						if (parentCommentBox && parentCommentBox.parentNode) parentCommentBox.parentNode.querySelector(`[data-comment-id="${result.reply_content.reply.id}"]`).onclick = optionButton;
+						attachOptionsButtons(); // Anexa os event listeners aos botões de opções
+					} else {
+						alert('Erro: ' + result.message);
+					}
+					commenting = false;
+					toggleNotification(notifId);
 				}
-				commenting = false;
-				toggleNotification(notifId);
 			}
-		}
-	);
+		);
+	}
 	
 	// Compartilhar
-	document.getElementById('shareButton').addEventListener('click', () => {
-		event.stopPropagation(); // Evita que o clique se propague para o document e feche o menu imediatamente
-		const contextMenu = document.getElementById('shareContextMenu');
-		shareMenuOpen = true;
-		contextMenu.classList.toggle('hidden');
-	});
+	const shareBtn = document.getElementById('shareButton');
+	if (shareBtn) {
+		shareBtn.addEventListener('click', (event) => {
+			event.stopPropagation(); // Evita que o clique se propague para o document e feche o menu imediatamente
+			const contextMenu = document.getElementById('shareContextMenu');
+			shareMenuOpen = true;
+			if (contextMenu) contextMenu.classList.toggle('hidden');
+		});
+	}
 
 	// Like
 	const likeButton = document.getElementById('likeButton');
-	initializeAuthButtons(
-		likeButton,
-		checkAuthenticationStatus,
-		async () => {
-			toggleActive(likeButton); 
-			visualReactionUpdate(`like`, `dislike`);
+	if (likeButton) {
+		initializeAuthButtons(
+			likeButton,
+			checkAuthenticationStatus,
+			async () => {
+				toggleActive(likeButton); 
+				visualReactionUpdate(`like`, `dislike`);
 
-			await handlePostReaction(postId, 'like_post');
-		}
-	);
+				await handlePostReaction(postId, 'like_post');
+			}
+		);
+	}
 
 	// Deslike
 	const dislikeButton = document.getElementById('dislikeButton');
-	initializeAuthButtons(
-		dislikeButton,
-		checkAuthenticationStatus,
-		async () => {
-			toggleActive(dislikeButton); 
-			visualReactionUpdate(`dislike`, `like`);
+	if (dislikeButton) {
+		initializeAuthButtons(
+			dislikeButton,
+			checkAuthenticationStatus,
+			async () => {
+				toggleActive(dislikeButton); 
+				visualReactionUpdate(`dislike`, `like`);
 
-			await handlePostReaction(postId, 'dislike_post');
-		}
-	);
+				await handlePostReaction(postId, 'dislike_post');
+			}
+		);
+	}
 
 	const postModal = document.getElementById('postModal')
 	if (postModal) {
@@ -619,6 +652,34 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 				}
 				loading = false;
 				toggleNotification(notifId);
+			}
+		);
+	}
+
+	// Salvar post (botão dentro do modal)
+	const modalSaveButton = document.getElementById(`saveButton-${postId}`);
+	if (modalSaveButton) {
+		initializeAuthButtons(
+			modalSaveButton,
+			checkAuthenticationStatus,
+			async () => {
+				// Chama a API para alternar salvar
+				const result = await sendApiRequest(`/api/posts/${postId}/save`, 'POST', {});
+				if (!result.success) {
+					alert('Erro ao salvar post: ' + (result.message || 'Erro desconhecido'));
+					return;
+				}
+				if (result.action === 'saved') {
+					modalSaveButton.classList.add('active');
+				} else if (result.action === 'unsaved') {
+					modalSaveButton.classList.remove('active');
+				}
+				// Sincroniza com o botão da timeline, se existir
+				const timelineBtn = document.querySelector(`.timeline-post[data-postid="${postId}"] #saveButton-${postId}`);
+				if (timelineBtn) {
+					if (result.action === 'saved') timelineBtn.classList.add('active');
+					else timelineBtn.classList.remove('active');
+				}
 			}
 		);
 	}
@@ -717,11 +778,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 	// --- Funções de Interatividade dos Botões Principais (Like, Dislike, Salvar) ---
 
 	document.querySelectorAll('[id^="saveButton-"]').forEach(function(btn) {
-		btn.addEventListener('click', function() {
-			toggleActive(btn);
-			console.log('Botão Salvar do Post clicado!');
-			// Lógica de backend aqui
-		});
+		initializeAuthButtons(
+			btn,
+			checkAuthenticationStatus,
+			async () => {
+				const postContainer = btn.closest('.post-container');
+				if (!postContainer) return;
+				const postId = postContainer.dataset.postid;
+				// Chama a API para alternar salvar
+				const result = await sendApiRequest(`/api/posts/${postId}/save`, 'POST', {});
+				if (!result.success) {
+					alert('Erro ao salvar post: ' + (result.message || 'Erro desconhecido'));
+					return;
+				}
+				if (result.action === 'saved') {
+					btn.classList.add('active');
+					// opcional: mudar texto
+					// btn.querySelector('span').textContent = 'Salvo';
+				} else if (result.action === 'unsaved') {
+					btn.classList.remove('active');
+					// opcional: btn.querySelector('span').textContent = 'Salvar';
+				}
+			}
+		);
 	});
 
 	// --- Compartilhamento ---
@@ -755,9 +834,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 				const response = await fetch(`/api/posts/${postId}`);
 				const data = await response.json();
 				if (data.success) {
+					ensurePostModalExists();
 					const postModal = document.getElementById('postModal');
-					const modalContent = postModal.querySelector('.post-modal-content')
-					
+					const modalContent = postModal.querySelector('.post-modal-content');
 					modalContent.innerHTML = renderPost(data);
 					openModal('postModal');
 					attachPostEventListeners(postId, data.total_comments, data.next_offset); // Passa o ID do post e o número total de comentários
@@ -765,6 +844,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 				}
 			} catch(error) {
 				console.error('Erro ao carregar o post:', error);
+			}
+			openingpost = false;
+			toggleNotification(notifId);
+		});
+	});
+
+	// Abrir post a partir da grade de salvos
+	document.querySelectorAll('.saved-cell').forEach(function(cell) {
+		cell.addEventListener('click', async function(event) {
+			if (openingpost) return;
+			openingpost = true;
+			const postId = cell.dataset.postid;
+			const notifId = Date.now();
+			toggleNotification(notifId);
+			try {
+				const response = await fetch(`/api/posts/${postId}`);
+				const data = await response.json();
+				if (data.success) {
+					ensurePostModalExists();
+					const postModal = document.getElementById('postModal');
+					const modalContent = postModal.querySelector('.post-modal-content');
+					modalContent.innerHTML = renderPost(data);
+					openModal('postModal');
+					attachPostEventListeners(postId, data.total_comments, data.next_offset);
+					attachOptionsButtons();
+				}
+			} catch (err) {
+				console.error('Erro ao abrir post salvo:', err);
 			}
 			openingpost = false;
 			toggleNotification(notifId);

@@ -89,10 +89,11 @@
 									</button>
 								</div>
 							</div>
-							<button class="interaction-button cursor-pointer" id="saveButton{{ post.id }}">
+							<button class="interaction-button cursor-pointer {% if post.is_saved %}active{% endif %}" id="saveButton-{{ post.id }}">
 								<i class="fa-solid fa-bookmark"></i>
 								<span>Salvar</span>
 							</button>
+
 						</div>
 					</div>
 				</div>

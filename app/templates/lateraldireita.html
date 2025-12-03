@@ -1,5 +1,21 @@
 <aside class="hidden sticky md:flex flex-col gap-6 w-72 min-w-[220px] max-w-xs bg-white rounded-xl shadow-lg p-5 h-fit top-6">
     <div>
+        <h3 class="font-bold text-gray-800 mb-2 text-lg">Pesquisar Posts</h3>
+        <div class="flex flex-col gap-3">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Buscar por título, conteúdo, tags..." 
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <div class="text-sm text-gray-600">
+                <p class="font-semibold mb-2">Dicas de filtro:</p>
+                <p class="text-xs mb-1"><span class="bg-blue-100 px-1 rounded">(Categoria)</span> - Filtrar por categoria</p>
+                <p class="text-xs">Ex: (Sono infantil) ou (TDAH)</p>
+            </div>
+        </div>
+    </div>
+    <div>
         <h3 class="font-bold text-gray-800 mb-2 text-lg">Dica do Dia</h3>
         <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-gray-700 text-sm">
             "Reserve um tempo para brincar com seu filho hoje. O vínculo criado nessas horas é fundamental!"<br>
@@ -27,6 +43,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const postMissionBtn = document.getElementById('postMissionBtn');
     const loggedIn = document.querySelector('meta[name="validated"]')?.getAttribute('content');
+    const searchInput = document.getElementById('searchInput');
     
     postMissionBtn.addEventListener('click', function(e) {
         e.preventDefault();
@@ -51,6 +68,26 @@ document.addEventListener('DOMContentLoaded', function() {
         // Armazena a categoria na sessionStorage para recuperar na página de escrita
         sessionStorage.setItem('selectedCategory', category);
         window.location.href = '/escrever';
+    }
+
+    // Funcionalidade de pesquisa
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch(this.value);
+            }
+        });
+    }
+
+    function performSearch(query) {
+        if (query.trim().length === 0) {
+            alert('Por favor, digite algo para pesquisar.');
+            return;
+        }
+        
+        // Redireciona para a página de pesquisa com a query na URL
+        window.location.href = `/pesquisar?q=${encodeURIComponent(query)}`;
     }
 });
 </script>

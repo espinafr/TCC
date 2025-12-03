@@ -1,8 +1,10 @@
 from flask import request, jsonify, session
+from sqlalchemy.orm import joinedload
 from app.extensions import login_required, db_manager
 from app.data_sanitizer import ReportForm
-from app.database import Post, Report
+from app.database import Post, Report, UserDetails
 from app.api import bp
+import re
 
 def get_user_icon(user_id):
     user = db_manager.get_user_details(user_id)
@@ -36,6 +38,7 @@ def get_post_with_details(post_id):
         'post_likes': post_likes,
         'post_dislikes': post_dislikes,
         'user_post_reaction': user_post_reaction_type,
+        'is_saved': db_manager.is_post_saved(user_id, post_id) if user_id else False,
         'user_icon': user_icon,
         'comment_count': comment_count,
         'next_offset': len(comments_with_details),
@@ -128,6 +131,40 @@ def react_to_post_api(post_id):
         return jsonify({"success": True, "message": message}), 200
     else:
         return jsonify({"success": False, "message": message}), 500
+
+
+@bp.route('/posts/<int:post_id>/save', methods=['POST'])
+@login_required
+def toggle_save_post_api(post_id):
+    user_id = session.get('id')
+    success, result = db_manager.toggle_save_post(user_id, post_id)
+    if not success:
+        return jsonify({"success": False, "message": result}), 400
+    # result is 'saved' or 'unsaved'
+    return jsonify({"success": True, "action": result}), 200
+
+
+@bp.route('/saved', methods=['GET'])
+@login_required
+def get_saved_posts_api():
+    user_id = session.get('id')
+    posts = db_manager.get_saved_posts(user_id)
+    formatted = []
+    for post in posts:
+        formatted.append({
+            'id': post.id,
+            'title': post.title,
+            'content': post.content,
+            'tag': post.tag,
+            'optional_tags': post.optional_tags,
+            'created_at': post.created_at.strftime('%d/%m/%Y'),
+            'author': post.author_user.display_name,
+            'authorat': post.author_user.user.username,
+            'authoricon': post.author_user.icon_url,
+            'userid': post.author_user.user_id,
+            'image_urls': post.image_urls,
+        })
+    return jsonify({"success": True, "total": len(formatted), "posts": formatted}), 200
 
 @bp.route('/comments/<int:comment_id>/react', methods=['POST'])
 @login_required
@@ -238,6 +275,7 @@ def get_post_details_api(post_id):
         "likes": post_details['post_likes'],
         "dislikes": post_details['post_dislikes'],
         "user_post_reaction": post_details['user_post_reaction'],
+        "is_saved": post_details.get('is_saved', False),
         "next_offset": post_details['next_offset'],
         "total_comments": post_details['total_comments']
     }), 200
@@ -326,6 +364,93 @@ def delete_interaction(interaction_id):
             return jsonify({"success": False, "message": "Você não tem permissão para executar essa ação."}), 403
     return jsonify({"success": False, "message": "Interação não encontrada."}), 404
     
+# Pesquisa de posts
+@bp.route('/search', methods=['GET'])
+def search_posts():
+    """
+    Busca posts por título, conteúdo, tag ou optional_tags.
+    Suporta filtro de categoria usando (categoria) na query.
+    """
+    query = request.args.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return jsonify({"success": False, "message": "Consulta de pesquisa muito curta."}), 400
+    
+    # Extrai filtro de categoria entre parênteses
+    category_filter = None
+    category_match = re.search(r'\(([^)]+)\)', query)
+    if category_match:
+        category_filter = category_match.group(1).strip()
+        query = query.replace(f'({category_match.group(1)})', '').strip()
+    
+    with db_manager.get_db() as db:
+        # Query base: busca por título, conteúdo, tag ou optional_tags
+        posts_query = db.query(Post).filter(
+            Post.is_deleted == False
+        ).filter(
+            (Post.title.ilike(f'%{query}%')) |
+            (Post.content.ilike(f'%{query}%')) |
+            (Post.tag.ilike(f'%{query}%')) |
+            (Post.optional_tags.ilike(f'%{query}%'))
+        )
+        
+        # Aplica filtro de categoria se fornecido
+        if category_filter:
+            posts_query = posts_query.filter(
+                (Post.tag.ilike(f'%{category_filter}%')) |
+                (Post.optional_tags.ilike(f'%{category_filter}%'))
+            )
+        
+        posts = posts_query.options(
+            joinedload(Post.author_user).joinedload(UserDetails.user)
+        ).order_by(Post.created_at.desc()).all()
+        
+        if not posts:
+            return jsonify({"success": False, "message": "Nenhum post encontrado.", "posts": []}), 200
+        
+        formatted_posts = []
+        user_id = session.get('id')
+        
+        for post in posts:
+            post_reactions = {
+                'likes': db_manager.count_reactions_for_post(post.id, 'like_post'),
+                'dislikes': db_manager.count_reactions_for_post(post.id, 'dislike_post'),
+                'comments': db_manager.count_comments_for_post(post.id),
+                'user_reaction': ""
+            }
+            
+            if user_id:
+                user_reaction = db_manager.get_user_post_reaction(user_id, post.id)
+                if user_reaction:
+                    post_reactions['user_reaction'] = user_reaction.type
+            
+            formatted_posts.append({
+                'id': post.id,
+                'title': post.title,
+                'content': post.content,
+                'tag': post.tag,
+                'optional_tags': post.optional_tags,
+                'created_at': post.created_at.strftime('%d/%m/%Y'),
+                'author': post.author_user.display_name,
+                'authorat': post.author_user.user.username,
+                'authoricon': post.author_user.icon_url,
+                'userid': post.author_user.user_id,
+                'image_urls': post.image_urls,
+                'likes': post_reactions["likes"],
+                'dislikes': post_reactions["dislikes"],
+                'comments': post_reactions["comments"],
+                'user_reaction': post_reactions["user_reaction"],
+                'is_saved': db_manager.is_post_saved(user_id, post.id) if user_id else False
+            })
+        
+        return jsonify({
+            "success": True,
+            "query": query,
+            "category_filter": category_filter,
+            "total_results": len(formatted_posts),
+            "posts": formatted_posts
+        }), 200
+
 # Denúncias
 @bp.route('/report', methods=['POST'])
 @login_required

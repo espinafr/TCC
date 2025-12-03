@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Posts Salvos{% endblock %}
+{% block additional_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
+{% endblock %}
+{% block content %}
+<body class="min-h-screen bg-gray-50">
+	{% include 'navbar.html' %}
+	<div class="flex flex-col md:flex-row md:items-start md:justify-center gap-4 w-full max-w-7xl mx-auto p-2 md:p-6">
+		{% include 'lateralesquerda.html' %}
+		<main class="flex-1 max-w-4xl w-full">
+			<h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6">Posts Salvos</h1>
+			{% if not posts %}
+				<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+					<i class="fas fa-bookmark text-yellow-500 text-4xl mb-4"></i>
+					<h2 class="text-xl font-semibold text-gray-800 mb-2">Você ainda não salvou nenhum post</h2>
+					<p class="text-gray-600">Salve posts usando o botão <i class="fa-solid fa-bookmark"></i> para encontrá-los aqui depois.</p>
+				</div>
+			{% else %}
+				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+					{% for post in posts %}
+					<div class="saved-cell bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-lg" data-postid="{{ post.id }}">
+						<div class="mb-2">
+							<h3 class="font-semibold text-gray-800 text-sm line-clamp-2">{{ post.title }}</h3>
+							<div class="flex flex-wrap gap-1 mt-2">
+								<span class="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full">{{ post.tag.upper() }}</span>
+								{% if post.optional_tags %}
+									{% for tag in post.optional_tags.split(',') %}
+										{% if tag.strip() %}
+											<span class="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded">{{ tag.strip().upper() }}</span>
+										{% endif %}
+									{% endfor %}
+								{% endif %}
+							</div>
+						</div>
+						<p class="text-gray-600 text-sm line-clamp-3">{{ post.content }}</p>
+					</div>
+					{% endfor %}
+				</div>
+			{% endif %}
+		</main>
+		{% include 'lateraldireita.html' %}
+	</div>
+
+	<!-- Modal padrão usado para abrir post em detalhe -->
+	<div id="postModal" class="modal hidden">
+		<span class="post-close-button cursor-pointer" onclick="closeModal('postModal')">&times;</span>
+		<div class="post-modal-content relative"></div>
+	</div>
+
+	{% include 'popups.html' %}
+</body>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='postrequests.js') }}"></script>
+{% endblock %}
