@@ -112,7 +112,3 @@ npm run watch:css
 ```
 
 Se você usa Docker com o `Dockerfile` atualizado, o passo de build do Tailwind é executado automaticamente durante a construção da imagem.
-
-## Rate Limiter
-
-Este projeto pode usar `Flask-Limiter` para proteção contra abuso e força bruta. Se decidir usar, configure um backend de armazenamento (Redis) e inicialize o limiter no arquivo de extensões (`app/extensions.py`) antes da inicialização do aplicativo.
