@@ -123,12 +123,18 @@
 									<input id="currentPasswordInput" name="current_password" type="password" minlength="8" maxlength="30" class="w-full border rounded p-2" required />
 									<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"><i class="fas fa-eye text-gray-500"></i></span>
 								</div>
+								<div class="flex justify-end">
+									<p id="currentPasswordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
+								</div>
 							</div>
 							<div>
 								<label class="block text-sm">Nova senha</label>
 								<div class="relative">
 									<input id="newPasswordInput" name="new_password" type="password" minlength="8" maxlength="30" class="w-full border rounded p-2" required />
 									<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"><i class="fas fa-eye text-gray-500"></i></span>
+								</div>
+								<div class="flex justify-end">
+									<p id="newPasswordInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
 								</div>
 							</div>
 							<div>
@@ -137,10 +143,13 @@
 									<input id="newPasswordConfirmInput" name="new_password_confirm" type="password" minlength="8" maxlength="30" class="w-full border rounded p-2" required />
 									<span class="view-password-button absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"><i class="fas fa-eye text-gray-500"></i></span>
 								</div>
+								<div class="flex justify-end">
+									<p id="newPasswordConfirmInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 30</p>
+								</div>
 							</div>
 							<div class="pt-4 flex items-center gap-2">
-								<button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Salvar</button>
-								<button type="button" id="cancel-change" class="px-4 py-2 border rounded">Cancelar</button>
+								<button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded cursor-pointer">Salvar</button>
+								<button type="button" id="cancel-change" class="px-4 py-2 border rounded cursor-pointer">Cancelar</button>
 							</div>
 							<div id="change-pass-msg" class="text-sm mt-2"></div>
 						</form>
@@ -149,17 +158,11 @@
 					const form = document.getElementById('change-pass-form');
 					const cancel = document.getElementById('cancel-change');
 					const msg = document.getElementById('change-pass-msg');
-					cancel.addEventListener('click', hideOverlay);
-					// Attach visibility toggles for dynamically inserted password inputs
-					form.querySelectorAll('.view-password-button').forEach((viewPasswordButton) => {
-						const passwordInput = viewPasswordButton.previousElementSibling;
-						const eyeIcon = viewPasswordButton.querySelector('i');
-						viewPasswordButton.addEventListener('click', () => {
-							const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-							passwordInput.setAttribute('type', type);
-							eyeIcon.classList.toggle('fa-eye');
-							eyeIcon.classList.toggle('fa-eye-slash');
-						});
+					cancel.addEventListener('click', hideOverlay);document.querySelectorAll('.view-password-button').forEach((viewPasswordButton) => {
+						initializeViewPasswordButton(viewPasswordButton)
+					});
+					document.querySelectorAll('[maxlength]').forEach(input => {
+						startCounterListener(input);
 					});
 					form.addEventListener('submit', async function(e){
 						e.preventDefault();

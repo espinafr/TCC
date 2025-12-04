@@ -74,21 +74,21 @@ def create_app(config_class=Config):
 
     @app.errorhandler(401)
     def unauthorized_error(error):
-        if 'application/json' in request.accept_mimetypes:
+        if request.is_json or (request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
             return {'success': False, 'message': 'Não autorizado'}, 401
         flash('Faça login para acessar esta página.', 'warning')
         return redirect(url_for('authentication.login'))
 
     @app.errorhandler(403)
     def forbidden_error(error):
-        if 'application/json' in request.accept_mimetypes:
+        if request.is_json or (request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
             return {'success': False, 'message': 'Acesso proibido'}, 403
         flash('Você não tem permissão para acessar esta página.', 'error')
         return redirect(url_for('main.index'))
     
     @app.errorhandler(404)
     def not_found_error(error):
-        if 'application/json' in request.accept_mimetypes:
+        if request.is_json or (request.headers.get('X-Requested-With') == 'XMLHttpRequest'):
             return {'success': False, 'message': 'Página não encontrada'}, 404
         flash('Página não encontrada!', 'error')
         return redirect(url_for('main.index'))

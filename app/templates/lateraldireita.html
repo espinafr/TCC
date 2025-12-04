@@ -45,30 +45,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const loggedIn = document.querySelector('meta[name="validated"]')?.getAttribute('content');
     const searchInput = document.getElementById('searchInput');
     
-    postMissionBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        if (!loggedIn) {
-            // Se não está logado, mostra o popup de login
-            showLoginPopup(
-                function(event) {
-                    // Após login bem-sucedido, redireciona para /escrever com categoria pré-selecionada
-                    redirectToPostWithCategory('Desafio Semanal');
-                },
-                e,
-                'Desafio Semanal'
-            );
-        } else {
-            // Se já está logado, redireciona diretamente
-            redirectToPostWithCategory('Desafio Semanal');
+    initializeAuthButtons(
+        postMissionBtn, 
+        checkAuthenticationStatus, 
+        () => {
+            sessionStorage.setItem('selectedCategory', 'Desafio Semanal');
+            window.location.href = '/escrever';
         }
-    });
-    
-    function redirectToPostWithCategory(category) {
-        // Armazena a categoria na sessionStorage para recuperar na página de escrita
-        sessionStorage.setItem('selectedCategory', category);
-        window.location.href = '/escrever';
-    }
+    );
 
     // Funcionalidade de pesquisa
     if (searchInput) {

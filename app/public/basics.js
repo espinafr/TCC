@@ -194,7 +194,7 @@ function showLoginPopup(onLoginSuccess, originalClickEvent = null, extraArgs = u
 	openModal();
 }
 
-document.querySelectorAll('.view-password-button').forEach((viewPasswordButton) => {
+function initializeViewPasswordButton(viewPasswordButton) {
 	const passwordInput = viewPasswordButton.previousElementSibling;
 	const eyeIcon = viewPasswordButton.querySelector('i');
 	
@@ -204,6 +204,10 @@ document.querySelectorAll('.view-password-button').forEach((viewPasswordButton) 
 		eyeIcon.classList.toggle('fa-eye');
 		eyeIcon.classList.toggle('fa-eye-slash');
 	});
+}
+
+document.querySelectorAll('.view-password-button').forEach((viewPasswordButton) => {
+	initializeViewPasswordButton(viewPasswordButton)
 });
 
 // Inicializa a funcionalidade do popup de login para botões que exigem autenticação.
