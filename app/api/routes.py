@@ -236,7 +236,7 @@ def reply_comment_api(parent_comment_id):
             "reply_content": {
                 "reply": {
                     "id": new_reply.id,
-                    "username": new_reply.user_who_interacted.display_name,
+                    "username": new_reply.user_who_interacted.display_name or new_reply.user_who_interacted.user.username,
                     "userid": new_reply.user_who_interacted.user_id,
                     "usericon": new_reply.user_who_interacted.icon_url,
                     "value": new_reply.value
