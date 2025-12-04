@@ -201,7 +201,7 @@ def comment_post_api(post_id):
             "comment_content": {
                 "comment": {
                     "id": new_comment.id,
-                    "username": new_comment.user_who_interacted.display_name,
+                    "username": new_comment.user_who_interacted.display_name or new_comment.user_who_interacted.user.username,
                     "userid": new_comment.user_who_interacted.user_id,
                     "usericon": new_comment.user_who_interacted.icon_url,
                     "value": new_comment.value

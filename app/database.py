@@ -399,7 +399,7 @@ class DatabaseManager:
     def get_interaction_by_id(self, interaction_id: int):
         """Obtém uma interação específica pelo ID, carregando o usuário."""
         with self.get_db() as db:
-            return db.query(Interaction).options(joinedload(Interaction.user_who_interacted)).filter(
+            return db.query(Interaction).options(joinedload(Interaction.user_who_interacted).joinedload(UserDetails.user)).filter(
                 Interaction.id == interaction_id
             ).first()
 
