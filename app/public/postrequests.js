@@ -109,6 +109,7 @@ async function handlePostReaction(postId, reactionType) {
 	if (!result.success) {
 		alert('Erro durante a reação, nenhuma alteração foi feita: ' + result.message);
 	}
+	return result;
 }
 
 async function handleCommentReaction(commentId, reactionType) {
@@ -478,13 +479,15 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 		}
 	);
 
-	const commentTextarea = document.getElementById('commentTextarea');
+	const postModal = document.getElementById('postModal');
+
+	const commentTextarea = postModal ? postModal.querySelector('#commentTextarea') : document.getElementById('commentTextarea');
 	if (commentTextarea) commentTextarea.addEventListener('input', toggleCommentButton);
-	const replyTextarea = document.getElementById('replyTextarea');
+	const replyTextarea = postModal ? postModal.querySelector('#replyTextarea') : document.getElementById('replyTextarea');
 	if (replyTextarea) replyTextarea.addEventListener('input', toggleReplyButton);
 
 	// Publicar um comentário no post
-	const commentButton = document.getElementById('commentButton');
+	const commentButton = postModal ? postModal.querySelector('#commentButton') : document.getElementById('commentButton');
 	if (commentButton) {
 		initializeAuthButtons(
 			commentButton,
@@ -521,7 +524,7 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 	}
 
 	// Publicar uma resposta a um comentário
-	const replyButton = document.getElementById('replyButton');
+	const replyButton = postModal ? postModal.querySelector('#replyButton') : document.getElementById('replyButton');
 	if (replyButton) {
 		initializeAuthButtons(
 			replyButton,
@@ -567,7 +570,7 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 	}
 	
 	// Compartilhar
-	const shareBtn = document.getElementById('shareButton');
+	const shareBtn = postModal ? postModal.querySelector('#shareButton') : document.getElementById('shareButton');
 	if (shareBtn) {
 		shareBtn.addEventListener('click', (event) => {
 			event.stopPropagation(); // Evita que o clique se propague para o document e feche o menu imediatamente
@@ -578,36 +581,83 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 	}
 
 	// Like
-	const likeButton = document.getElementById('likeButton');
+	const likeButton = postModal ? postModal.querySelector('#likeButton') : document.getElementById('likeButton');
+	const dislikeButton = postModal ? postModal.querySelector('#dislikeButton') : document.getElementById('dislikeButton');
+
 	if (likeButton) {
 		initializeAuthButtons(
 			likeButton,
 			checkAuthenticationStatus,
 			async () => {
-				toggleActive(likeButton); 
+				toggleActive(likeButton);
 				visualReactionUpdate(`like`, `dislike`);
 
-				await handlePostReaction(postId, 'like_post');
+				const result = await handlePostReaction(postId, 'like_post');
+
+				// Sincroniza visualmente com a timeline (se existir)
+				try {
+					const timelinePost = document.querySelector(`.timeline-post[data-postid="${postId}"]`);
+					if (timelinePost) {
+						const tlLike = timelinePost.querySelector('[id^="likeButton"], .like-button');
+						const tlDislike = timelinePost.querySelector('[id^="dislikeButton"], .dislike-button');
+						if (tlLike) {
+							if (likeButton.classList.contains('active')) tlLike.classList.add('active'); else tlLike.classList.remove('active');
+							const modalLikeCount = (postModal && postModal.querySelector('#likeCount')) || document.getElementById('likeCount');
+							const tlSpan = tlLike.querySelector('span');
+							if (modalLikeCount && tlSpan) tlSpan.textContent = modalLikeCount.textContent;
+						}
+						if (tlDislike) {
+							if (dislikeButton && dislikeButton.classList.contains('active')) tlDislike.classList.add('active'); else tlDislike.classList.remove('active');
+							const modalDislikeCount = (postModal && postModal.querySelector('#dislikeCount')) || document.getElementById('dislikeCount');
+							const tlSpanD = tlDislike.querySelector('span');
+							if (modalDislikeCount && tlSpanD) tlSpanD.textContent = modalDislikeCount.textContent;
+						}
+					}
+				} catch (e) {
+					console.error('Erro ao sincronizar reação com a timeline:', e);
+				}
 			}
 		);
 	}
 
 	// Deslike
-	const dislikeButton = document.getElementById('dislikeButton');
 	if (dislikeButton) {
 		initializeAuthButtons(
 			dislikeButton,
 			checkAuthenticationStatus,
 			async () => {
-				toggleActive(dislikeButton); 
+				toggleActive(dislikeButton);
 				visualReactionUpdate(`dislike`, `like`);
 
-				await handlePostReaction(postId, 'dislike_post');
+				const result = await handlePostReaction(postId, 'dislike_post');
+
+				// Sincroniza visualmente com a timeline (se existir)
+				try {
+					const timelinePost = document.querySelector(`.timeline-post[data-postid="${postId}"]`);
+					if (timelinePost) {
+						const tlLike = timelinePost.querySelector('[id^="likeButton"], .like-button');
+						const tlDislike = timelinePost.querySelector('[id^="dislikeButton"], .dislike-button');
+						if (tlDislike) {
+							if (dislikeButton.classList.contains('active')) tlDislike.classList.add('active'); else tlDislike.classList.remove('active');
+							const modalDislikeCount = (postModal && postModal.querySelector('#dislikeCount')) || document.getElementById('dislikeCount');
+							const tlSpanD = tlDislike.querySelector('span');
+							if (modalDislikeCount && tlSpanD) tlSpanD.textContent = modalDislikeCount.textContent;
+						}
+						if (tlLike) {
+							if (likeButton && likeButton.classList.contains('active')) tlLike.classList.add('active'); else tlLike.classList.remove('active');
+							const modalLikeCount = (postModal && postModal.querySelector('#likeCount')) || document.getElementById('likeCount');
+							const tlSpan = tlLike.querySelector('span');
+							if (modalLikeCount && tlSpan) tlSpan.textContent = modalLikeCount.textContent;
+						}
+					}
+				} catch (e) {
+					console.error('Erro ao sincronizar reação com a timeline:', e);
+				}
 			}
 		);
 	}
 
-	const postModal = document.getElementById('postModal')
+	// postModal já obtido acima como escopo preferencial para seletores
 	if (postModal) {
 		postModal.querySelectorAll('.options-button').forEach(button => {
 			attachOptionBtnListener(button);
@@ -615,7 +665,7 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 	}
 
 	// Carregar mais comentários
-	const loadMoreButton = document.getElementById('loadMoreComments');
+	const loadMoreButton = postModal ? postModal.querySelector('#loadMoreComments') : document.getElementById('loadMoreComments');
 	if (loadMoreButton) {
 		initializeAuthButtons(
 			dislikeButton,
@@ -657,7 +707,7 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 	}
 
 	// Salvar post (botão dentro do modal)
-	const modalSaveButton = document.getElementById(`saveButton-${postId}`);
+	const modalSaveButton = postModal ? postModal.querySelector(`#saveButton-${postId}`) : document.getElementById(`saveButton-${postId}`);
 	if (modalSaveButton) {
 		initializeAuthButtons(
 			modalSaveButton,
@@ -675,10 +725,13 @@ function attachPostEventListeners(postId, total_comments, rendered_comments) {
 					modalSaveButton.classList.remove('active');
 				}
 				// Sincroniza com o botão da timeline, se existir
-				const timelineBtn = document.querySelector(`.timeline-post[data-postid="${postId}"] #saveButton-${postId}`);
-				if (timelineBtn) {
-					if (result.action === 'saved') timelineBtn.classList.add('active');
-					else timelineBtn.classList.remove('active');
+				const timelinePost = document.querySelector(`.timeline-post[data-postid="${postId}"]`);
+				if (timelinePost) {
+					const timelineBtn = timelinePost.querySelector(`#saveButton-${postId}`) || timelinePost.querySelector('[id^="saveButton-"]');
+					if (timelineBtn) {
+						if (result.action === 'saved') timelineBtn.classList.add('active');
+						else timelineBtn.classList.remove('active');
+					}
 				}
 			}
 		);

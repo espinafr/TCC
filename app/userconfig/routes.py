@@ -6,7 +6,7 @@ from app.userconfig import bp
 @bp.route('/')
 @login_required
 def mainconfigpage():
-    return render_template('configs.html')
+    return render_template('configs.html', power=session.get('power', 0))
 
 
 @bp.route('/account_info', methods=['GET'])
