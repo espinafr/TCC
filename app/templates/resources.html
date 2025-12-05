@@ -19,15 +19,15 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {% for r in resources %}
                 <a href="{{ url_for('resources.view_resource', resource_id=r.id) }}" class="block bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition p-3">
+                    {% if r.banner_url or r.first_attachment %}
                     <div class="h-40 bg-gray-200 rounded-md overflow-hidden flex items-center justify-center">
                         {% if r.banner_url %}
-                        <img src="{{ r.banner_url }}" class="object-cover w-full h-full"/>
+                            <img src="{{ r.banner_url }}" class="object-cover w-full h-full"/>
                         {% elif r.first_attachment %}
                         <img src="{{ r.first_attachment }}" class="object-cover w-full h-full"/>
-                        {% else %}
-                        <div class="text-gray-500">Sem imagem</div>
                         {% endif %}
                     </div>
+                    {% endif %}
                     <div class="pt-2">
                         <h3 class="font-semibold text-lg truncate">{{ r.title }}</h3>
                         <p class="text-xs text-gray-500 mt-1">{{ r.category }} • {{ r.created_at }} • por {{ r.author }}</p>
