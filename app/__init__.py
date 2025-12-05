@@ -1,6 +1,7 @@
 from flask import Flask, session, send_from_directory, flash, redirect, url_for, request
 from flask_wtf import CSRFProtect
 from app.extensions import db_manager, email_service, mail, s3
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 
 def create_app(config_class=Config):
@@ -12,8 +13,24 @@ def create_app(config_class=Config):
     email_service.init_app(app)
     s3.init_app(app)
 
+    # Habilitar ProxyFix se a aplicação estiver atrás de um proxy reverso na produção
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+
     # Habilitando proteção CSRF
     csrf = CSRFProtect(app)
+
+    @app.after_request
+    def add_header(response):
+        if request.path.startswith('/static/'):
+            if request.path.endswith('.css'):
+                response.headers['Content-Type'] = 'text/css; charset=utf-8'
+            elif request.path.endswith('.js'):
+                response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
+            elif request.path.endswith('.woff2'):
+                response.headers['Content-Type'] = 'font/woff2'
+            elif request.path.endswith('.ttf'):
+                response.headers['Content-Type'] = 'font/ttf'
+        return response
 
     @app.before_request
     def load_logged_in_user():
