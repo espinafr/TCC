@@ -284,6 +284,7 @@
     resourceForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         submitBtn.disabled = true;
+        toggleLoading(submitBtn);
         const formData = new FormData(resourceForm);
         // Validação da URL
         const youtubeVal = youtubeInput.value.trim();
@@ -292,6 +293,7 @@
             if (!embed) {
                 alert('Insira uma URL do YouTube válida (ex: https://youtu.be/VIDEO_ID ou https://www.youtube.com/watch?v=VIDEO_ID).');
                 submitBtn.disabled = false;
+                toggleLoading(commentButton);
                 return;
             }
         }
@@ -341,6 +343,7 @@
             }
         }
         submitBtn.disabled = false;
+        toggleLoading(commentButton);
     });
 </script>
 {% endblock %}
