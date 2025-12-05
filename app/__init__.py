@@ -14,7 +14,7 @@ def create_app(config_class=Config):
     s3.init_app(app)
 
     # Habilitar ProxyFix se a aplicação estiver atrás de um proxy reverso na produção
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+    #app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     # Habilitando proteção CSRF
     csrf = CSRFProtect(app)
