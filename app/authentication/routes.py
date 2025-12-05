@@ -92,5 +92,6 @@ def login_ajax():
 def logout():
     session.pop('id', None)
     session.pop('username', None)
+    session.pop('power', None)
     flash('Você saiu com sucesso.', 'success')
     return redirect(url_for('.login'))
