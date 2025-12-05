@@ -7,11 +7,8 @@ class Config:
     # Configurações flask
     SECRET_KEY = os.getenv('SECRET_KEY')
     MAX_CONTENT_LENGTH = 5 * 10 * 1024 * 1024
-    MAIL_SERVER = 'smtp.gmail.com'
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
-    MAIL_USERNAME = os.getenv('EMAIL_USER')
-    MAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
+    RESEND_API_KEY = os.getenv('RESEND_API_KEY')
+    RESEND_FROM = os.getenv('RESEND_FROM')
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'

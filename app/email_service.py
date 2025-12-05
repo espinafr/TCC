@@ -1,29 +1,48 @@
+import requests
 from flask import render_template
-from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, exc
 
 class EmailService:
     def __init__(self, app=None):
-        self.mail = None
+        self.api_key = None
         self.serializer = None
+        self.app = None
         if app is not None:
             self.init_app(app)
 
     def init_app(self, app):
-        self.mail = app.extensions.get('mail')
-        if not self.mail:
-            raise RuntimeError("A extensão Flask-Mail não foi inicializada corretamente.")
-        self.serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        self.api_key = app.config["RESEND_API_KEY"]
+        self.from_email = app.config["RESEND_FROM"]
+        self.serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
         self.app = app
 
     def send_confirmation_email(self, email, nome, confirm_url):
-        msg = Message('Confirme seu E-mail - Timby', 
-                      sender=self.app.config['MAIL_USERNAME'], 
-                      recipients=[email])
-        msg.html = render_template('/emails/confirmation_email.html', confirmation_link=confirm_url)
+        # renderiza seu template normalmente
+        html_content = render_template(
+            "emails/confirmation_email.html",
+            confirmation_link=confirm_url
+        )
+
         try:
-            self.mail.send(msg)
-            return True, None
+            response = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "from": self.from_email,
+                    "to": email,
+                    "subject": "Confirme seu E-mail - Timby",
+                    "html": html_content
+                }
+            )
+
+            if response.status_code >= 200 and response.status_code < 300:
+                return True, None
+            else:
+                return False, f"Erro Resend: {response.text}"
+
         except Exception as e:
             return False, str(e)
 

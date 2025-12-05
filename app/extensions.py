@@ -4,12 +4,10 @@ from flask import session, abort, g
 from functools import wraps
 from datetime import datetime
 from app.database import DatabaseManager, User, ModerationHistory
-from flask_mail import Mail
 from app.email_service import EmailService
 import boto3
 
 # Inicializando serviços
-mail = Mail()
 email_service = EmailService()
 db_manager  = DatabaseManager()
 

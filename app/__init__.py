@@ -1,6 +1,6 @@
 from flask import Flask, session, send_from_directory, flash, redirect, url_for, request
 from flask_wtf import CSRFProtect
-from app.extensions import db_manager, email_service, mail, s3
+from app.extensions import db_manager, email_service, s3
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 
@@ -9,7 +9,6 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     
     # Iniciando extensões
-    mail.init_app(app)
     email_service.init_app(app)
     s3.init_app(app)
 
