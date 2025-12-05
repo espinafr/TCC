@@ -2,9 +2,10 @@ import os
 import logging
 from datetime import datetime, timedelta
 from argon2 import PasswordHasher, exceptions
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, SmallInteger, desc, func, case
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, SmallInteger, desc, func, case, text
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship, joinedload
 from sqlalchemy.exc import IntegrityError, OperationalError
+from flask import current_app
 import contextlib
 import json
 
@@ -56,6 +57,7 @@ class UserDetails(Base):
     user = relationship("User", foreign_keys=[user_id], back_populates="user_details")
     posts = relationship("Post", foreign_keys="[Post.user_id]", back_populates="author_user")
     interactions = relationship("Interaction", foreign_keys="[Interaction.user_id]", back_populates="user_who_interacted")
+    resources = relationship("Resource", foreign_keys="[Resource.user_id]", back_populates="author_user")
 
     def __repr__(self):
         return f"<UserDetails(id={self.id}, display_name='{self.display_name}', user_id='{self.user_id}')>"
@@ -79,6 +81,28 @@ class Post(Base):
     
     def __repr__(self):
         return f"<Post(id={self.id}, title='{self.title}', user_id='{self.user_id}')>"
+
+class Resource(Base):
+    __tablename__ = 'resources'
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users_details.user_id'), nullable=False)
+    title = Column(String(255), nullable=False)
+    category = Column(String(75), nullable=False)
+    tags = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
+    banner_url = Column(Text, nullable=True)
+    youtube_url = Column(Text, nullable=True)
+    content = Column(Text, nullable=True)
+    attachment_urls = Column(Text, nullable=True)
+    is_deleted = Column(Boolean, default=False)
+
+    # Relacionamentos
+    author_user = relationship("UserDetails", foreign_keys=[user_id], back_populates="resources")
+
+    def __repr__(self):
+        return f"<Resource(id={self.id}, title='{self.title}', user_id='{self.user_id}')>"
+
 
 class Interaction(Base):
     __tablename__ = "interactions"
@@ -159,7 +183,7 @@ class SavedPost(Base):
 class DatabaseManager:
     def __init__(self):
         # A conexão e sessão são gerenciadas pelo SessionLocal
-        self.ph = PasswordHasher() # Instancia o PasswordHasher uma vez
+        self.ph = PasswordHasher() # Instancia o PasswordHasher
 
     @contextlib.contextmanager
     def get_db(self):
@@ -204,6 +228,14 @@ class DatabaseManager:
         """Cria todas as tabelas definidas nos modelos no banco de dados."""
         try:
             Base.metadata.create_all(bind=engine)
+            try:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE resources ADD COLUMN IF NOT EXISTS youtube_url TEXT;"))
+                    conn.execute(text("ALTER TABLE resources ADD COLUMN IF NOT EXISTS attachment_urls TEXT;"))
+                    conn.execute(text(r"UPDATE resources SET youtube_url = NULL WHERE youtube_url IS NOT NULL AND NOT (youtube_url ~ '^https://www\x2Eyoutube\x2Ecom/embed/[A-Za-z0-9_\-]{11}$');"))
+                logging.getLogger(__name__).info("Applied lightweight migrations for resources table (youtube_url / attachment_urls if missing).")
+            except Exception as e:
+                logging.getLogger(__name__).warning(f"Could not apply lightweight resources migration: {e}")
             logging.getLogger(__name__).info("Tabelas criadas ou já existentes no PostgreSQL.")
         except OperationalError as e:
             logging.getLogger(__name__).error(f"Erro ao conectar ou criar tabelas: {e}")
@@ -395,6 +427,102 @@ class DatabaseManager:
                 else:
                     post.image_urls = []
             return post
+
+    def get_resource_by_id(self, id):
+        """Obtém um recurso pelo seu ID."""
+        with self.get_db() as db:
+            resource = db.query(Resource).filter(Resource.id == id, Resource.is_deleted == False).options(joinedload(Resource.author_user).joinedload(UserDetails.user)).first()
+            if resource:
+                if resource.attachment_urls:
+                    try:
+                        resource.attachment_urls = json.loads(resource.attachment_urls)
+                    except Exception:
+                        resource.attachment_urls = []
+                else:
+                    resource.attachment_urls = []
+                if resource.youtube_url:
+                    try:
+                        import re
+                        if isinstance(resource.youtube_url, str) and re.match(r'^https://www\.youtube\.com/embed/[A-Za-z0-9_\-]{11}$', resource.youtube_url):
+                            pass
+                        else:
+                            resource.youtube_url = None
+                    except Exception:
+                        resource.youtube_url = None
+            return resource
+
+    def get_all_resources(self, offset: int = 0, limit: int = 25):
+        with self.get_db() as db:
+            resources = db.query(Resource).filter(Resource.is_deleted == False).options(joinedload(Resource.author_user).joinedload(UserDetails.user)).order_by(Resource.created_at.desc()).offset(offset).limit(limit).all()
+            for r in resources:
+                if r.attachment_urls:
+                    try:
+                        r.attachment_urls = json.loads(r.attachment_urls)
+                    except Exception:
+                        r.attachment_urls = []
+                else:
+                    r.attachment_urls = []
+                try:
+                    import re
+                    if r.youtube_url and isinstance(r.youtube_url, str) and re.match(r'^https://www\.youtube\.com/embed/[A-Za-z0-9_\-]{11}$', r.youtube_url):
+                        pass
+                    else:
+                        r.youtube_url = None
+                except Exception:
+                    r.youtube_url = None
+            return resources
+
+    def create_resource(self, user_id: int, title: str, category: str, tags: str = None, banner_url: str = None, content: str = None, attachment_urls: list | None = None, youtube_url: str | None = None):
+        with self.get_db() as db:
+            try:
+                try:
+                    import re
+                    if youtube_url and isinstance(youtube_url, str) and re.match(r'^https://www\.youtube\.com/embed/[A-Za-z0-9_\-]{11}$', youtube_url):
+                        valid_youtube = youtube_url
+                    else:
+                        valid_youtube = None
+                except Exception:
+                    valid_youtube = None
+                r = Resource(
+                    user_id=user_id,
+                    title=title,
+                    category=category,
+                    tags=tags,
+                    banner_url=banner_url,
+                    youtube_url=valid_youtube,
+                    content=content,
+                    attachment_urls=json.dumps(attachment_urls) if attachment_urls else None
+                )
+                db.add(r)
+                db.commit()
+                db.refresh(r)
+                return True, r.id
+            except Exception as e:
+                db.rollback()
+                return False, str(e)
+
+    def delete_resource_by_id(self, id):
+        with self.get_db() as db:
+            resource = db.query(Resource).filter(Resource.id == id, Resource.is_deleted == False).first()
+            if resource:
+                resource.is_deleted = True
+                db.commit()
+                return True
+            return False
+
+    def get_user_resources(self, user_id):
+        with self.get_db() as db:
+            resources = db.query(Resource).filter(Resource.user_id == user_id, Resource.is_deleted == False).options(joinedload(Resource.author_user).joinedload(UserDetails.user)).order_by(Resource.created_at.desc()).all()
+            import re
+            for r in resources:
+                try:
+                    if r.youtube_url and isinstance(r.youtube_url, str) and re.match(r'^https://www\.youtube\.com/embed/[A-Za-z0-9_\-]{11}$', r.youtube_url):
+                        pass
+                    else:
+                        r.youtube_url = None
+                except Exception:
+                    r.youtube_url = None
+            return resources
 
     def get_interaction_by_id(self, interaction_id: int):
         """Obtém uma interação específica pelo ID, carregando o usuário."""
@@ -784,3 +912,48 @@ class DatabaseManager:
                 ModerationHistory.user_id == user_id,
                 ModerationHistory.is_active == True
             ).all()
+
+    def award_badge(self, user_id: int, name, filename):
+        """
+        Adiciona um selo ao UserDetails caso ele ainda não o tenha
+        A imagem do selo deve estar no public/selos no S3
+        """
+        import json
+        try:
+            with self.get_db() as db:
+                user_details = db.query(UserDetails).filter(UserDetails.user_id == user_id).first()
+                if not user_details:
+                    # Create a details profile if missing
+                    user_details = UserDetails(user_id=user_id)
+                    db.add(user_details)
+                    db.commit()
+
+                badges_raw = user_details.badges or '[]'
+                try:
+                    badges_list = json.loads(badges_raw)
+                    if isinstance(badges_list, dict):
+                        badges_list = []
+                except Exception:
+                    badges_list = []
+
+                exists = any((b.get('name') == name) for b in badges_list if isinstance(b, dict))
+                if exists:
+                    return True, 'exists'
+
+                bucket = current_app.config.get('S3_BUCKET_NAME') if current_app else None
+                region = current_app.config.get('AWS_REGION') if current_app else None
+                if bucket and region:
+                    icon_url = f"https://{bucket}.s3.{region}.amazonaws.com/public/selos/{filename}"
+                else:
+                    icon_url = f'/static/selos/{filename}'
+
+                badges_list.append({'name': name, 'icon_url': icon_url})
+                user_details.badges = json.dumps(badges_list)
+                db.commit()
+                return True, 'added'
+        except Exception as e:
+            try:
+                db.rollback()
+            except Exception:
+                pass
+            return False, str(e)

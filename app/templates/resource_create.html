@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block title %}Criar Recurso{% endblock %}
+{% block additional_styles %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css"/>
+{% endblock %}
+
+{% block content %}
+<body>
+    {% include 'navbar.html' %}
+    <div class="flex flex-col md:flex-row md:items-start md:justify-center gap-4 w-full max-w-7xl mx-auto p-2 md:p-6">
+        {% include 'lateralesquerda.html' %}
+        <div class="max-w-2xl mx-auto p-6 mt-10 bg-white rounded-lg shadow-2xl">
+            <h1 class="text-2xl font-bold mb-4">Criar Novo Recurso</h1>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="p-2 mb-4 text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }} rounded">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" id="resourceForm" enctype="multipart/form-data" class="max-w-2xl mx-auto p-6 mt-6">
+                {{ form.hidden_tag() }}
+                <div class="mb-4">
+                    <input type="text" id="tituloInput" name="tituloInput" minlength="5" maxlength="150" placeholder="Título do recurso" class="w-full p-2 border text-gray-700 rounded" required>
+                    <div class="flex justify-end">
+                        <p id="tituloInputCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 150</p>
+                    </div>
+                </div>
+                <div class="mb-4 flex space-x-4">
+                    <div class="w-1/2">
+                        <select class="w-full p-2 border text-gray-700 rounded" name="category" id="category" required>
+                            <option value="" selected disabled>Selecione uma categoria...</option>
+                            {% for value in form.category.iter_choices() %}
+                                <option value="{{ value[0] }}">{{ value[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="w-1/2 relative">
+                        <select class="w-full p-2 border text-gray-700 rounded appearance-none" id="optionalTags" size="1" onchange="toggleSelectedTag(this);">
+                            <option value="" disabled selected>Tags opcionais...</option>
+                            {% for value in allowed_categories %}
+                                <option value="{{ value }}">{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="hidden" name="tags" id="hiddenOptionalTags" />
+                        <div id="selectedTags" class="mt-2 flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <textarea id="contentTextarea" name="contentTextarea" minlength="10" maxlength="5000" placeholder="Descrição do recurso (até 5000 caracteres)." class="w-full h-48 p-2 border text-gray-700 rounded" required></textarea>
+                    <div class="flex justify-end">
+                        <p id="contentTextareaCounter" class="text-gray-500 text-sm mt-1 hidden">0 / 5000</p>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">Imagem de capa (opcional) — será centralizada e convertida para retângulo (16:9)</label>
+                    <input type="file" id="bannerImage" name="bannerImage" accept="image/*" class="mb-2 border rounded p-2 hover:bg-gray-200 transition" />
+                    <div id="bannerPreview" class="w-full rounded overflow-hidden bg-gray-100 mt-2 hidden"><img id="bannerPreviewImg" src="" class="w-full object-cover" /></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">Vídeo do YouTube (opcional)</label>
+                    <input type="url" id="youtubeUrl" name="youtubeUrl" placeholder="https://youtu.be/VIDEO_ID ou https://www.youtube.com/watch?v=VIDEO_ID" class="w-full p-2 border rounded" />
+                    <div id="youtubePreview" class="mt-3 hidden">
+                        <p class="text-sm text-gray-500 mb-1">Pré-visualização:</p>
+                        <div class="w-full aspect-w-16 aspect-h-9 bg-black rounded overflow-hidden">
+                            <iframe id="youtubePreviewFrame" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">Anexos (PDF ou imagens, até 3)</label>
+                    <input type="file" id="attachments" name="attachments" accept="image/*,application/pdf" multiple class="mb-2 border rounded p-2 hover:bg-gray-200 transition" />
+                    <div id="attachmentsPreview" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <button id="submitResourceBtn" type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Publicar Recurso</button>
+            </form>
+        </div>
+        {% include 'lateraldireita.html' %}
+    </div>
+    {% include 'popups.html' %}
+</body>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+<script>
+    const resourceForm = document.getElementById('resourceForm');
+    const attachmentsInput = document.getElementById('attachments');
+    const attachmentsPreview = document.getElementById('attachmentsPreview');
+    const submitBtn = document.getElementById('submitResourceBtn');
+
+    attachmentsInput.addEventListener('change', function(e) {
+        attachmentsPreview.innerHTML = '';
+        if (attachmentsInput.files.length > 3) {
+            alert('Máximo 3 anexos permitidos.');
+            attachmentsInput.value = '';
+            return;
+        }
+        for (let i = 0; i < attachmentsInput.files.length; i++) {
+            const f = attachmentsInput.files[i];
+            const div = document.createElement('div');
+            div.className = 'w-28 h-28 bg-gray-100 flex items-center justify-center rounded overflow-hidden';
+            if (f.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(f);
+                img.className = 'object-cover w-full h-full';
+                div.appendChild(img);
+            } else {
+                div.textContent = f.name;
+                div.classList.add('p-2', 'text-xs', 'text-gray-700');
+            }
+            attachmentsPreview.appendChild(div);
+        }
+    });
+
+    // Optional tags UI (same behavior as post creation)
+    let selectedTags = [];
+    function toggleSelectedTag(select) {
+        const value = select.value;
+        if (!value) return;
+
+        const index = selectedTags.indexOf(value);
+        if (index === -1) {
+            if (selectedTags.length >= 5) {
+                alert('Você pode selecionar no máximo 5 tags opcionais!');
+                select.value = '';
+                return;
+            }
+            selectedTags.push(value);
+        } else {
+            selectedTags.splice(index, 1);
+        }
+
+        updateSelectedTagsDisplay();
+        select.value = '';
+    }
+
+    function updateSelectedTagsDisplay() {
+        const display = document.getElementById('selectedTags');
+        const hiddenInput = document.getElementById('hiddenOptionalTags');
+        display.innerHTML = '';
+
+        selectedTags.forEach(tag => {
+            const tagElement = document.createElement('span');
+            tagElement.className = 'bg-blue-200 px-2 py-1 rounded flex items-center';
+            tagElement.textContent = tag;
+            const removeButton = document.createElement('button');
+            removeButton.textContent = '×';
+            removeButton.className = 'ml-2 text-red-400 hover:text-red-300';
+            removeButton.onclick = () => {
+                selectedTags = selectedTags.filter(t => t !== tag);
+                updateSelectedTagsDisplay();
+            };
+            tagElement.appendChild(removeButton);
+            display.appendChild(tagElement);
+        });
+
+        hiddenInput.value = selectedTags.join(',');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectedCategory = sessionStorage.getItem('selectedCategory');
+        if (selectedCategory) {
+            const tagsSelect = document.getElementById('category');
+            for (let option of tagsSelect.options) {
+                if (option.textContent === selectedCategory) {
+                    tagsSelect.value = option.value;
+                    break;
+                }
+            }
+            sessionStorage.removeItem('selectedCategory');
+        }
+    });
+
+    // --- CROPPER for banner (profile-like, force 16:9) ---
+    const bannerInput = document.getElementById('bannerImage');
+    const cropModal = document.createElement('div');
+    cropModal.id = 'bannerCropModal';
+    cropModal.className = 'fixed inset-0 z-[999] flex items-center justify-center bg-blue-500/60 hidden';
+    cropModal.innerHTML = `
+        <div class="bg-white rounded-xl shadow-xl p-6 max-w-3xl w-full flex flex-col items-center">
+            <div class="w-full aspect-video bg-gray-100 flex items-center justify-center overflow-hidden mb-4" style="max-height:420px;">
+                <img id="bannerCropImage" class="max-w-full max-h-[420px] object-contain" src="" alt="Crop" />
+            </div>
+            <div class="flex justify-end w-full gap-2">
+                <button id="cancelBannerCrop" class="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-100">Cancelar</button>
+                <button id="applyBannerCrop" class="px-4 py-2 rounded bg-blue-600 text-white font-bold hover:bg-blue-700">Aplicar</button>
+            </div>
+        </div>`;
+    document.body.appendChild(cropModal);
+
+    let bannerCropper = null;
+    let originalBannerFile = null;
+
+    bannerInput.addEventListener('change', function(e) {
+        if (!bannerInput.files || bannerInput.files.length === 0) return;
+        const f = bannerInput.files[0];
+        originalBannerFile = f;
+        const url = URL.createObjectURL(f);
+        const cropImg = document.getElementById('bannerCropImage');
+        cropImg.src = url;
+        cropModal.classList.remove('hidden');
+        // init cropper
+        setTimeout(() => {
+            if (bannerCropper) {
+                bannerCropper.destroy();
+                bannerCropper = null;
+            }
+            bannerCropper = new Cropper(cropImg, { aspectRatio: 16/9, viewMode: 1, autoCropArea: 1 });
+        }, 50);
+    });
+
+    document.getElementById('cancelBannerCrop').addEventListener('click', () => {
+        if (bannerCropper) { bannerCropper.destroy(); bannerCropper = null; }
+        document.getElementById('bannerCropImage').src = '';
+        // clear file input
+        bannerInput.value = '';
+        cropModal.classList.add('hidden');
+    });
+
+    document.getElementById('applyBannerCrop').addEventListener('click', () => {
+        if (!bannerCropper) return;
+        const canvas = bannerCropper.getCroppedCanvas({ width: 1280, height: 720, imageSmoothingQuality: 'high' });
+        canvas.toBlob((blob) => {
+            // create a File and place it back into the file input using DataTransfer
+            const filename = originalBannerFile && originalBannerFile.name ? originalBannerFile.name : 'banner.jpg';
+            const newFile = new File([blob], filename, { type: 'image/jpeg' });
+            const dt = new DataTransfer();
+            dt.items.add(newFile);
+            bannerInput.files = dt.files;
+
+            // update preview
+            const preview = document.getElementById('bannerPreview');
+            const previewImg = document.getElementById('bannerPreviewImg');
+            previewImg.src = URL.createObjectURL(newFile);
+            preview.classList.remove('hidden');
+
+            // cleanup
+            bannerCropper.destroy();
+            bannerCropper = null;
+            document.getElementById('bannerCropImage').src = '';
+            cropModal.classList.add('hidden');
+        }, 'image/jpeg', 0.9);
+    });
+
+
+    const youtubeInput = document.getElementById('youtubeUrl');
+    const youtubePreview = document.getElementById('youtubePreview');
+    const youtubePreviewFrame = document.getElementById('youtubePreviewFrame');
+
+    function extractYoutubeEmbed(url) {
+        if (!url) return null;
+        const re = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]{11})(?:[&?].*)?$/;
+        const m = url.trim().match(re);
+        if (!m) return null;
+        return `https://www.youtube.com/embed/${m[1]}`;
+    }
+
+    youtubeInput.addEventListener('input', function() {
+        const val = youtubeInput.value.trim();
+        if (!val) {
+            youtubePreview.classList.add('hidden');
+            youtubePreviewFrame.src = '';
+            return;
+        }
+        const embed = extractYoutubeEmbed(val);
+        if (embed && typeof embed === 'string') {
+            youtubePreview.classList.remove('hidden');
+            // protect against non-string values (arrays etc) being assigned to iframe
+            youtubePreviewFrame.src = embed;
+        } else {
+            youtubePreview.classList.add('hidden');
+            youtubePreviewFrame.src = '';
+        }
+    });
+
+    resourceForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        const formData = new FormData(resourceForm);
+        // Validação da URL
+        const youtubeVal = youtubeInput.value.trim();
+        if (youtubeVal) {
+            const embed = extractYoutubeEmbed(youtubeVal);
+            if (!embed) {
+                alert('Insira uma URL do YouTube válida (ex: https://youtu.be/VIDEO_ID ou https://www.youtube.com/watch?v=VIDEO_ID).');
+                submitBtn.disabled = false;
+                return;
+            }
+        }
+
+        // remove previous error messages
+        const oldErrorMessages = resourceForm.querySelectorAll('.error-message');
+        oldErrorMessages.forEach(msg => msg.remove());
+        resourceForm.querySelectorAll('input, textarea, select').forEach(el => el.classList.remove('border-red-500'));
+
+        const res = await sendFormAsAjax("{{ url_for('resources.create_resource') }}", formData);
+        if (res.success) {
+            window.location.pathname = `/recursos/${res.message}`;
+        } else {
+            // If the server returned detailed field errors, render them near the corresponding inputs
+            if (res.errors) {
+                for (const fieldName in res.errors) {
+                    const messages = res.errors[fieldName];
+                    // try to find the input element; some field names may map to hidden inputs
+                    let inputElement = resourceForm.querySelector(`[name="${fieldName}"]`);
+
+                    // special-case: WTForms sometimes returns 'hiddenOptionalTags' or 'tags' - we use name="tags" on the hidden input
+                    if (!inputElement && fieldName === 'hiddenOptionalTags') {
+                        inputElement = resourceForm.querySelector('[name="tags"]');
+                    }
+
+                    // fallback: for attachments/banners show the enclosing element
+                    let parentEl = inputElement ? inputElement.closest('div') : resourceForm;
+
+                    if (inputElement) {
+                        inputElement.classList.add('border-red-500');
+                    }
+
+                    if (!parentEl) parentEl = resourceForm;
+
+                    messages.forEach(msg => {
+                        const errorMessage = document.createElement('p');
+                        errorMessage.className = 'text-red-500 text-xs mt-1 error-message';
+                        errorMessage.textContent = msg;
+                        parentEl.appendChild(errorMessage);
+                    });
+                }
+            } else if (res.message) {
+                // Generic message
+                alert(res.message || 'Erro ao criar recurso');
+            } else {
+                alert('Erro ao criar recurso');
+            }
+        }
+        submitBtn.disabled = false;
+    });
+</script>
+{% endblock %}

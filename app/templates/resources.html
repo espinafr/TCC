@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Recursos{% endblock %}
+{% block additional_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
+{% endblock %}
+{% block content %}
+<body>
+    {% include 'navbar.html' %}
+    <div class="flex flex-col md:flex-row md:items-start md:justify-center gap-4 w-full max-w-7xl mx-auto p-2 md:p-6">
+        {% include 'lateralesquerda.html' %}
+        <div class="w-full max-w-4xl mx-auto p-6 mt-10">
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-3xl font-extrabold">Recursos</h1>
+                {% if can_create %}
+                <a href="{{ url_for('resources.create_resource') }}" class="bg-blue-600 text-white px-4 py-2 rounded">Criar novo recurso</a>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {% for r in resources %}
+                <a href="{{ url_for('resources.view_resource', resource_id=r.id) }}" class="block bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition p-3">
+                    <div class="h-40 bg-gray-200 rounded-md overflow-hidden flex items-center justify-center">
+                        {% if r.banner_url %}
+                        <img src="{{ r.banner_url }}" class="object-cover w-full h-full"/>
+                        {% elif r.first_attachment %}
+                        <img src="{{ r.first_attachment }}" class="object-cover w-full h-full"/>
+                        {% else %}
+                        <div class="text-gray-500">Sem imagem</div>
+                        {% endif %}
+                    </div>
+                    <div class="pt-2">
+                        <h3 class="font-semibold text-lg truncate">{{ r.title }}</h3>
+                        <p class="text-xs text-gray-500 mt-1">{{ r.category }} • {{ r.created_at }} • por {{ r.author }}</p>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+
+        </div>
+        {% include 'lateraldireita.html' %}
+    </div>
+    {% include 'popups.html' %}
+</body>
+{% endblock %}

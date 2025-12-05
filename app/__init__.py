@@ -97,10 +97,8 @@ def create_app(config_class=Config):
     def robots():
         return send_from_directory(app.static_folder, "robots.txt")
 
-    @app.route("/recursos")
-    def recursos():
-        flash('Página em desenvolvimento!', 'error')
-        return redirect(url_for('main.index'))
+    from app.resources import bp as resources_bp
+    app.register_blueprint(resources_bp, url_prefix='/recursos')
     
     @app.route("/dicas")
     def dicas():

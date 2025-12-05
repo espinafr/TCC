@@ -1,6 +1,8 @@
 from flask import render_template, session, request, jsonify
-from app.extensions import power_required, db_manager
-from app.database import Report, User, Post, Interaction, ModerationHistory
+from app.extensions import power_required, db_manager, s3
+from app.database import Report, User, Post, Interaction, ModerationHistory, UserDetails
+from flask import current_app
+import json
 from app.data_sanitizer import ModerationForm
 from sqlalchemy import func
 from datetime import date, datetime
@@ -207,6 +209,15 @@ def powersurge():
                 else:
                     user.power = power
                     db.commit()
+
+                    if power >= 1:
+                        try:
+                            db_manager.award_badge(user.id, 'Administrador', '1.png')
+                        except Exception:
+                            try:
+                                db.rollback()
+                            except Exception:
+                                pass
             else:
                 return jsonify({'success': False, 'message': f'O usuário não existe'}), 500
         except Exception as e:

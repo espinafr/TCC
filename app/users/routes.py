@@ -90,6 +90,16 @@ def view_profile(id):
     
     user_posts = get_user_posts(id)
     
+    try:
+        badges_raw = user_details.badges or '[]'
+        badges_list = json.loads(badges_raw)
+        if isinstance(badges_list, dict):
+            badges_list = []
+        if not isinstance(badges_list, list):
+            badges_list = []
+    except Exception:
+        badges_list = []
+
     return render_template(
         'profile.html',
         user={
@@ -100,7 +110,7 @@ def view_profile(id):
             'creation_date': user_details.user.creation_date,
             'profile_image_url': user_details.icon_url,
             'banner_url': user_details.banner_url,
-            'badges': [],
+            'badges': badges_list,
             'posts': user_posts
         },
         can_edit_profile=session.get('id') == id

@@ -45,6 +45,14 @@ def validate_fotos(form, field):
     if len(selected_files) > 5:
         raise ValidationError('Você pode enviar no máximo 5 fotos.')
 
+
+def validate_attachments(form, field):
+    # Filtra arquivos efetivamente enviados
+    selected_files = [f for f in field.data if isinstance(f, FileStorage) and f.filename]
+    if len(selected_files) > 3:
+        raise ValidationError('Você pode enviar no máximo 3 arquivos anexos (PDF ou imagens).')
+    # opcional: tamanho máximo por arquivo já é verificado via FileSize ao definir o campo
+
 def validate_not_empty_choice(form, field):
     if field.data == '':
         raise ValidationError('Por favor, selecione uma opção válida.')
@@ -127,6 +135,30 @@ class PostForm(FlaskForm):
             validate_fotos
         ]
     )
+
+
+class ResourceForm(FlaskForm):
+    tituloInput = StringField(name='tituloInput', validators=[InputRequired(message='O título é obrigatório.'), Length(min=5, max=150, message="O título precisa conter entre %(min)d e %(max)d caracteres")])
+    category = SelectField(name='category', choices=[(c, c) for c in ALLOWED_CATEGORIES], validators=[InputRequired(message='Selecione uma categoria.'), validate_not_empty_choice])
+    tags = StringField(validators=[Optional(), validate_opcional])
+    contentTextarea = TextAreaField(name='contentTextarea', validators=[InputRequired(message='O conteúdo é obrigatório.'), Length(min=10, max=5000, message="O conteúdo precisa conter entre %(min)d e %(max)d caracteres")])
+    bannerImage = FileField('Banner (opcional)', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg', 'webp', 'jfif'], 'Apenas imagens JPG, PNG, JPEG e WEBP são permitidas!'), FileSize(max_size=5 * 1024 * 1024, message='O tamanho do banner não pode exceder 5MB!')])
+    attachments = MultipleFileField('Anexos (até 3, PDF ou imagens)', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg', 'webp', 'jfif', 'pdf'], 'Apenas imagens e PDFs são permitidos!'), FileSize(max_size=15 * 1024 * 1024, message='Cada arquivo não pode exceder 15MB!'), validate_attachments])
+    youtubeUrl = StringField(name='youtubeUrl', validators=[Optional(), Length(max=255)])
+
+    def validate_youtubeUrl(form, field):
+        # Accept empty, or common YouTube URLs (youtu.be or youtube.com/watch?v=).
+        if not field.data:
+            return
+        val = field.data.strip()
+        # Simple regex to validate youtube url and capture id
+        import re
+        match = re.match(r'^(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_\-]{11})(?:[&?].*)?$', val)
+        if not match:
+            raise ValidationError('Insira uma URL do YouTube válida (ex: https://youtu.be/VIDEO_ID ou https://www.youtube.com/watch?v=VIDEO_ID).')
+        # Replace the field value with embeddable URL
+        video_id = match.group(1)
+        field.data = f'https://www.youtube.com/embed/{video_id}'
 
 def tiposDenuncia(form, field):
     if field.data not in ('interacao', 'usuario', 'post'):

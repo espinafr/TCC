@@ -369,10 +369,14 @@
 		const result = await sendApiRequest(`/adm/changepower`, 'POST', data);
 		
 		if (result.success) {
-			sucessmsg = document.createElement('div');
+			const prev = document.getElementById('sucess_message');
+			if (prev) prev.remove();
+
+			const sucessmsg = document.createElement('div');
 			sucessmsg.classList.add('p-2', 'mb-4', 'text-white', 'bg-green-500', 'rounded');
 			sucessmsg.id = 'sucess_message';
-			document.getElementById('powerForm').insertAdjacentElement('beforebegin', result.message);
+			sucessmsg.textContent = result.message || `Poder alterado para ${data.power} com sucesso`;
+			document.getElementById('powerForm').insertAdjacentElement('beforebegin', sucessmsg);
 		} else {
 			alert('Erro: ' + result.message);
 		}
