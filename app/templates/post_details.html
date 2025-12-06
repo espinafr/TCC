@@ -83,7 +83,7 @@
 						</button>
 					</div>
 				</div>
-				<button class="interaction-button cursor-pointer" id="saveButton">
+				<button class="interaction-button cursor-pointer {{'active' if is_saved else ''}}" id="saveButton-{{post.id}}">
 					<i class="fa-solid fa-bookmark"></i>
 					<span>Salvar</span>
 				</button>

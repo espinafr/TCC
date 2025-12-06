@@ -17,7 +17,7 @@
 					<p class="text-gray-600">Salve posts usando o botão <i class="fa-solid fa-bookmark"></i> para encontrá-los aqui depois.</p>
 				</div>
 			{% else %}
-				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
 					{% for post in posts %}
 					<div class="saved-cell bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-lg" data-postid="{{ post.id }}">
 						<div class="mb-2">

@@ -90,7 +90,7 @@ def create_post():
 def view_post(post_id):
     post = get_post_with_details(post_id)
     if not post:
-        flash('Post não encontrado.', 'error') # Considerar usar abort()
+        flash('Post não encontrado.', 'error')
         return redirect(url_for('main.index'))
     
     return render_template('post_details.html',
@@ -101,5 +101,6 @@ def view_post(post_id):
                            user_post_reaction=post['user_post_reaction'],
                            next_offset=post['next_offset'],
                            total_comments=post['total_comments'],
+                           is_saved=db_manager.is_post_saved(session.get('id', 0), post_id) if session.get('id') else False,
                            user_icon=get_user_icon(session.get('id')))
 
