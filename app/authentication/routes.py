@@ -10,8 +10,7 @@ def _process_login_attempt_and_session(form_obj):
     if user_logged_in:
         session['id'] = user_logged_in.id
         session['username'] = user_logged_in.username
-        if user_logged_in.power > 0:
-            session['power'] = user_logged_in.power
+        session['power'] = user_logged_in.power
         session.permanent = True
         return True, user_logged_in
     else:
