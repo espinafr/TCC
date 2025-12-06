@@ -39,6 +39,7 @@ def load_logged_in_user():
             user = db_session.query(User).filter_by(id=user_id).first()
             if user:
                 g.user = user
+                session['power'] = user.power
                 
                 # Verificar por banimentos ou desativações ativas
                 active_moderations = db_session.query(ModerationHistory).filter(
