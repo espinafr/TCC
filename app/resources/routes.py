@@ -14,8 +14,9 @@ from urllib.parse import unquote
 def upload_file_to_s3(file: FileStorage, folder: str):
     """Faz upload de um arquivo pra S3 e retorna a URL, e em caso de erro None"""
     try:
-        file_extension = os.path.splitext(file.filename)[1].lower()
-        unique_filename = str(uuid.uuid4()) + file_extension
+        nomearquivo = os.path.splitext(file.filename)
+        file_extension = nomearquivo[1].lower()
+        unique_filename = nomearquivo[0] + file_extension # str(uuid.uuid4())
 
         if file_extension in ['.jpg', '.jpeg', '.png', '.webp', '.jfif']:
             img = Image.open(file)
