@@ -95,20 +95,3 @@ Você pode executar o projeto usando Docker (recomendado) ou localmente com um a
 Este projeto foi desenvolvido como um Trabalho de Conclusão de Curso (TCC). No momento, contribuições diretas via pull request não estão sendo aceitas.
 
 No entanto, sinta-se à vontade para explorar o código, testar a aplicação e relatar quaisquer bugs ou sugestões abrindo uma **Issue** aqui no GitHub. Todo feedback é bem-vindo!
-
-## Compilando o CSS (Tailwind)
-
-Para compilar ou atualizar o CSS do Tailwind localmente (útil em desenvolvimento):
-
-```bash
-npm ci
-npm run build:css
-```
-
-Ou durante o desenvolvimento para assistir a mudanças:
-
-```bash
-npm run watch:css
-```
-
-Se você usa Docker com o `Dockerfile` atualizado, o passo de build do Tailwind é executado automaticamente durante a construção da imagem.
