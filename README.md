@@ -11,23 +11,9 @@ O Timby é uma plataforma social com foco em parentalidade, criada para conectar
 
 Além de ser um espaço informativo, o Timby se diferencia por seu sistema de missões, que sugere atividades e momentos de conexão entre pais e filhos. O objetivo é fortalecer os laços familiares e oferecer suporte prático, adaptado a diferentes rotinas e necessidades.
 
-## Planejado
-
-*   **Rede de Apoio:** Conecte-se com outros pais e responsáveis.
-*   **Biblioteca de Recursos:** Acesse uma vasta gama de artigos, dicas e recursos sobre parentalidade.
-*   **Sistema de Missões:** Participe de atividades e desafios criados para fortalecer os laços familiares.
-*   **Ambiente Seguro:** Construído com um forte foco em segurança, incluindo sanitização de dados, proteção contra CSRF e hashing de senhas com Argon2.
-
-## Tecnologias Utilizadas
-
-*   **Back-end:** Flask (Python)
-*   **Front-end:** Tailwind CSS, JavaScript
-*   **Banco de Dados:** PostgreSQL com SQLAlchemy
-*   **Deployment:** Docker, Railway
-
 ## Começando
 
-Você pode executar o projeto usando Docker (recomendado) ou localmente com um ambiente virtual Python.
+Você pode executar o projeto usando Docker ou localmente com um ambiente virtual Python.
 
 ### Pré-requisitos
 
