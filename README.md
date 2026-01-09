@@ -1,6 +1,6 @@
 # Timby - Uma Plataforma para Pais
 
-![Status](https://img.shields.io/badge/status-active-success.svg)
+![Status](https://img.shields.io/badge/status-archived-orangd.svg)
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-2.x-blue.svg)
 ![Tailwind CSS](https://img.shields.io/badge/tailwind%20css-3.x-blue.svg)
