@@ -1,4 +1,4 @@
-# Timby - Plataforma Social para Pais
+# Timby - Uma Plataforma para Pais
 
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
